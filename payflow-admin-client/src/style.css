@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #4F46E5;
+  --color-accent: #10B981;
+  --color-danger: #EF4444;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-info: #6B7280;
+}
+
+/* =============================================
+   Element Plus 品牌色覆盖（修复蓝色按钮问题）
+   品牌紫色：#6366F1 / #4F46E5
+   ============================================= */
+:root,
+:root.dark {
+  --el-color-primary: #6366F1;
+  --el-color-primary-light-3: #818CF8;
+  --el-color-primary-light-5: #A5B4FC;
+  --el-color-primary-light-7: #C7D2FE;
+  --el-color-primary-light-8: #E0E7FF;
+  --el-color-primary-light-9: #EEF2FF;
+  --el-color-primary-dark-2: #4F46E5;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Element Plus 暗黑化覆盖 */
+body {
+  background-color: #f9fafb;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 卡片阴影 */
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格行点击手型 */
+.el-table__row {
+  cursor: pointer;
+}
+
+/* 全局文字主色 */
+.text-primary { color: var(--color-primary); }
+.text-accent  { color: var(--color-accent); }
+.text-danger  { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+
+/* 全局边框主色 */
+.border-primary { border-color: var(--color-primary); }
+
+/* 全局背景主色 */
+.bg-primary { background-color: var(--color-primary); }

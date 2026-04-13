@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   品牌色覆盖 — Element Plus + 全局变量
+   与管理后台 payflow-admin 保持完全一致
+   ============================================================ */
+:root {
+  /* Element Plus 品牌色覆盖 */
+  --el-color-primary: #6366F1;
+  --el-color-primary-light-3: #818CF8;
+  --el-color-primary-light-5: #A5B4FC;
+  --el-color-primary-light-7: #C7D2FE;
+  --el-color-primary-light-8: #E0E7FF;
+  --el-color-primary-light-9: #EEF2FF;
+  --el-color-primary-dark-2: #4F46E5;
+
+  /* 品牌语义色变量 */
+  --brand-primary: #6366F1;
+  --brand-primary-dark: #4F46E5;
+  --brand-primary-soft: #EEF2FF;
+  --brand-success: #10B981;
+  --brand-warning: #F59E0B;
+  --brand-bg: #F8FAFC;
+  --brand-border: #E2E8F0;
+  --brand-text: #0F172A;
+  --brand-text-muted: #64748B;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--brand-bg);
+  }
+}
+
+@layer components {
+  /* ── 收银台页面背景 ── */
+  .cashier-page {
+    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%);
+    min-height: 100vh;
+  }
+
+  /* ── 顶部导航栏 ── */
+  .cashier-nav {
+    background: linear-gradient(90deg, #0F172A 0%, #1E293B 60%, #312E81 100%);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .nav-brand-name {
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px; /* 中文与英文品牌名拉开间距 */
+  }
+
+  .nav-brand-en {
+    color: #C7D2FE;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px; /* 英文品牌名字母间距 */
+  }
+
+  .nav-link {
+    color: #94A3B8;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover {
+    color: #FFFFFF;
+  }
+
+  /* ── 订单卡片 ── */
+  .order-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s;
+  }
+
+  .order-card:hover {
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12);
+  }
+
+  /* ── 支付方式卡片 ── */
+  .channel-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    border: 1.5px solid #E2E8F0;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .channel-card:hover,
+  .channel-card.selected {
+    border-color: #6366F1;
+    background: #EEF2FF;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+  }
+
+  /* ── 提交支付按钮 ── */
+  .pay-btn {
+    background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+    border: none;
+    color: white;
+    border-radius: 12px;
+    width: 100%;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 4px;
+  }
+
+  .pay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  }
+
+  .pay-btn:disabled {
+    background: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    letter-spacing: normal;
+  }
+
+  /* ── 订单金额展示 ── */
+  .amount-display {
+    font-size: 48px;
+    font-weight: 800;
+    color: #0F172A;
+    font-family: 'Inter', 'DM Sans', monospace;
+    letter-spacing: -1px;
+  }
+
+  /* ── 安全承诺区域 ── */
+  .security-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748B;
+    font-size: 13px;
+    padding: 12px 16px;
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+  }
+}
