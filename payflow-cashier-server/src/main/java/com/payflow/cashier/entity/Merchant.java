@@ -41,6 +41,11 @@ public class Merchant {
     @Schema(description = "登录密码")
     private String password;
 
+    /** 商户签名密钥（HMAC-SHA256 签名用） */
+    @TableField("app_secret")
+    @Schema(description = "商户签名密钥")
+    private String appSecret;
+
     /** 商户状态 */
     @Schema(description = "商户状态")
     private String status;

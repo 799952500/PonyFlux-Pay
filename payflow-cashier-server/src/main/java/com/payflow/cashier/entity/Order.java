@@ -66,6 +66,10 @@ public class Order {
     @Schema(description = "商户异步通知地址")
     private String notifyUrl;
 
+    @TableField("merchant_notify_url")
+    @Schema(description = "商户异步回调地址（支付成功后回调）")
+    private String merchantNotifyUrl;
+
     @TableField("return_url")
     @Schema(description = "支付完成回跳地址")
     private String returnUrl;
@@ -86,6 +90,14 @@ public class Order {
     @Schema(description = "更新时间")
     private LocalDateTime updatedAt;
 
+    @TableField("notify_status")
+    @Schema(description = "回调状态：PENDING/SUCCESS/FAILED")
+    private String notifyStatus;
+
+    @TableField("notify_retry_count")
+    @Schema(description = "回调重试次数")
+    private Integer notifyRetryCount;
+
     // ==================== 状态常量 ====================
 
     public static final String STATUS_CREATED = "CREATED";
@@ -93,6 +105,15 @@ public class Order {
     public static final String STATUS_PAID = "PAID";
     public static final String STATUS_EXPIRED = "EXPIRED";
     public static final String STATUS_FAILED = "FAILED";
+    public static final String STATUS_PENDING = "PENDING";
+    public static final String STATUS_SUCCESS = "SUCCESS";
+    public static final String STATUS_CLOSED = "CLOSED";
+    public static final String STATUS_REFUNDED = "REFUNDED";
+
+    // ==================== 回调状态常量 ====================
+    public static final String NOTIFY_STATUS_PENDING = "PENDING";
+    public static final String NOTIFY_STATUS_SUCCESS = "SUCCESS";
+    public static final String NOTIFY_STATUS_FAILED = "FAILED";
 
     // ==================== 渠道常量 ====================
 

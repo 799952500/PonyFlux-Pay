@@ -1,0 +1,12 @@
+﻿=== Test Round 3 - 2026-04-14 16:21:38 ===
+[16:21:38] === STEP 1: Maven Clean Compile ===
+mvn.cmd : Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF-8
+At C:\tmp\_run.ps1:30 char:15
++ $compileOut = & mvn clean compile -f $PomFile 2>&1
++               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Picked up JAVA_....encoding=UTF-8:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+错误: 找不到或无法加载主类 ?-Dfile.encoding=UTF-8
+原因: java.lang.ClassNotFoundException: ?-Dfile.encoding=UTF-8
+[16:21:38] COMPILE FAILED

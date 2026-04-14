@@ -9,6 +9,8 @@ import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.exception.BizException;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.cashier.service.OrderCacheService;
+import com.payflow.cashier.service.OrderMqProducer;
 import com.payflow.cashier.service.OrderService;
 import com.payflow.cashier.util.SignUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -32,12 +34,19 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final PaymentMapper paymentMapper;
     private final PayflowProperties properties;
+    private final OrderCacheService orderCacheService;
+    private final OrderMqProducer orderMqProducer;
 
-    public OrderServiceImpl(OrderMapper orderMapper, PaymentMapper paymentMapper,
-                            PayflowProperties properties) {
+    public OrderServiceImpl(OrderMapper orderMapper,
+                            PaymentMapper paymentMapper,
+                            PayflowProperties properties,
+                            OrderCacheService orderCacheService,
+                            OrderMqProducer orderMqProducer) {
         this.orderMapper = orderMapper;
         this.paymentMapper = paymentMapper;
         this.properties = properties;
+        this.orderCacheService = orderCacheService;
+        this.orderMqProducer = orderMqProducer;
     }
 
     @Override
@@ -76,16 +85,33 @@ public class OrderServiceImpl implements OrderService {
                 .channel(request.getChannel())
                 .status(Order.STATUS_CREATED)
                 .notifyUrl(request.getNotifyUrl())
+                .merchantNotifyUrl(request.getNotifyUrl()) // 支付成功回调地址
                 .returnUrl(request.getReturnUrl())
                 .expireTime(expireTime)
                 .createdAt(now)
                 .updatedAt(now)
+                .notifyStatus(Order.NOTIFY_STATUS_PENDING)
+                .notifyRetryCount(0)
                 .build();
 
         orderMapper.insert(order);
         log.info("订单创建成功: orderId={}", orderId);
 
-        // 4. 生成收银台 URL
+        // 4. 缓存到 Redis（TTL=30分钟）
+        try {
+            orderCacheService.cacheOrder(orderId, order);
+        } catch (Exception e) {
+            log.warn("Redis缓存订单失败（不影响主业务）: orderId={}, error={}", orderId, e.getMessage());
+        }
+
+        // 5. 发送 MQ 延迟消息（订单超时检查）
+        try {
+            orderMqProducer.sendOrderTimeoutCheck(orderId, expireTime);
+        } catch (Exception e) {
+            log.warn("MQ发送超时检查消息失败（不影响主业务）: orderId={}, error={}", orderId, e.getMessage());
+        }
+
+        // 6. 生成收银台 URL
         String payUrl = buildPayUrl(orderId);
 
         return CreateOrderResponse.builder()
@@ -102,53 +128,18 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDetailResponse getOrderDetail(String orderId) {
-        Order order = orderMapper.selectOne(
-                new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
+        // 1. 先查 Redis 缓存
+        Order order = orderCacheService.getOrderWithFallback(orderId);
         if (order == null) {
             throw new BizException(6001, "订单不存在: " + orderId);
         }
-
-        List<Payment> payments = paymentMapper.selectList(
-                new LambdaQueryWrapper<Payment>().eq(Payment::getOrderId, orderId));
-
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        List<OrderDetailResponse.PaymentRecordDTO> paymentDTOs = new ArrayList<>();
-        for (Payment p : payments) {
-            paymentDTOs.add(OrderDetailResponse.PaymentRecordDTO.builder()
-                    .paymentId(p.getPaymentId())
-                    .payChannel(p.getPayChannel())
-                    .payMethod(p.getPayMethod())
-                    .amount(p.getAmount())
-                    .status(p.getStatus())
-                    .channelTransactionId(p.getChannelTransactionId())
-                    .createdAt(p.getCreatedAt() != null ? p.getCreatedAt().format(fmt) : null)
-                    .updatedAt(p.getUpdatedAt() != null ? p.getUpdatedAt().format(fmt) : null)
-                    .build());
-        }
-
-        return OrderDetailResponse.builder()
-                .orderId(order.getOrderId())
-                .merchantId(order.getMerchantId())
-                .merchantOrderNo(order.getMerchantOrderNo())
-                .amount(order.getAmount())
-                .payAmount(order.getPayAmount())
-                .currency(order.getCurrency())
-                .subject(order.getSubject())
-                .body(order.getBody())
-                .attach(order.getAttach())
-                .channel(order.getChannel())
-                .status(order.getStatus())
-                .expireTime(order.getExpireTime() != null ? order.getExpireTime().format(fmt) : null)
-                .payTime(order.getPayTime() != null ? order.getPayTime().format(fmt) : null)
-                .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().format(fmt) : null)
-                .payments(paymentDTOs)
-                .build();
+        return buildOrderDetailResponse(order);
     }
 
     @Override
     public CashierResponse getCashierInfo(String orderId) {
-        Order order = orderMapper.selectOne(
-                new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
+        // 1. 先查 Redis 缓存
+        Order order = orderCacheService.getOrderWithFallback(orderId);
         if (order == null) {
             throw new BizException(6001, "订单不存在: " + orderId);
         }
@@ -204,6 +195,88 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         orderMapper.updateById(order);
         log.info("订单状态更新: orderId={}, status={}", orderId, newStatus);
+
+        // 更新缓存
+        try {
+            orderCacheService.evictOrder(orderId);
+            // 重新查DB并回填（确保缓存数据最新）
+            Order updatedOrder = orderMapper.selectOne(
+                    new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
+            if (updatedOrder != null) {
+                orderCacheService.cacheOrder(orderId, updatedOrder);
+            }
+        } catch (Exception e) {
+            log.warn("Redis缓存同步失败（不影响主业务）: orderId={}, error={}", orderId, e.getMessage());
+        }
+
+        // 支付成功/失败 → 发送 MQ 商户回调消息
+        if (Order.STATUS_PAID.equals(newStatus) || Order.STATUS_FAILED.equals(newStatus)) {
+            try {
+                orderMqProducer.sendPaymentResultNotify(orderId, newStatus, null);
+            } catch (Exception e) {
+                log.warn("MQ发送商户回调消息失败: orderId={}, error={}", orderId, e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public OrderDetailResponse getOrderByMerchant(String orderId, String merchantId) {
+        // 1. 优先从 Redis 缓存查
+        Order order = orderCacheService.getOrderWithFallback(orderId);
+
+        // 2. 校验订单存在
+        if (order == null) {
+            return null;
+        }
+
+        // 3. 校验 merchantId 匹配
+        if (!merchantId.equals(order.getMerchantId())) {
+            log.warn("商户查询订单，merchantId不匹配: orderId={}, requestMerchantId={}, actualMerchantId={}",
+                    orderId, merchantId, order.getMerchantId());
+            return null;
+        }
+
+        return buildOrderDetailResponse(order);
+    }
+
+    // ==================== 私有方法 ====================
+
+    private OrderDetailResponse buildOrderDetailResponse(Order order) {
+        List<Payment> payments = paymentMapper.selectList(
+                new LambdaQueryWrapper<Payment>().eq(Payment::getOrderId, order.getOrderId()));
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        List<OrderDetailResponse.PaymentRecordDTO> paymentDTOs = new ArrayList<>();
+        for (Payment p : payments) {
+            paymentDTOs.add(OrderDetailResponse.PaymentRecordDTO.builder()
+                    .paymentId(p.getPaymentId())
+                    .payChannel(p.getPayChannel())
+                    .payMethod(p.getPayMethod())
+                    .amount(p.getAmount())
+                    .status(p.getStatus())
+                    .channelTransactionId(p.getChannelTransactionId())
+                    .createdAt(p.getCreatedAt() != null ? p.getCreatedAt().format(fmt) : null)
+                    .updatedAt(p.getUpdatedAt() != null ? p.getUpdatedAt().format(fmt) : null)
+                    .build());
+        }
+
+        return OrderDetailResponse.builder()
+                .orderId(order.getOrderId())
+                .merchantId(order.getMerchantId())
+                .merchantOrderNo(order.getMerchantOrderNo())
+                .amount(order.getAmount())
+                .payAmount(order.getPayAmount())
+                .currency(order.getCurrency())
+                .subject(order.getSubject())
+                .body(order.getBody())
+                .attach(order.getAttach())
+                .channel(order.getChannel())
+                .status(order.getStatus())
+                .expireTime(order.getExpireTime() != null ? order.getExpireTime().format(fmt) : null)
+                .payTime(order.getPayTime() != null ? order.getPayTime().format(fmt) : null)
+                .createdAt(order.getCreatedAt() != null ? order.getCreatedAt().format(fmt) : null)
+                .payments(paymentDTOs)
+                .build();
     }
 
     private String buildPayUrl(String orderId) {

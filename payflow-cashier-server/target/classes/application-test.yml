@@ -1,0 +1,13 @@
+# 测试/无 MQ 环境配置：禁用 RocketMQ 自动装配，允许服务在无 MQ 时正常启动
+spring:
+  autoconfigure:
+    exclude:
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+
+rocketmq:
+  name-server: ""
+
+# 关闭 MQ 功能
+payflow:
+  mq:
+    enabled: false
