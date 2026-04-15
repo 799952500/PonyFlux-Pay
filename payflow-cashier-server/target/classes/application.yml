@@ -41,30 +41,30 @@ mybatis-plus:
       table-prefix: ""
   ddl-auto: none
 
-  # Redis 配置
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
-      password:
-      database: 0
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+  # Redis 配置（暂时禁用，无本地 Redis）
+  # data:
+  #   redis:
+  #     host: 127.0.0.1
+  #     port: 6379
+  #     password:
+  #     database: 0
+  #     lettuce:
+  #       pool:
+  #         max-active: 8
+  #         max-idle: 8
+  #         min-idle: 0
 
-# RocketMQ 配置
-rocketmq:
-  name-server: 127.0.0.1:9876
-  producer:
-    group: payflow-cashier-producer
+# RocketMQ 配置（暂时禁用，无本地 RocketMQ）
+# rocketmq:
+#   name-server: 127.0.0.1:9876
+#   producer:
+#     group: payflow-cashier-producer
 
 # PayFlow 收银台自定义配置
 payflow:
-  # MQ 功能开关（默认 true，有 MQ 环境时自动启用；设为 false 可在无 MQ 时优雅降级）
+  # MQ 功能开关（无 MQ 环境时设为 false 优雅降级）
   mq:
-    enabled: true
+    enabled: false
   jwt:
     # JWT 签名密钥（生产环境请通过环境变量注入）
     secret: cashier_jwt_secret_key_2024_secure

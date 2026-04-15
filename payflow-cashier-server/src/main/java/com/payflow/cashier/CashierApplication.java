@@ -17,7 +17,10 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @author PayFlow Team
  */
 @Slf4j
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+        org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class
+})
 @MapperScan("com.payflow.cashier.mapper")
 @EnableAsync
 public class CashierApplication {

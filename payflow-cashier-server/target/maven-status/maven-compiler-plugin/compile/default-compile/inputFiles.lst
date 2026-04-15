@@ -1,9 +1,7 @@
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\CashierApplication.java
-D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\config\MqConfig.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\config\PayflowProperties.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\config\RedisConfig.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\config\WebMvcConfig.java
-D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\consumer\OrderMqConsumer.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\consumer\OrderMqNoOpConsumer.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\controller\CashierController.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\controller\MerchantQueryController.java
@@ -33,8 +31,9 @@ D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cash
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\middleware\MerchantSignatureInterceptor.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\AuthService.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\AuthServiceImpl.java
+D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\OrderCacheNoOpServiceImpl.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\OrderCacheServiceImpl.java
-D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\OrderMqProducerImpl.java
+D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\OrderMqNoOpProducerImpl.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\OrderServiceImpl.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\impl\PaymentServiceImpl.java
 D:\个人\pay\PonyFlux-Pay\payflow-cashier-server\src\main\java\com\payflow\cashier\service\OrderCacheService.java

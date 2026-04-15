@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -18,10 +19,12 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 /**
  * Redis 配置类
  * 配置 RedisTemplate 和 StringRedisTemplate，支持 JSON 序列化
+ * 仅当 Redis 连接可用时启用
  *
  * @author PayFlow Team
  */
 @Configuration
+@ConditionalOnProperty(name = "payflow.cache.redis.enabled", havingValue = "true", matchIfMissing = false)
 public class RedisConfig {
 
     @Bean

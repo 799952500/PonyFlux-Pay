@@ -6,6 +6,7 @@ import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.service.OrderCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "payflow.cache.redis.enabled", havingValue = "true")
 public class OrderCacheServiceImpl implements OrderCacheService {
 
     private static final String ORDER_KEY_PREFIX = "order:";
