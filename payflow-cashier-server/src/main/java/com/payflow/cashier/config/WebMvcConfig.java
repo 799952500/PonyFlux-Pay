@@ -43,11 +43,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 // 收银台相关接口全部公开，无需认证：
                 //   - /api/v1/cashier/**   收银台信息，消费者直接访问
                 //   - /api/v1/payments/**  支付接口，消费者直接调用
+                //   - /api/v1/admin/**     管理接口（JWT 由前端管理，暂跳过签名）
                 .addPathPatterns("/api/v1/orders/**")
                 .excludePathPatterns(
                         "/api/v1/auth/**",             // 认证接口
-                        "/api/v1/cashier/**",          // 收银台信息（无需认证）
-                        "/api/v1/payments/**",         // 支付接口（无需认证，消费者直接调用）
+                        "/api/v1/cashier/**",           // 收银台信息（无需认证）
+                        "/api/v1/payments/**",          // 支付接口（无需认证，消费者直接调用）
+                        "/api/v1/admin/**",             // 管理接口
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/h2-console/**",

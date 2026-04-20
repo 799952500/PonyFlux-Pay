@@ -117,6 +117,10 @@ export interface Merchant {
   contactEmail?: string
   contactPhone?: string
   createdAt: string
+  merchantKey?: string
+  callbackUrl?: string
+  notifyUrl?: string
+  commissionRate?: number
 }
 
 // ============================================================

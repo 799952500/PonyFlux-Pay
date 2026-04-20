@@ -1,6 +1,6 @@
 <template>
   <header class="cashier-nav">
-    <div class="max-w-[540px] mx-auto px-6 h-[60px] flex items-center justify-between">
+    <div class="max-w-[560px] w-full mx-auto px-6 h-[60px] flex items-center justify-between">
       <!-- Logo & 商户名 -->
       <div class="flex items-center gap-3">
         <!-- 品牌徽标区 -->
@@ -11,8 +11,8 @@
 
         <!-- 分隔符 + 商户名 -->
         <template v-if="merchantName">
-          <span class="text-slate-600 text-lg font-light mx-1">|</span>
-          <span class="text-slate-300 text-sm font-medium">{{ merchantName }}</span>
+          <span class="text-emerald-200/50 text-lg font-light mx-1">|</span>
+          <span class="text-emerald-100/90 text-sm font-medium">{{ merchantName }}</span>
         </template>
       </div>
 
@@ -45,7 +45,7 @@
     </div>
 
     <!-- 底部紫色光晕线 -->
-    <div class="h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+    <div class="h-px bg-gradient-to-r from-transparent via-emerald-400/35 to-transparent" />
   </header>
 </template>
 

@@ -1,6 +1,8 @@
 <template>
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-[360px] p-8 text-center card-shadow">
+  <div class="fixed inset-0 bg-emerald-950/55 flex items-center justify-center z-50 backdrop-blur-md">
+    <div
+      class="rounded-2xl w-[min(360px,calc(100vw-32px))] p-8 text-center card-shadow border border-white/20 bg-white/12 backdrop-blur-xl"
+    >
       <!-- 状态图标 -->
       <div class="mb-4">
         <div
@@ -18,10 +20,10 @@
       </div>
 
       <!-- 标题 -->
-      <h3 class="text-xl font-bold text-gray-900 mb-2">
+      <h3 class="text-xl font-bold text-white mb-2">
         {{ status === 'success' ? '支付成功' : '支付失败' }}
       </h3>
-      <p class="text-gray-500 text-sm mb-6">
+      <p class="text-emerald-100/75 text-sm mb-6">
         {{ status === 'success' ? '您的订单已完成支付' : '支付未完成，请重试' }}
       </p>
 
@@ -46,7 +48,7 @@
         </el-button>
         <button
           v-else
-          class="text-gray-400 text-sm hover:text-gray-600 transition-colors mt-1"
+          class="text-emerald-100/55 text-sm hover:text-white transition-colors mt-1"
           @click="close"
         >
           关闭

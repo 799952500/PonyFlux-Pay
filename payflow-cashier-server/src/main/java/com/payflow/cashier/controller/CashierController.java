@@ -43,4 +43,5 @@ public class CashierController {
         CashierResponse response = orderService.getCashierInfo(orderId);
         return R.ok(response);
     }
+
 }

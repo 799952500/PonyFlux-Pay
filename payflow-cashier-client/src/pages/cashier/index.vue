@@ -265,8 +265,8 @@ function formatAmount(amount: number): string {
 /* ── 内容容器（480px 居中，内部可滚动） ── */
 .cashier-inner {
   width: 100%;
-  max-width: 480px;
-  padding: 0 16px;
+  max-width: min(560px, 100%);
+  padding: 0 24px;
   /* 内容总高强制不超过视口可用高度（导航 60px） */
   max-height: calc(100vh - 60px);
   overflow-y: auto;
@@ -291,7 +291,7 @@ function formatAmount(amount: number): string {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #0d9488 100%);
   color: white;
   font-size: 17px;
   font-weight: 700;
@@ -311,19 +311,19 @@ function formatAmount(amount: number): string {
 .merchant-name {
   font-size: 15px;
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff;
   line-height: 1.2;
 }
 
 .merchant-label {
   font-size: 12px;
-  color: #64748b;
+  color: rgba(209, 250, 229, 0.75);
 }
 
 /* ── 区块分割线 ── */
 .section-divider {
   height: 1px;
-  background: #e2e8f0;
+  background: rgba(255, 255, 255, 0.14);
   flex-shrink: 0;
 }
 

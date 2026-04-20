@@ -117,7 +117,7 @@ onMounted(() => { loadRefunds() })
 <style scoped>
 /* 按钮样式（与 orders/index.vue 保持一致） */
 .btn-primary {
-  background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -143,7 +143,7 @@ onMounted(() => { loadRefunds() })
 }
 
 .btn-outline:hover {
-  border-color: #6366F1;
-  color: #6366F1;
+  border-color: #047857;
+  color: #047857;
 }
 </style>

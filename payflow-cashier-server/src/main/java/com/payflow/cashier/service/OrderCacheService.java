@@ -6,6 +6,8 @@ import com.payflow.cashier.entity.Order;
  * 订单缓存服务接口
  * 提供 Redis 缓存操作，Cache-Aside 模式
  *
+ * 使用 Spring Cache 注解方式
+ *
  * @author PayFlow Team
  */
 public interface OrderCacheService {
@@ -14,7 +16,7 @@ public interface OrderCacheService {
      * 缓存订单（TTL=30分钟）
      *
      * @param orderId 订单号
-     * @param order   订单实体
+     * @param order 订单实体
      */
     void cacheOrder(String orderId, Order order);
 
@@ -45,7 +47,7 @@ public interface OrderCacheService {
      * 更新缓存（DB更新后同步更新缓存）
      *
      * @param orderId 订单号
-     * @param order   订单实体
+     * @param order 订单实体
      */
     void updateCache(String orderId, Order order);
 

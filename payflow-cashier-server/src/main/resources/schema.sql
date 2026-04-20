@@ -93,3 +93,52 @@ CREATE TABLE IF NOT EXISTS callback_logs (
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_at    TIMESTAMP COMMENT '处理完成时间'
 ) COMMENT '回调日志表';
+
+-- ----------------------------
+-- 5. 支付渠道表 pay_channels
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS pay_channels (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    channel_code    VARCHAR(32) NOT NULL UNIQUE COMMENT '渠道编码：wechat_pay/alipay/union_pay',
+    channel_name    VARCHAR(64) NOT NULL COMMENT '渠道名称：微信支付/支付宝/银联',
+    icon_url        VARCHAR(512) COMMENT '图标URL',
+    status          VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT 'ENABLED/DISABLED',
+    sort_weight     INT DEFAULT 0 COMMENT '排序权重，越大越靠前',
+    description     VARCHAR(256) COMMENT '描述',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_channel_status (status)
+) COMMENT '支付渠道表';
+
+-- ----------------------------
+-- 6. 渠道账户表 pay_channel_accounts
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS pay_channel_accounts (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    channel_id      BIGINT NOT NULL COMMENT '所属渠道ID',
+    account_code    VARCHAR(64) NOT NULL COMMENT '账户编码',
+    account_name    VARCHAR(128) NOT NULL COMMENT '账户名称',
+    channel_config  TEXT COMMENT '渠道配置JSON（appId/appSecret/mchId等）',
+    status          VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT 'ENABLED/DISABLED',
+    remark          VARCHAR(256) COMMENT '备注',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_account_channel (channel_id),
+    INDEX idx_account_status (status)
+) COMMENT '渠道账户表';
+
+-- ----------------------------
+-- 7. 商户渠道路由表 pay_channel_merchant_routes
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS pay_channel_merchant_routes (
+    id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
+    channel_account_id  BIGINT NOT NULL COMMENT '渠道账户ID',
+    merchant_id         VARCHAR(64) NOT NULL COMMENT '商户号',
+    enabled             BOOLEAN NOT NULL DEFAULT TRUE COMMENT '是否启用',
+    priority            INT DEFAULT 0 COMMENT '优先级，越大越高',
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_route_merchant (merchant_id),
+    INDEX idx_route_account (channel_account_id),
+    INDEX idx_route_enabled (enabled)
+) COMMENT '商户渠道路由表';

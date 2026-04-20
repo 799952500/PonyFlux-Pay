@@ -15,7 +15,7 @@
             昨日 {{ kpi.sub }}
             <span
               class="ml-1 font-medium"
-              :class="kpi.trend > 0 ? 'text-[#EF4444]' : 'text-[#10B981]'"
+              :class="kpi.trend > 0 ? 'text-[#EF4444]' : 'text-[#047857]'"
             >
               {{ kpi.trend > 0 ? '↑' : '↓' }}{{ Math.abs(kpi.trend) }}%
             </span>
@@ -164,14 +164,14 @@ function initTrendChart() {
     series: [
       {
         name: '订单数', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
-        lineStyle: { color: '#4F46E5', width: 2 }, itemStyle: { color: '#4F46E5' },
+        lineStyle: { color: '#047857', width: 2 }, itemStyle: { color: '#047857' },
         areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(79,70,229,0.15)' }, { offset: 1, color: 'rgba(79,70,229,0)' }]) },
+          { offset: 0, color: 'rgba(5,150,105,0.2)' }, { offset: 1, color: 'rgba(5,150,105,0)' }]) },
         data: trendData.map((d) => d.orders),
       },
       {
         name: '收入', type: 'line', smooth: true, symbol: 'none',
-        lineStyle: { color: '#10B981', width: 1.5 }, yAxisIndex: 1,
+        lineStyle: { color: '#0d9488', width: 1.5 }, yAxisIndex: 1,
         data: trendData.map((d) => d.revenue),
       },
     ],
@@ -189,7 +189,7 @@ function initPieChart() {
       avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: false } },
       data: channelData.map((item, index) => ({
         ...item,
-        itemStyle: { color: ['#4F46E5', '#10B981', '#F59E0B'][index] },
+        itemStyle: { color: ['#065f46', '#0d9488', '#F59E0B'][index] },
       })),
     }],
   })

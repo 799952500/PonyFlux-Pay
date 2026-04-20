@@ -39,7 +39,7 @@
       <el-table v-loading="loading" :data="orderList" stripe size="small" @row-click="openDetail" class="data-table">
         <el-table-column label="订单号" prop="orderId" min-width="160">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums font-medium text-[#6366F1] cursor-pointer">#{{ row.orderId }}</span>
+            <span class="text-xs tabular-nums font-medium text-[#047857] cursor-pointer">#{{ row.orderId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="150" />
@@ -172,7 +172,7 @@ onMounted(() => { loadOrders() })
 
 /* 按钮样式 */
 .btn-primary {
-  background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
   border: none;
   color: white;
   border-radius: 10px;
@@ -198,8 +198,8 @@ onMounted(() => { loadOrders() })
 }
 
 .btn-outline:hover {
-  border-color: #6366F1;
-  color: #6366F1;
+  border-color: #047857;
+  color: #047857;
 }
 
 /* 表格样式 */

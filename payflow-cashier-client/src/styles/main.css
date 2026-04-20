@@ -2,30 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   品牌色覆盖 — Element Plus + 全局变量
-   与管理后台 payflow-admin 保持完全一致
-   ============================================================ */
+/* 品牌色 — 与管理端统一的深绿沉稳 */
 :root {
-  /* Element Plus 品牌色覆盖 */
-  --el-color-primary: #6366F1;
-  --el-color-primary-light-3: #818CF8;
-  --el-color-primary-light-5: #A5B4FC;
-  --el-color-primary-light-7: #C7D2FE;
-  --el-color-primary-light-8: #E0E7FF;
-  --el-color-primary-light-9: #EEF2FF;
-  --el-color-primary-dark-2: #4F46E5;
+  --el-color-primary: #047857;
+  --el-color-primary-light-3: #059669;
+  --el-color-primary-light-5: #0d9488;
+  --el-color-primary-light-7: #14b8a6;
+  --el-color-primary-light-8: #5eead4;
+  --el-color-primary-light-9: #ccfbf1;
+  --el-color-primary-dark-2: #065f46;
 
-  /* 品牌语义色变量 */
-  --brand-primary: #6366F1;
-  --brand-primary-dark: #4F46E5;
-  --brand-primary-soft: #EEF2FF;
-  --brand-success: #10B981;
-  --brand-warning: #F59E0B;
-  --brand-bg: #F8FAFC;
-  --brand-border: #E2E8F0;
-  --brand-text: #0F172A;
-  --brand-text-muted: #64748B;
+  --brand-primary: #047857;
+  --brand-primary-dark: #065f46;
+  --brand-primary-soft: #ccfbf1;
+  --brand-success: #047857;
+  --brand-warning: #f59e0b;
+  --brand-bg: #021a18;
+  --brand-border: rgba(255, 255, 255, 0.14);
+  --brand-text: #f8fafc;
+  --brand-text-muted: rgba(226, 232, 240, 0.72);
 }
 
 @layer base {
@@ -39,65 +34,80 @@
     font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: var(--brand-bg);
+    background-color: #021a18;
+    background-image:
+      radial-gradient(ellipse 92% 72% at 0% 0%, rgba(3, 42, 36, 0.78) 0%, transparent 56%),
+      radial-gradient(ellipse 90% 52% at 50% 0%, rgba(2, 44, 36, 0.62) 0%, transparent 52%),
+      radial-gradient(ellipse 88% 52% at 100% 14%, rgba(2, 32, 28, 0.62) 0%, transparent 50%),
+      radial-gradient(ellipse 120% 58% at 50% 100%, rgba(1, 16, 14, 0.78) 0%, transparent 55%),
+      linear-gradient(180deg, rgba(2, 36, 32, 0.88) 0%, rgba(4, 58, 48, 0.68) 48%, rgba(1, 22, 20, 0.9) 100%),
+      url('/forest-hero.png');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
   }
 }
 
 @layer components {
-  /* ── 收银台页面背景 ── */
   .cashier-page {
-    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  /* ── 顶部导航栏 ── */
   .cashier-nav {
-    background: linear-gradient(90deg, #0F172A 0%, #1E293B 60%, #312E81 100%);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+    background: rgba(2, 22, 20, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
   }
 
   .nav-brand-name {
-    color: #FFFFFF;
+    color: #ffffff;
     font-size: 20px;
     font-weight: 700;
-    margin-bottom: 4px; /* 中文与英文品牌名拉开间距 */
+    margin-bottom: 4px;
   }
 
   .nav-brand-en {
-    color: #C7D2FE;
+    color: rgba(209, 250, 229, 0.85);
     font-size: 12px;
     font-weight: 500;
-    letter-spacing: 1.5px; /* 英文品牌名字母间距 */
+    letter-spacing: 1.5px;
   }
 
   .nav-link {
-    color: #94A3B8;
+    color: rgba(226, 232, 240, 0.75);
     font-size: 14px;
     transition: color 0.2s;
   }
 
   .nav-link:hover {
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
-  /* ── 订单卡片 ── */
   .order-card {
-    background: #FFFFFF;
-    border-radius: 16px;
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
     transition: all 0.2s;
   }
 
   .order-card:hover {
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12);
+    border-color: rgba(13, 148, 136, 0.42);
+    box-shadow: 0 12px 48px rgba(4, 120, 87, 0.14);
   }
 
-  /* ── 支付方式卡片 ── */
   .channel-card {
-    background: #FFFFFF;
-    border-radius: 12px;
-    border: 1.5px solid #E2E8F0;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
     padding: 16px;
     cursor: pointer;
     transition: all 0.2s;
@@ -105,65 +115,63 @@
 
   .channel-card:hover,
   .channel-card.selected {
-    border-color: #6366F1;
-    background: #EEF2FF;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+    border-color: rgba(13, 148, 136, 0.55);
+    background: rgba(4, 120, 87, 0.18);
+    box-shadow: 0 4px 20px rgba(2, 44, 34, 0.25);
   }
 
-  /* ── 提交支付按钮 ── */
   .pay-btn {
-    background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
-    border: none;
+    background: linear-gradient(180deg, #0d9488 0%, #047857 50%, #065f46 100%);
+    border: 1px solid rgba(6, 95, 70, 0.85);
     color: white;
-    border-radius: 12px;
+    border-radius: 9999px;
     width: 100%;
     padding: 16px;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.25s;
-    letter-spacing: 4px;
+    letter-spacing: 0.12em;
+    text-transform: none;
   }
 
   .pay-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 10px 32px rgba(2, 44, 34, 0.5);
   }
 
   .pay-btn:disabled {
-    background: #E2E8F0;
-    color: #94A3B8;
+    background: rgba(148, 163, 184, 0.35);
+    color: rgba(248, 250, 252, 0.65);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
     letter-spacing: normal;
   }
 
-  /* ── 订单金额展示 ── */
   .amount-display {
     font-size: 48px;
     font-weight: 800;
-    color: #0F172A;
+    color: #ffffff;
     font-family: 'Inter', 'DM Sans', monospace;
     letter-spacing: -1px;
   }
 
-  /* ── 安全承诺区域 ── */
   .security-badge {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #64748B;
+    color: rgba(226, 232, 240, 0.85);
     font-size: 13px;
     padding: 12px 16px;
-    background: rgba(99, 102, 241, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 }
 
 @layer utilities {
   .card-shadow {
-    box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
   }
 }

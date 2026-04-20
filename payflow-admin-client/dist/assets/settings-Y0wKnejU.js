@@ -1,1 +1,0 @@
-import{_ as s,o as n,c as r,b as e}from"./index-CCie_Xah.js";const c={};function o(a,t){return n(),r("div",null,[...t[0]||(t[0]=[e("div",{class:"bg-white rounded-xl p-10 text-center text-gray-400"},[e("p",{class:"text-4xl mb-3"},"⚙️"),e("p",null,"系统设置功能开发中")],-1)])])}const d=s(c,[["render",o]]);export{d as default};

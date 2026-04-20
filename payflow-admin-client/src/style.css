@@ -3,27 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #4F46E5;
-  --color-accent: #10B981;
-  --color-danger: #EF4444;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-info: #6B7280;
+  --color-primary: #065f46;
+  --color-accent: #0d9488;
+  --color-danger: #ef4444;
+  --color-success: #047857;
+  --color-warning: #f59e0b;
+  --color-info: #64748b;
 }
 
-/* =============================================
-   Element Plus 品牌色覆盖（修复蓝色按钮问题）
-   品牌紫色：#6366F1 / #4F46E5
-   ============================================= */
+/* Element Plus 品牌色：深绿沉稳 */
 :root,
 :root.dark {
-  --el-color-primary: #6366F1;
-  --el-color-primary-light-3: #818CF8;
-  --el-color-primary-light-5: #A5B4FC;
-  --el-color-primary-light-7: #C7D2FE;
-  --el-color-primary-light-8: #E0E7FF;
-  --el-color-primary-light-9: #EEF2FF;
-  --el-color-primary-dark-2: #4F46E5;
+  --el-color-primary: #047857;
+  --el-color-primary-light-3: #059669;
+  --el-color-primary-light-5: #0d9488;
+  --el-color-primary-light-7: #14b8a6;
+  --el-color-primary-light-8: #5eead4;
+  --el-color-primary-light-9: #ccfbf1;
+  --el-color-primary-dark-2: #065f46;
 }
 
 html, body, #app {
@@ -32,10 +29,21 @@ html, body, #app {
   padding: 0;
 }
 
-/* Element Plus 暗黑化覆盖 */
 body {
-  background-color: #f9fafb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background-color: #021a18;
+  background-image:
+    radial-gradient(ellipse 92% 72% at 0% 0%, rgba(3, 42, 36, 0.78) 0%, transparent 56%),
+    radial-gradient(ellipse 90% 52% at 50% 0%, rgba(2, 44, 36, 0.62) 0%, transparent 52%),
+    radial-gradient(ellipse 88% 52% at 100% 14%, rgba(2, 32, 28, 0.62) 0%, transparent 50%),
+    radial-gradient(ellipse 120% 58% at 50% 100%, rgba(1, 16, 14, 0.78) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(2, 36, 32, 0.88) 0%, rgba(4, 58, 48, 0.68) 48%, rgba(1, 22, 20, 0.9) 100%),
+    url('/forest-hero.png');
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* 卡片阴影 */
@@ -59,3 +67,97 @@ body {
 
 /* 全局背景主色 */
 .bg-primary { background-color: var(--color-primary); }
+
+/* =============================================
+   Element Plus × Tailwind 兼容性修复
+   修复：按钮文字靠后、表单内容偏移、对齐异常
+   ============================================= */
+
+/* 表单项内容区对齐：确保 label 右侧紧贴输入框 */
+.el-form--inline .el-form-item {
+  align-items: center;
+}
+
+.el-form--inline .el-form-item__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* 防止 label 文字被挤压到右侧 */
+  white-space: nowrap;
+  padding-right: 8px;
+}
+
+.el-form--inline .el-form-item__content {
+  /* 内容区左对齐，不拉伸 */
+  justify-content: flex-start;
+  flex: none;
+  flex-shrink: 0;
+}
+
+/* 按钮内文字/图标居中对齐（修复"靠后"问题） */
+.el-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Select 下拉框文字居中 */
+.el-select .el-input__inner {
+  text-align: left;
+}
+
+/* Input 输入框文字左对齐 */
+.el-input__inner,
+.el-textarea__inner {
+  text-align: left;
+}
+
+/* Tag 标签内文字居中 */
+.el-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pagination 分页器居中修正 */
+.el-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Dialog 弹窗按钮区域 */
+.el-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Table 表格单元格：flex 纵向居中，并按列 align 恢复水平对齐（避免覆盖 is-right 表头/数字列） */
+.el-table .cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.el-table .el-table__cell.is-right .cell {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.el-table .el-table__cell.is-center .cell {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Radio / Checkbox 组对齐 */
+.el-radio-group,
+.el-checkbox-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

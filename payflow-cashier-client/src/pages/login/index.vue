@@ -1,19 +1,16 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-700 via-primary-600 to-purple-700 flex items-center justify-center px-4">
-    <!-- 居中卡片 -->
-    <div class="w-full max-w-[420px]">
-      <!-- Logo + 标题 -->
+  <div class="login-shell min-h-screen flex items-center justify-center px-6 py-12">
+    <div class="w-full max-w-[440px]">
       <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm mb-4">
-          <img src="/ponyflux-logo-dark.svg" alt="PonyFlux Pay" class="h-10 w-auto" />
+        <div class="inline-flex items-center justify-center w-[72px] h-[72px] rounded-2xl mb-4 login-logo-ring">
+          <img src="/ponyflux-logo.svg" width="56" height="56" alt="小马支付" />
         </div>
-        <h1 class="text-white text-2xl font-bold tracking-tight">小马支付</h1>
-        <p class="text-white/60 text-sm mt-1">PonyFlux Pay · 商户收银台</p>
+        <h1 class="text-white text-2xl font-bold tracking-tight drop-shadow-sm">小马支付</h1>
+        <p class="text-emerald-100/75 text-sm mt-1.5">PonyFlux Pay · 商户收银台</p>
       </div>
 
-      <!-- 登录表单卡片 -->
-      <div class="bg-white rounded-2xl card-shadow p-8">
-        <h2 class="text-gray-800 font-semibold text-lg mb-6 text-center">商户登录</h2>
+      <div class="login-glass rounded-[28px] p-8 sm:p-10">
+        <h2 class="text-white font-semibold text-lg mb-6 text-center">商户登录</h2>
 
         <el-form
           ref="formRef"
@@ -21,8 +18,8 @@
           :rules="rules"
           label-position="top"
           @submit.prevent="handleLogin"
+          class="login-form-el"
         >
-          <!-- 商户号 -->
           <el-form-item label="商户号" prop="merchantId">
             <el-input
               v-model="form.merchantId"
@@ -33,7 +30,6 @@
             />
           </el-form-item>
 
-          <!-- 密码 -->
           <el-form-item label="登录密码" prop="password">
             <el-input
               v-model="form.password"
@@ -46,15 +42,13 @@
             />
           </el-form-item>
 
-          <!-- 错误提示 -->
           <div v-if="errorMsg" class="mb-4">
             <el-alert type="error" :title="errorMsg" :closable="false" show-icon />
           </div>
 
-          <!-- 登录按钮 -->
           <el-button
             type="primary"
-            class="w-full !h-[48px] !rounded-xl !text-base !font-semibold !mt-2"
+            class="w-full !h-[50px] !rounded-full !text-base !font-semibold !mt-2 login-submit"
             :loading="loading"
             native-type="submit"
           >
@@ -62,17 +56,15 @@
           </el-button>
         </el-form>
 
-        <!-- 底部 -->
-        <p class="text-center text-xs text-gray-400 mt-6">
+        <p class="text-center text-xs text-emerald-100/55 mt-6 leading-relaxed">
           登录即表示同意
-          <a href="#" class="text-primary hover:underline">《商户服务协议》</a>
+          <a href="#" class="text-emerald-200 hover:text-white hover:underline">《商户服务协议》</a>
           与
-          <a href="#" class="text-primary hover:underline">《隐私政策》</a>
+          <a href="#" class="text-emerald-200 hover:text-white hover:underline">《隐私政策》</a>
         </p>
       </div>
 
-      <!-- 版权 -->
-      <p class="text-center text-white/40 text-xs mt-6">
+      <p class="text-center text-emerald-100/45 text-xs mt-8">
         © {{ new Date().getFullYear() }} PonyFlux Pay. All rights reserved.
       </p>
     </div>
@@ -100,9 +92,7 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  merchantId: [
-    { required: true, message: '请输入商户号', trigger: 'blur' },
-  ],
+  merchantId: [{ required: true, message: '请输入商户号', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入登录密码', trigger: 'blur' },
     { min: 6, message: '密码至少 6 位', trigger: 'blur' },
@@ -143,3 +133,50 @@ async function handleLogin() {
   }
 }
 </script>
+
+<style scoped>
+.login-shell {
+  position: relative;
+}
+
+.login-logo-ring {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.login-glass {
+  background: rgba(4, 28, 26, 0.78);
+  border: 1px solid rgba(120, 150, 140, 0.22);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.login-form-el :deep(.el-form-item__label) {
+  color: rgba(236, 253, 245, 0.9);
+}
+
+.login-form-el :deep(.el-input__wrapper) {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.login-form-el :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.55) inset, 0 0 0 3px rgba(4, 120, 87, 0.28);
+}
+
+.login-form-el :deep(.el-input__inner) {
+  color: #f8fafc;
+}
+
+.login-form-el :deep(.el-input__inner::placeholder) {
+  color: rgba(226, 232, 240, 0.45);
+}
+
+.login-submit {
+  letter-spacing: 0.08em;
+}
+</style>

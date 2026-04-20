@@ -1,24 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PonyFlux Pay">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="小马支付">
   <defs>
-    <linearGradient id="pg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#6366F1"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+    <linearGradient id="pf-body" x1="12" y1="8" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f766e"/>
+      <stop offset="0.45" stop-color="#047857"/>
+      <stop offset="1" stop-color="#022c22"/>
     </linearGradient>
-    <linearGradient id="pg-m" x1="8" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#818CF8"/>
-      <stop offset="100%" stop-color="#A78BFA"/>
+    <linearGradient id="pf-mane" x1="10" y1="14" x2="28" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#134e4a"/>
+      <stop offset="1" stop-color="#042f2e"/>
+    </linearGradient>
+    <linearGradient id="pf-accent" x1="28" y1="44" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a16207"/>
+      <stop offset="1" stop-color="#713f12"/>
     </linearGradient>
   </defs>
-  <g transform="translate(4, 6)">
-    <path d="M38 4 L46 16 L30 14 Z" fill="url(#pg)"/>
-    <path d="M22 16 Q30 8 42 16 L38 4 L30 14 Z" fill="url(#pg)" opacity="0.9"/>
-    <path d="M14 28 L22 16 L42 16 L48 24 L46 32 L38 36 L26 36 L18 30 Z" fill="url(#pg)"/>
-    <path d="M18 30 L26 36 L38 36 L32 42 L22 42 Z" fill="#4F46E5" opacity="0.85"/>
-    <circle cx="40" cy="24" r="2.2" fill="white" opacity="0.95"/>
-    <path d="M22 16 Q16 20 14 28 L18 30 Q20 22 28 16 Z" fill="url(#pg-m)"/>
-    <path d="M18 14 Q12 18 10 24 L14 28 Q16 20 22 16 Z" fill="url(#pg-m)" opacity="0.7"/>
-    <path d="M14 28 L10 24 L8 32 L14 40 L18 30 Z" fill="url(#pg)" opacity="0.8"/>
+  <rect width="64" height="64" rx="14" fill="url(#pf-body)" opacity="0.15"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="13.5" stroke="rgba(226,232,240,0.14)" stroke-width="1"/>
+  <g transform="translate(5,6)">
+    <path d="M36 4l5 10-11-2 2.5-7.2" fill="url(#pf-body)" stroke="rgba(12,74,60,0.45)" stroke-width="0.35" stroke-linejoin="round"/>
+    <path d="M22 16q7-7 19 0l-4-12-9.5 1.8z" fill="url(#pf-body)" opacity="0.95"/>
+    <path d="M15 29l7-13 20 0 5.5 7.5-1.5 7.5-8 4H26z" fill="url(#pf-body)" stroke="rgba(2,26,24,0.4)" stroke-width="0.35" stroke-linejoin="round"/>
+    <path d="M18 30l8.5 6h10l-5.5 5.5H24z" fill="url(#pf-mane)" stroke="rgba(1,28,26,0.35)" stroke-width="0.25"/>
+    <circle cx="40.5" cy="23.5" r="2" fill="#ecfdf5" opacity="0.92"/>
+    <path d="M22 16q-6.5 4-8.5 11l4 3q2.2-7.5 10-14z" fill="url(#pf-mane)"/>
+    <path d="M15 29l-4.5-2.5-2 6 5.5 6.5 3-6z" fill="url(#pf-body)" opacity="0.85"/>
+    <path d="M31 46c5 0 10-1.2 14-3.5" stroke="url(#pf-accent)" stroke-width="1.6" stroke-linecap="round" opacity="0.88"/>
   </g>
-  <text x="58" y="28" font-family="'Inter','DM Sans','Segoe UI',system-ui,sans-serif" font-weight="700" font-size="9.5" fill="#0F172A" text-anchor="end" letter-spacing="0.3">PonyFlux</text>
-  <text x="58" y="40" font-family="'Inter','DM Sans','Segoe UI',system-ui,sans-serif" font-weight="600" font-size="6" fill="#64748B" text-anchor="end" letter-spacing="1.2">PAY</text>
 </svg>

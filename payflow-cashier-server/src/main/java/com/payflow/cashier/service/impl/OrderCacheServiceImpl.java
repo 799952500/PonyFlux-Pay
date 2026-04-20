@@ -1,83 +1,83 @@
 package com.payflow.cashier.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.cashier.config.CacheConfig;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.service.OrderCacheService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
 /**
- * 订单缓存服务实现（Cache-Aside 模式）
+ * 订单缓存服务实现（Spring Cache 注解方式）
  * - 写操作：先操作DB，成功后更新缓存
  * - 查询时：先查缓存，未命中再查DB并回填缓存
- * - TTL：30分钟
+ * - TTL：30分钟（在 CacheConfig 中配置）
  *
  * @author PayFlow Team
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "payflow.cache.redis.enabled", havingValue = "true")
 public class OrderCacheServiceImpl implements OrderCacheService {
 
-    private static final String ORDER_KEY_PREFIX = "order:";
-    private static final long CACHE_TTL_MINUTES = 30;
-
-    private final RedisTemplate<String, Object> redisTemplate;
     private final OrderMapper orderMapper;
 
-    @Override
-    public void cacheOrder(String orderId, Order order) {
-        if (orderId == null || order == null) {
-            return;
-        }
-        try {
-            String key = buildKey(orderId);
-            redisTemplate.opsForValue().set(key, order, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-            log.debug("缓存订单成功: orderId={}", orderId);
-        } catch (Exception e) {
-            log.warn("缓存订单失败（不影响主业务）: orderId={}, error={}", orderId, e.getMessage());
-        }
+    @Autowired(required = false)
+    private CacheManager cacheManager;
+
+    public OrderCacheServiceImpl(OrderMapper orderMapper) {
+        this.orderMapper = orderMapper;
     }
 
+    /**
+     * 缓存订单（内部使用 @CachePut 注解）
+     * 注意：此方法被 @CachePut 标记后，Spring 会自动处理缓存写入
+     */
     @Override
+    @CachePut(cacheNames = CacheConfig.CACHE_NAME_ORDER, key = "#orderId")
+    public void cacheOrder(String orderId, Order order) {
+        log.debug("缓存订单: orderId={}", orderId);
+    }
+
+    /**
+     * 查询缓存
+     * 使用 @Cacheable 注解，Spring 会自动拦截并从缓存获取
+     * 只有缓存未命中时才会执行方法体
+     */
+    @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_NAME_ORDER, key = "#orderId", unless = "#result == null")
     public Order getOrder(String orderId) {
-        if (orderId == null) {
-            return null;
-        }
-        try {
-            String key = buildKey(orderId);
-            Object cached = redisTemplate.opsForValue().get(key);
-            if (cached != null) {
-                log.debug("缓存命中: orderId={}", orderId);
-                return (Order) cached;
-            }
-            log.debug("缓存未命中，回填DB: orderId={}", orderId);
-            return null;
-        } catch (Exception e) {
-            log.warn("查询缓存异常（降级走DB）: orderId={}, error={}", orderId, e.getMessage());
-            return null;
-        }
+        // 只有缓存未命中时才会执行到这里
+        // 但 Cache-Aside 模式的回填逻辑在 getOrderWithFallback 中实现
+        log.debug("缓存未命中: orderId={}", orderId);
+        return null;
     }
 
     /**
      * 先查缓存，未命中则查DB并回填缓存（用于对外查询接口）
-     * 注意：本类已是 public，不需要额外 public 声明
+     * 手动实现 Cache-Aside 模式
      */
+    @Override
     public Order getOrderWithFallback(String orderId) {
-        // 1. 先查缓存
-        Order cached = getOrder(orderId);
+        if (orderId == null) {
+            return null;
+        }
+        // 1. 先查缓存（手动从缓存获取）
+        Order cached = getOrderFromCache(orderId);
         if (cached != null) {
+            log.debug("缓存命中: orderId={}", orderId);
             return cached;
         }
-        // 2. 缓存未命中，查DB
+        // 2. 缓存未命中，查 DB
+        log.debug("缓存未命中，回填DB: orderId={}", orderId);
         try {
             Order order = orderMapper.selectOne(
                     new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
@@ -92,42 +92,59 @@ public class OrderCacheServiceImpl implements OrderCacheService {
         }
     }
 
-    @Override
-    public void evictOrder(String orderId) {
-        if (orderId == null) {
-            return;
+    /**
+     * 从缓存获取（内部方法）
+     */
+    private Order getOrderFromCache(String orderId) {
+        Cache cache = getCache();
+        if (cache != null) {
+            Cache.ValueWrapper wrapper = cache.get(orderId);
+            if (wrapper != null) {
+                return (Order) wrapper.get();
+            }
         }
-        try {
-            String key = buildKey(orderId);
-            redisTemplate.delete(key);
-            log.debug("删除缓存成功: orderId={}", orderId);
-        } catch (Exception e) {
-            log.warn("删除缓存失败（不影响主业务）: orderId={}, error={}", orderId, e.getMessage());
-        }
+        return null;
     }
 
+    /**
+     * 获取缓存实例
+     */
+    private Cache getCache() {
+        if (cacheManager == null) {
+            log.warn("CacheManager 未配置");
+            return null;
+        }
+        return cacheManager.getCache(CacheConfig.CACHE_NAME_ORDER);
+    }
+
+    /**
+     * 删除缓存
+     * 使用 @CacheEvict 注解删除缓存
+     */
+    @Override
+    @CacheEvict(cacheNames = CacheConfig.CACHE_NAME_ORDER, key = "#orderId")
+    public void evictOrder(String orderId) {
+        log.debug("删除缓存: orderId={}", orderId);
+    }
+
+    /**
+     * 判断缓存是否存在
+     */
     @Override
     public boolean exists(String orderId) {
         if (orderId == null) {
             return false;
         }
-        try {
-            String key = buildKey(orderId);
-            Boolean result = redisTemplate.hasKey(key);
-            return Boolean.TRUE.equals(result);
-        } catch (Exception e) {
-            log.warn("判断缓存是否存在异常: orderId={}, error={}", orderId, e.getMessage());
-            return false;
-        }
+        return getOrderFromCache(orderId) != null;
     }
 
+    /**
+     * 更新缓存
+     * 使用 @CachePut 注解更新缓存
+     */
     @Override
+    @CachePut(cacheNames = CacheConfig.CACHE_NAME_ORDER, key = "#orderId")
     public void updateCache(String orderId, Order order) {
-        // 更新时直接覆盖，等同于 cacheOrder
-        cacheOrder(orderId, order);
-    }
-
-    private String buildKey(String orderId) {
-        return ORDER_KEY_PREFIX + orderId;
+        log.debug("更新缓存: orderId={}", orderId);
     }
 }

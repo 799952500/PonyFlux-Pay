@@ -53,6 +53,18 @@ const router = createRouter({
           meta: { title: '渠道管理', requiresAuth: true },
         },
         {
+          path: 'payment-methods',
+          name: 'PaymentMethods',
+          component: () => import('@/pages/admin/payment-methods.vue'),
+          meta: { title: '支付方式', requiresAuth: true },
+        },
+        {
+          path: 'merchant-payments',
+          name: 'MerchantPayments',
+          component: () => import('@/pages/admin/merchant-payments.vue'),
+          meta: { title: '商户支付方式', requiresAuth: true },
+        },
+        {
           path: 'risk',
           name: 'Risk',
           component: () => import('@/pages/admin/risk.vue'),
