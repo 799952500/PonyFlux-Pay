@@ -107,6 +107,24 @@ export interface ChannelConfig {
 }
 
 // ============================================================
+// 管理后台 - 支付渠道
+// ============================================================
+export interface Channel {
+  id: number
+  channelCode: string
+  channelName: string
+  channelType?: string
+  apiUrl?: string
+  apiKey?: string
+  enabled: boolean
+  priority?: number
+  icon?: string
+  description?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
 // 管理后台 - 商户
 // ============================================================
 export interface Merchant {
@@ -121,6 +139,92 @@ export interface Merchant {
   callbackUrl?: string
   notifyUrl?: string
   commissionRate?: number
+}
+
+// ============================================================
+// 管理后台 - 支付方式
+// ============================================================
+export interface PaymentMethod {
+  id: number
+  channelId: string
+  channelName?: string
+  methodName: string
+  methodCode: string
+  methodType: string
+  icon?: string
+  status: 'ACTIVE' | 'INACTIVE'
+  minAmount?: number
+  maxAmount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
+// 管理后台 - 支付账号（收款账户池）
+// ============================================================
+export interface PaymentAccount {
+  id: number
+  channelId: number
+  channelName?: string
+  accountCode: string
+  accountName: string
+  enabled: boolean
+  priority?: number
+  description?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
+// 管理后台 - 渠道账号（ChannelAccount 池）
+// ============================================================
+export interface ChannelAccount {
+  id: number
+  channelId: number
+  accountCode: string
+  accountName: string
+  appId?: string
+  appSecret?: string
+  mchId?: string
+  mchKey?: string
+  certPath?: string
+  certPassword?: string
+  extConfig?: Record<string, any>
+  enabled: boolean
+  priority?: number
+  description?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
+// 管理后台 - 渠道路由（ChannelRoute）
+// ============================================================
+export interface ChannelRoute {
+  id: number
+  merchantId: string
+  channelId: number
+  accountId: number
+  priority: number
+  enabled: boolean
+  merchantName?: string
+  channelName?: string
+  accountName?: string
+  accountCode?: string
+}
+
+// ============================================================
+// 管理后台 - 商户支付路由（方式+账号）
+// ============================================================
+export interface MerchantPaymentRoute {
+  id?: number
+  merchantId: string
+  paymentMethodId: number
+  paymentAccountId: number
+  enabled: boolean
+  priority: number
+  paymentMethod?: PaymentMethod
+  paymentAccount?: PaymentAccount
 }
 
 // ============================================================
@@ -170,4 +274,37 @@ export interface AdminLoginResponse {
   adminId: string
   username: string
   role: string
+  menus?: SysMenu[]
+}
+
+// ============================================================
+// 管理后台 - 系统角色
+// ============================================================
+export interface SysRole {
+  id: number
+  roleCode: string
+  roleName: string
+  description?: string
+  status: 'ACTIVE' | 'DISABLED'
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
+// 管理后台 - 系统菜单
+// ============================================================
+export interface SysMenu {
+  id: number
+  parentId?: number
+  menuCode: string
+  menuName: string
+  menuType: 'MENU' | 'BUTTON'
+  path?: string
+  icon?: string
+  sortOrder: number
+  visible: boolean
+  status: 'ACTIVE' | 'DISABLED'
+  children?: SysMenu[]
+  createdAt: string
+  updatedAt: string
 }

@@ -1,15 +1,15 @@
 -- ============================================================
 -- PayFlow 收银台数据库 Schema
 -- ============================================================
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS callback_logs;
-DROP TABLE IF EXISTS merchants;
+DROP TABLE IF EXISTS cashier_orders;
+DROP TABLE IF EXISTS cashier_payments;
+DROP TABLE IF EXISTS cashier_callback_logs;
+DROP TABLE IF EXISTS cashier_merchants;
 
 -- ----------------------------
 -- 1. 商户表 merchants
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS merchants (
+CREATE TABLE IF NOT EXISTS cashier_merchants (
     id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
     merchant_id         VARCHAR(32) NOT NULL UNIQUE COMMENT '商户号',
     merchant_name       VARCHAR(128) NOT NULL COMMENT '商户名称',
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS merchants (
 -- ----------------------------
 -- 2. 订单表 orders
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE IF NOT EXISTS cashier_orders (
     id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id            VARCHAR(64) NOT NULL UNIQUE COMMENT '平台订单号',
     merchant_id         VARCHAR(64) NOT NULL COMMENT '商户号',
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS orders (
 -- ----------------------------
 -- 3. 支付记录表 payments
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS payments (
+CREATE TABLE IF NOT EXISTS cashier_payments (
     id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
     payment_id              VARCHAR(64) NOT NULL UNIQUE COMMENT '支付记录ID',
     order_id                VARCHAR(64) NOT NULL COMMENT '关联订单号',
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS payments (
 -- ----------------------------
 -- 4. 回调日志表 callback_logs
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS callback_logs (
+CREATE TABLE IF NOT EXISTS cashier_callback_logs (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id        VARCHAR(64) COMMENT '关联订单号',
     channel         VARCHAR(32) COMMENT '渠道',
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS callback_logs (
 -- ----------------------------
 -- 5. 支付渠道表 pay_channels
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS pay_channels (
+CREATE TABLE IF NOT EXISTS cashier_channels (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     channel_code    VARCHAR(32) NOT NULL UNIQUE COMMENT '渠道编码：wechat_pay/alipay/union_pay',
     channel_name    VARCHAR(64) NOT NULL COMMENT '渠道名称：微信支付/支付宝/银联',
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS pay_channels (
 -- ----------------------------
 -- 6. 渠道账户表 pay_channel_accounts
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS pay_channel_accounts (
+CREATE TABLE IF NOT EXISTS cashier_channel_accounts (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
     channel_id      BIGINT NOT NULL COMMENT '所属渠道ID',
     account_code    VARCHAR(64) NOT NULL COMMENT '账户编码',
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS pay_channel_accounts (
 -- ----------------------------
 -- 7. 商户渠道路由表 pay_channel_merchant_routes
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS pay_channel_merchant_routes (
+CREATE TABLE IF NOT EXISTS cashier_channel_merchant_routes (
     id                  BIGINT AUTO_INCREMENT PRIMARY KEY,
     channel_account_id  BIGINT NOT NULL COMMENT '渠道账户ID',
     merchant_id         VARCHAR(64) NOT NULL COMMENT '商户号',

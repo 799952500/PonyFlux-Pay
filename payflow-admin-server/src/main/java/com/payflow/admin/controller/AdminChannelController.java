@@ -1,10 +1,11 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.entity.Channel;
+import com.payflow.admin.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -12,24 +13,90 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminChannelController {
 
+    private final ChannelService channelService;
+
+    /**
+     * 查询所有渠道列表
+     *
+     * @return 渠道列表
+     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> listChannels() {
         return ResponseEntity.ok(Map.of(
                 "code", 0, "message", "success", "data",
-                List.of(
-                        Map.of("channel", "Alipay", "name", "支付宝", "enabled", true, "priority", 1),
-                        Map.of("channel", "WeChatPay", "name", "微信支付", "enabled", true, "priority", 2),
-                        Map.of("channel", "UnionPay", "name", "银联支付", "enabled", true, "priority", 3),
-                        Map.of("channel", "CreditCard", "name", "信用卡", "enabled", false, "priority", 4)
-                )
+                channelService.listAll()
         ));
     }
 
-    @PutMapping("/{channel}/toggle")
-    public ResponseEntity<Map<String, Object>> toggleChannel(@PathVariable String channel) {
+    /**
+     * 根据ID查询渠道详情
+     *
+     * @param id 渠道ID
+     * @return 渠道详情
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getChannel(@PathVariable Long id) {
         return ResponseEntity.ok(Map.of(
                 "code", 0, "message", "success", "data",
-                Map.of("channel", channel, "enabled", true)
+                channelService.getById(id)
+        ));
+    }
+
+    /**
+     * 创建渠道
+     *
+     * @param channel 渠道信息
+     * @return 创建的渠道
+     */
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createChannel(@RequestBody Channel channel) {
+        channelService.create(channel);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", channel));
+    }
+
+    /**
+     * 更新渠道信息
+     *
+     * @param id      渠道ID
+     * @param channel 更新后的渠道信息
+     * @return 更新后的渠道
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateChannel(@PathVariable Long id, @RequestBody Channel channel) {
+        channelService.update(id, channel);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", channel));
+    }
+
+    /**
+     * 删除渠道
+     *
+     * @param id 渠道ID
+     * @return 操作结果
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteChannel(@PathVariable Long id) {
+        channelService.delete(id);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", true));
+    }
+
+    /**
+     * 启用/禁用渠道
+     *
+     * @param id 渠道ID
+     * @return 操作后的渠道
+     */
+    @PutMapping("/{id}/toggle")
+    public ResponseEntity<Map<String, Object>> toggleChannel(@PathVariable Long id) {
+        Channel channel = channelService.getById(id);
+        if (channel == null) {
+            return ResponseEntity.ok(Map.of("code", 404, "message", "渠道不存在", "data", null));
+        } else {
+            channel.setEnabled(channel.getEnabled() == null || !channel.getEnabled());
+            channelService.update(id, channel);
+        }
+        return ResponseEntity.ok(Map.of(
+                "code", 0, "message", "success", "data",
+                channel
         ));
     }
 }

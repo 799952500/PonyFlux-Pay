@@ -34,32 +34,35 @@
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 支付管理 -->
+        <!-- 渠道管理 -->
+        <el-menu-item index="/admin/channels">
+          <span class="menu-icon">💳</span>
+          <span class="menu-text">渠道管理</span>
+        </el-menu-item>
+
+        <!-- 支付管理（子菜单）-->
         <el-sub-menu index="payment-group">
           <template #title>
-            <span class="menu-icon">💳</span>
+            <span class="menu-icon">💰</span>
             <span class="menu-text">支付管理</span>
           </template>
-          <el-menu-item index="/admin/channels">
-            <span class="menu-text">渠道管理</span>
-          </el-menu-item>
           <el-menu-item index="/admin/payment-methods">
             <span class="menu-text">支付方式</span>
           </el-menu-item>
-          <el-menu-item index="/admin/merchant-payments">
-            <span class="menu-text">商户支付方式</span>
+          <el-menu-item index="/admin/payment-accounts">
+            <span class="menu-text">支付账号</span>
           </el-menu-item>
         </el-sub-menu>
 
         <!-- 商户管理 -->
         <el-menu-item index="/admin/merchants">
-          <span class="menu-icon">👥</span>
+          <span class="menu-icon">🏪</span>
           <span class="menu-text">商户管理</span>
         </el-menu-item>
 
         <!-- 风控管理 -->
         <el-menu-item index="/admin/risk">
-          <span class="menu-icon">⚠️</span>
+          <span class="menu-icon">⚖️</span>
           <span class="menu-text">风控管理</span>
         </el-menu-item>
 
@@ -68,6 +71,23 @@
           <span class="menu-icon">⚙️</span>
           <span class="menu-text">系统设置</span>
         </el-menu-item>
+
+        <!-- 系统管理（子菜单）-->
+        <el-sub-menu index="system-group">
+          <template #title>
+            <span class="menu-icon">🔧</span>
+            <span class="menu-text">系统管理</span>
+          </template>
+          <el-menu-item index="/admin/roles">
+            <span class="menu-text">角色管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/menus">
+            <span class="menu-text">菜单管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/users">
+            <span class="menu-text">用户管理</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
 
       <!-- 底部用户信息 -->

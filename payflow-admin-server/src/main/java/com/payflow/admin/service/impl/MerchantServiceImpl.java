@@ -1,6 +1,8 @@
 package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.service.MerchantService;
@@ -17,6 +19,21 @@ public class MerchantServiceImpl implements MerchantService {
     @Override
     public List<Merchant> listAll() {
         return merchantMapper.selectList(null);
+    }
+
+    @Override
+    public IPage<Merchant> page(int page, int pageSize, String keyword, String status) {
+        LambdaQueryWrapper<Merchant> wrapper = new LambdaQueryWrapper<>();
+        if (status != null && !status.isBlank()) {
+            wrapper.eq(Merchant::getStatus, status);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.and(w -> w.like(Merchant::getMerchantId, keyword)
+                    .or()
+                    .like(Merchant::getMerchantName, keyword));
+        }
+        wrapper.orderByDesc(Merchant::getId);
+        return merchantMapper.selectPage(new Page<>(page, pageSize), wrapper);
     }
 
     @Override

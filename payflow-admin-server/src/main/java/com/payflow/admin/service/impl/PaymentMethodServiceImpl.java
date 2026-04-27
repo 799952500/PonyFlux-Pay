@@ -16,7 +16,16 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     @Override
     public List<PaymentMethod> listAll() {
-        return paymentMethodMapper.selectList(null);
+        List<PaymentMethod> list = paymentMethodMapper.listWithChannelName();
+        // 设置 status 字段
+        list.forEach(pm -> {
+            if (pm.getEnabled() != null && pm.getEnabled()) {
+                pm.setStatus("ACTIVE");
+            } else {
+                pm.setStatus("INACTIVE");
+            }
+        });
+        return list;
     }
 
     @Override

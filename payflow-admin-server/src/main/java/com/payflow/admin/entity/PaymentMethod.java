@@ -14,6 +14,10 @@ public class PaymentMethod {
     private String methodCode;
     private String methodName;
     private Long channelId;              // 所属渠道ID
+    @TableField(exist = false)          // 非数据库字段，关联查询
+    private String channelName;         // 渠道名称（前端展示用）
+    @TableField(exist = false)          // 非数据库字段，关联查询
+    private String channelType;         // 渠道类型 WECHAT/ALIPAY/UNION/CARD（表单下拉用）
     private String appId;               // 应用ID（微信appId/支付宝appId）
     private String appSecret;            // 应用密钥
     private String mchId;              // 商户号
@@ -24,6 +28,7 @@ public class PaymentMethod {
     private Boolean enabled;
     private Integer priority;
     private String description;
+    private String status;              // 状态字段（前端用）
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

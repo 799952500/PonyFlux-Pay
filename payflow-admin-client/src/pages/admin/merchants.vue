@@ -41,10 +41,11 @@
           <template #default="{ row }"><el-tag size="small" :type="statusTypeMap[row.status]">{{ statusLabelMap[row.status] }}</el-tag></template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="170" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
             <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
+            <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付方式</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -130,14 +131,70 @@
         <el-button type="primary" class="btn-primary" :loading="editSubmitting" @click="handleEditSubmit">确认</el-button>
       </template>
     </el-dialog>
+
+    <!-- 商户支付方式配置弹窗（方式+账号路由） -->
+    <el-dialog v-model="paymentConfigVisible" :title="`支付方式配置 - ${currentMerchant?.merchantName || ''}`" width="860px" destroy-on-close>
+      <div v-if="paymentConfigLoading" class="p-4"><el-skeleton animated :rows="4" /></div>
+      <div v-else>
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-sm text-gray-500">为该商户配置“支付方式 + 收款账号”的路由列表：</div>
+          <el-button type="primary" class="btn-primary" size="small" @click="addRoute">新增路由</el-button>
+        </div>
+        <el-table :data="merchantRoutes" stripe size="small" max-height="420">
+          <el-table-column label="支付方式" min-width="220">
+            <template #default="{ row }">
+              <el-select v-model="row.paymentMethodId" placeholder="请选择支付方式" filterable style="width: 100%" @change="handleRouteMethodChange(row)">
+                <el-option
+                  v-for="m in allPaymentMethods"
+                  :key="m.id"
+                  :label="`${m.channelName ?? ''} / ${m.methodName} (${m.methodCode})`"
+                  :value="m.id"
+                />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="收款账号" min-width="220">
+            <template #default="{ row }">
+              <el-select v-model="row.paymentAccountId" placeholder="请选择收款账号" filterable style="width: 100%">
+                <el-option
+                  v-for="a in getAccountOptions(row)"
+                  :key="a.id"
+                  :label="`${a.channelName ?? ''} / ${a.accountName} (${a.accountCode})`"
+                  :value="a.id"
+                />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="优先级" width="120">
+            <template #default="{ row }">
+              <el-input-number v-model="row.priority" :min="0" :max="9999" controls-position="right" style="width: 100%" />
+            </template>
+          </el-table-column>
+          <el-table-column label="启用" width="90" align="center">
+            <template #default="{ row }">
+              <el-switch v-model="row.enabled" />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="{ $index }">
+              <el-button link type="danger" size="small" @click="removeRoute($index)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="paymentConfigVisible = false">取消</el-button>
+        <el-button type="primary" class="btn-primary" :loading="paymentConfigSaving" @click="savePaymentRoutes">保存配置</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { getMerchants } from '@/api/admin'
-import type { Merchant } from '@/types'
+import { getMerchants, getPaymentMethods, getPaymentAccounts, getMerchantPaymentRoutes, replaceMerchantPaymentRoutes, updateMerchant } from '@/api/admin'
+import type { Merchant, PaymentMethod, PaymentAccount, MerchantPaymentRoute } from '@/types'
 
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -150,6 +207,14 @@ const currentMerchant = ref<Merchant | null>(null)
 const editFormRef = ref<FormInstance>()
 const isEdit = ref(false)
 const queryForm = reactive({ page: 1, pageSize: 20, keyword: '', status: '' })
+
+// 支付方式配置相关状态
+const paymentConfigVisible = ref(false)
+const paymentConfigLoading = ref(false)
+const paymentConfigSaving = ref(false)
+const allPaymentMethods = ref<PaymentMethod[]>([])
+const allPaymentAccounts = ref<PaymentAccount[]>([])
+const merchantRoutes = ref<Array<MerchantPaymentRoute & { _tmpId: string }>>([])
 
 const statusTypeMap: Record<string, string> = { ACTIVE: 'success', SUSPENDED: 'warning', CLOSED: 'danger' }
 const statusLabelMap: Record<string, string> = { ACTIVE: '正常', SUSPENDED: '停用', CLOSED: '关闭' }
@@ -217,16 +282,125 @@ async function handleEditSubmit() {
     if (!valid) return
     editSubmitting.value = true
     try {
-      // TODO: 调用更新商户 API
+      // 后端需实现 PUT /admin/merchants/{merchantId} 接口
+      await updateMerchant(editForm.merchantId, {
+        merchantName: editForm.merchantName,
+        merchantKey: editForm.merchantKey || undefined,
+        callbackUrl: editForm.callbackUrl || undefined,
+        notifyUrl: editForm.notifyUrl || undefined,
+        commissionRate: editForm.commissionRate,
+        status: editForm.status,
+      } as Partial<Merchant>)
       ElMessage.success('商户信息已更新')
       editVisible.value = false
       loadMerchants()
     } catch {
-      ElMessage.error('更新商户信息失败')
+      // 如果后端尚未实现该接口，用户会看到错误提示
+      ElMessage.error('更新商户信息失败，请确认后端已实现 PUT /admin/merchants/{id} 接口')
     } finally {
       editSubmitting.value = false
     }
   })
+}
+
+// ========== 支付方式配置 ==========
+async function openPaymentConfig(merchant: Merchant) {
+  currentMerchant.value = merchant
+  paymentConfigVisible.value = true
+  paymentConfigLoading.value = true
+  
+  try {
+    const [methods, accounts, routes] = await Promise.all([
+      getPaymentMethods({ page: 1, pageSize: 100 }),
+      getPaymentAccounts({ page: 1, pageSize: 200 }),
+      getMerchantPaymentRoutes(merchant.merchantId),
+    ])
+    
+    allPaymentMethods.value = methods.list as PaymentMethod[]
+    allPaymentAccounts.value = accounts.list as PaymentAccount[]
+    merchantRoutes.value = (routes ?? []).map((r) => ({
+      ...r,
+      _tmpId: cryptoRandomId(),
+      enabled: r.enabled ?? true,
+      priority: r.priority ?? 0,
+    }))
+    if (merchantRoutes.value.length === 0) {
+      addRoute()
+    }
+  } catch (e) {
+    ElMessage.error('加载支付方式失败')
+    console.error(e)
+  } finally {
+    paymentConfigLoading.value = false
+  }
+}
+
+function cryptoRandomId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36)
+}
+
+function addRoute() {
+  if (!currentMerchant.value) return
+  merchantRoutes.value.push({
+    _tmpId: cryptoRandomId(),
+    merchantId: currentMerchant.value.merchantId,
+    paymentMethodId: 0,
+    paymentAccountId: 0,
+    enabled: true,
+    priority: 0,
+  })
+}
+
+function removeRoute(index: number) {
+  merchantRoutes.value.splice(index, 1)
+}
+
+function getAccountOptions(route: Pick<MerchantPaymentRoute, 'paymentMethodId' | 'paymentAccountId'>) {
+  const method = allPaymentMethods.value.find(m => m.id === route.paymentMethodId)
+  if (!method) return allPaymentAccounts.value
+  const channelIdNum = typeof method.channelId === 'string' ? Number(method.channelId) : (method.channelId as unknown as number)
+  if (!Number.isFinite(channelIdNum)) return allPaymentAccounts.value
+  return allPaymentAccounts.value.filter(a => a.channelId === channelIdNum)
+}
+
+function handleRouteMethodChange(route: MerchantPaymentRoute) {
+  const options = getAccountOptions(route)
+  if (options.length === 0) {
+    route.paymentAccountId = 0
+    return
+  }
+  if (!options.some(a => a.id === route.paymentAccountId)) {
+    route.paymentAccountId = 0
+  }
+}
+
+async function savePaymentRoutes() {
+  if (!currentMerchant.value) return
+  
+  paymentConfigSaving.value = true
+  try {
+    const routes = merchantRoutes.value.map(r => ({
+      paymentMethodId: Number(r.paymentMethodId),
+      paymentAccountId: Number(r.paymentAccountId),
+      enabled: Boolean(r.enabled),
+      priority: Number(r.priority ?? 0),
+    }))
+
+    const invalidIndex = routes.findIndex(r => !r.paymentMethodId || !r.paymentAccountId)
+    if (invalidIndex >= 0) {
+      ElMessage.warning(`第 ${invalidIndex + 1} 行请先选择支付方式与收款账号`)
+      return
+    }
+
+    await replaceMerchantPaymentRoutes(currentMerchant.value.merchantId, routes)
+    ElMessage.success('支付方式配置已保存')
+    paymentConfigVisible.value = false
+  } catch (e) {
+    ElMessage.error('保存失败')
+    console.error(e)
+  } finally {
+    paymentConfigSaving.value = false
+  }
 }
 
 onMounted(() => { loadMerchants() })

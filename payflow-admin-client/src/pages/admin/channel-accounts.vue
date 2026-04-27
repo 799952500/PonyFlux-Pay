@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { listAllAccounts, createAccount, updateAccount, toggleAccount, deleteAccount } from '@/api/channel'
+import { getChannelAccounts, createChannelAccount, updateChannelAccount, toggleChannelAccount, deleteChannelAccount, getChannels } from '@/api/admin'
 
 interface ChannelAccount {
   id?: number
@@ -197,8 +197,8 @@ const rules: FormRules = {
 async function loadAccounts() {
   loading.value = true
   try {
-    const data = await listAllAccounts()
-    allAccounts.value = data ?? []
+    const data: any = await getChannelAccounts()
+    allAccounts.value = data?.list ?? data ?? []
     filterAndPaginate()
   } catch {
     ElMessage.error('加载账户列表失败')
@@ -258,10 +258,10 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value && currentAccount.value?.id) {
-      await updateAccount(currentAccount.value.id, form)
+      await updateChannelAccount(currentAccount.value.id, form)
       ElMessage.success('账户更新成功')
     } else {
-      await createAccount(form)
+      await createChannelAccount(form)
       ElMessage.success('账户创建成功')
     }
     dialogVisible.value = false
@@ -277,7 +277,7 @@ async function handleToggle(row: ChannelAccount) {
   const action = row.status === 'ENABLED' ? '禁用' : '启用'
   try {
     if (!row.id) return
-    await toggleAccount(row.id)
+    await toggleChannelAccount(row.id)
     row.status = row.status === 'ENABLED' ? 'DISABLED' : 'ENABLED'
     ElMessage.success(`${row.accountName} 已${action}`)
   } catch {
@@ -293,7 +293,7 @@ async function handleDelete(row: ChannelAccount) {
       type: 'warning',
     })
     if (!row.id) return
-    await deleteAccount(row.id)
+    await deleteChannelAccount(row.id)
     ElMessage.success('删除成功')
     loadAccounts()
   } catch { /* cancelled */ }

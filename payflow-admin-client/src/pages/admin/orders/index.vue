@@ -135,9 +135,9 @@ const channelLabelMap: Record<string, string> = { ALIPAY: '支付宝', WECHAT_PA
 async function loadOrders() {
   loading.value = true
   try {
-    const params: Record<string, unknown> = { ...queryForm }
+    const params: OrderListQuery & { dateRange?: [string, string] } = { ...queryForm }
     if (dateRange.value) params.dateRange = dateRange.value
-    const resp = await getOrders(params as OrderListQuery)
+    const resp = await getOrders(params)
     orderList.value = resp.list
     total.value = resp.total
   } catch { ElMessage.error('加载订单列表失败') }

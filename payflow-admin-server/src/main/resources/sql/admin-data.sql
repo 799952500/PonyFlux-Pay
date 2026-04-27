@@ -49,3 +49,19 @@ INSERT INTO `merchant_payment_methods` (`merchant_id`, `payment_method_id`, `ena
 (1, 5, 1, 90, NULL, NOW(), NOW()),
 (2, 2, 1, 90, NULL, NOW(), NOW()),
 (2, 5, 1, 90, NULL, NOW(), NOW());
+
+-- ----------------------------
+-- 支付账号（收款账户池）
+-- ----------------------------
+INSERT INTO `payment_accounts` (`channel_id`, `account_code`, `account_name`, `app_id`, `app_secret`, `mch_id`, `mch_key`, `config_json`, `enabled`, `priority`, `description`, `created_at`, `updated_at`) VALUES
+(1, '1001', '微信收款账户1001', 'wx_1001_app', 'wx_1001_secret', 'wx_mch_1001', 'wx_mch_key_1001', '{"accountNo":"1001"}', 1, 100, '示例微信账户', NOW(), NOW()),
+(2, '2001', '支付宝收款账户2001', 'ali_2001_app', 'ali_2001_secret', 'ali_mch_2001', 'ali_mch_key_2001', '{"accountNo":"2001"}', 1, 100, '示例支付宝账户', NOW(), NOW()),
+(2, '2002', '支付宝收款账户2002', 'ali_2002_app', 'ali_2002_secret', 'ali_mch_2002', 'ali_mch_key_2002', '{"accountNo":"2002"}', 1, 90, '示例支付宝账户', NOW(), NOW());
+
+-- ----------------------------
+-- 商户支付路由（方式+账号）
+-- ----------------------------
+INSERT INTO `merchant_payment_routes` (`merchant_id`, `payment_method_id`, `payment_account_id`, `enabled`, `priority`, `created_at`, `updated_at`) VALUES
+('M2024040001', 1, 1, 1, 100, NOW(), NOW()),
+('M2024040001', 4, 2, 1, 100, NOW(), NOW()),
+('M10002', 5, 3, 1, 100, NOW(), NOW());

@@ -105,9 +105,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { listMerchantPayments, createMerchantPayment, deleteMerchantPayment, toggleMerchantPayment } from '@/api/merchant-api'
-import { listMerchants } from '@/api/merchant-api'
-import { listPaymentMethods } from '@/api/payment-method'
+import { getMerchantPaymentMethods, createMerchantPayment, deleteMerchantPayment, toggleMerchantPayment } from '@/api/admin'
+import { getMerchants } from '@/api/admin'
+import { getPaymentMethods } from '@/api/admin'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -151,7 +151,7 @@ function maskValue(val: string | undefined) {
 
 async function loadMerchants() {
   try {
-    const res: any = await listMerchants({ page: 1, pageSize: 500 })
+    const res: any = await getMerchants({ page: 1, pageSize: 500 })
     merchantOptions.value = Array.isArray(res) ? res : (res.list ?? [])
   } catch {
     // ignore
@@ -160,7 +160,7 @@ async function loadMerchants() {
 
 async function loadPaymentMethods() {
   try {
-    const res: any = await listPaymentMethods({ page: 1, pageSize: 500 })
+    const res: any = await getPaymentMethods({ page: 1, pageSize: 500 })
     paymentMethodOptions.value = Array.isArray(res) ? res : (res.list ?? [])
   } catch {
     // ignore
@@ -176,7 +176,7 @@ async function loadData() {
     if (!params.status) delete params.status
 
     if (params.merchantId) {
-      const res: any = await listMerchantPayments(params.merchantId)
+      const res: any = await getMerchantPaymentMethods(params.merchantId)
       tableData.value = Array.isArray(res) ? res : []
       total.value = tableData.value.length
     } else {

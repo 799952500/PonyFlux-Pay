@@ -139,7 +139,8 @@ const handleLogin = async () => {
   try {
     const res = await adminLogin({ username: form.username, password: form.password })
     localStorage.setItem('adminToken', res.token)
-    localStorage.setItem('adminUser', JSON.stringify(res.user || res))
+    const user = (res as unknown as { user?: unknown }).user ?? res
+    localStorage.setItem('adminUser', JSON.stringify(user))
     router.push('/admin/dashboard')
   } catch (e: any) {
     errorMsg.value = e.message || '用户名或密码错误'

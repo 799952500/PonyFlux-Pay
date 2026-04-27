@@ -12,7 +12,7 @@ public class MerchantPaymentMethod {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    private Long merchantId;
+    private String merchantId;       // 商户号（字符串）
     private Long paymentMethodId;
     private Boolean enabled;
     private Integer priority;

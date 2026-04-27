@@ -135,8 +135,31 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  listRoutes, createRoute, deleteRoute, toggleRoute, listChannels, listAllAccounts, getMerchantsSimple,
-} from '@/api/channel'
+  getChannelRoutes, createChannelRoute, deleteChannelRoute, toggleChannelRoute, getChannels, getChannelAccounts, getMerchantsSimple,
+} from '@/api/admin'
+
+interface ChannelAccount {
+  id?: number
+  channelId: string
+  accountNo: string
+  accountName: string
+  status: 'ENABLED' | 'DISABLED' | string
+}
+
+interface ChannelRoute {
+  routeId: number
+  merchantId: string
+  merchantName?: string
+  channelId: string
+  channelName?: string
+  accountId: number | string
+  accountNo?: string
+  accountName?: string
+  priority: number
+  enabled: boolean
+  createdAt?: string
+  updatedAt?: string
+}
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -170,7 +193,7 @@ const rules: FormRules = {
 
 const filteredAccounts = computed(() => {
   if (!form.channelId) return []
-  return allAccounts.value.filter((a) => a.channelId === form.channelId && a.status === 'ENABLED')
+  return allAccounts.value.filter((a: ChannelAccount) => a.channelId === form.channelId && a.status === 'ENABLED')
 })
 
 function onChannelChange() {
@@ -180,10 +203,10 @@ function onChannelChange() {
 async function loadRoutes() {
   loading.value = true
   try {
-    const resp = await listRoutes(queryForm.merchantId || undefined)
-    const list = resp?.list ?? []
-    total.value = list.length
-    routeList.value = list.slice((page.value - 1) * pageSize.value, page.value * pageSize.value)
+    const resp: any = await getChannelRoutes({ merchantId: queryForm.merchantId || undefined })
+    const rawList = resp?.data?.list ?? resp?.list ?? []
+    routeList.value = rawList.map((item: any) => ({ ...item, routeId: item.id }))
+    total.value = resp?.data?.total ?? resp?.total ?? rawList.length
   } catch {
     ElMessage.error('加载路由列表失败')
   } finally {
@@ -199,7 +222,7 @@ async function loadMerchants() {
 
 async function loadAccounts() {
   try {
-    allAccounts.value = await listAllAccounts()
+    allAccounts.value = await getChannelAccounts()
   } catch { /* ignore */ }
 }
 
@@ -222,11 +245,11 @@ async function handleSubmit() {
     const payload = {
       merchantId: form.merchantId,
       channelId: form.channelId,
-      accountId: form.accountId,
+      paymentAccountId: Number(form.accountId),
       priority: form.priority,
       enabled: true,
     }
-    await createRoute(payload)
+    await createChannelRoute(payload)
     ElMessage.success('路由创建成功')
     dialogVisible.value = false
     loadRoutes()
@@ -240,7 +263,7 @@ async function handleSubmit() {
 async function handleToggle(row: ChannelRoute) {
   const action = row.enabled ? '禁用' : '启用'
   try {
-    await toggleRoute(row.routeId)
+    await toggleChannelRoute(row.id)
     row.enabled = !row.enabled
     ElMessage.success(`路由已${action}`)
   } catch {
@@ -255,7 +278,7 @@ async function handleDelete(row: ChannelRoute) {
       cancelButtonText: '取消',
       type: 'warning',
     })
-    await deleteRoute(row.routeId)
+    await deleteChannelRoute(row.id)
     ElMessage.success('删除成功')
     loadRoutes()
   } catch {

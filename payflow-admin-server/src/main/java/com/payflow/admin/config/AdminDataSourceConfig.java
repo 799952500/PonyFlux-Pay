@@ -6,9 +6,19 @@ import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerIntercept
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.mapper.ChannelMapper;
+import com.payflow.admin.mapper.ChannelRouteMapper;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.MerchantPaymentMethodMapper;
+import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
+import com.payflow.admin.mapper.PaymentAccountMapper;
 import com.payflow.admin.mapper.PaymentMethodMapper;
+import com.payflow.admin.mapper.RiskRuleMapper;
+import com.payflow.admin.mapper.SysRoleMapper;
+import com.payflow.admin.mapper.SysMenuMapper;
+import com.payflow.admin.mapper.SysRoleMenuMapper;
+import com.payflow.admin.mapper.SysUserMapper;
+import com.payflow.admin.mapper.SysUserRoleMapper;
+import com.payflow.admin.mapper.SystemConfigMapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.mapper.MapperFactoryBean;
@@ -122,6 +132,96 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<PaymentMethodMapper> paymentMethodMapper(
             @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         MapperFactoryBean<PaymentMethodMapper> factory = new MapperFactoryBean<>(PaymentMethodMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<PaymentAccountMapper> paymentAccountMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<PaymentAccountMapper> factory = new MapperFactoryBean<>(PaymentAccountMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<RiskRuleMapper> riskRuleMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<RiskRuleMapper> factory = new MapperFactoryBean<>(RiskRuleMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<MerchantPaymentRouteMapper> merchantPaymentRouteMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<MerchantPaymentRouteMapper> factory = new MapperFactoryBean<>(MerchantPaymentRouteMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ChannelRouteMapper> channelRouteMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ChannelRouteMapper> factory = new MapperFactoryBean<>(ChannelRouteMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SysRoleMapper> sysRoleMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SysRoleMapper> factory = new MapperFactoryBean<>(SysRoleMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SysMenuMapper> sysMenuMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SysMenuMapper> factory = new MapperFactoryBean<>(SysMenuMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SysRoleMenuMapper> sysRoleMenuMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SysRoleMenuMapper> factory = new MapperFactoryBean<>(SysRoleMenuMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SysUserRoleMapper> sysUserRoleMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SysUserRoleMapper> factory = new MapperFactoryBean<>(SysUserRoleMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SystemConfigMapper> systemConfigMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SystemConfigMapper> factory = new MapperFactoryBean<>(SystemConfigMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<SysUserMapper> sysUserMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<SysUserMapper> factory = new MapperFactoryBean<>(SysUserMapper.class);
         factory.setSqlSessionFactory(sqlSessionFactory);
         return factory;
     }

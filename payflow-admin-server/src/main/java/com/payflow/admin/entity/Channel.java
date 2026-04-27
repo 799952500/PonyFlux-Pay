@@ -19,6 +19,7 @@ public class Channel {
     private String apiKey;           // 渠道密钥/公钥
     private Boolean enabled;
     private Integer priority;
+    private String icon;
     private String description;
 
     @TableField(fill = FieldFill.INSERT)

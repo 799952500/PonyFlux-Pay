@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("pay_channel_accounts")
+@TableName("cashier_channel_accounts")
 public class PayChannelAccount {
 
     @TableId(type = IdType.AUTO)

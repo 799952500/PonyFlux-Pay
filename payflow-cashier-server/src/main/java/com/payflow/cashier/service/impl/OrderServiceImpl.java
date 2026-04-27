@@ -12,6 +12,7 @@ import com.payflow.cashier.mapper.PaymentMapper;
 import com.payflow.cashier.service.OrderCacheService;
 import com.payflow.cashier.service.OrderMqProducer;
 import com.payflow.cashier.service.OrderService;
+import com.payflow.cashier.service.RiskCheckService;
 import com.payflow.cashier.util.SignUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,17 +37,20 @@ public class OrderServiceImpl implements OrderService {
     private final PayflowProperties properties;
     private final OrderCacheService orderCacheService;
     private final OrderMqProducer orderMqProducer;
+    private final RiskCheckService riskCheckService;
 
     public OrderServiceImpl(OrderMapper orderMapper,
                             PaymentMapper paymentMapper,
                             PayflowProperties properties,
                             OrderCacheService orderCacheService,
-                            OrderMqProducer orderMqProducer) {
+                            OrderMqProducer orderMqProducer,
+                            RiskCheckService riskCheckService) {
         this.orderMapper = orderMapper;
         this.paymentMapper = paymentMapper;
         this.properties = properties;
         this.orderCacheService = orderCacheService;
         this.orderMqProducer = orderMqProducer;
+        this.riskCheckService = riskCheckService;
     }
 
     @Override
@@ -54,6 +58,9 @@ public class OrderServiceImpl implements OrderService {
     public CreateOrderResponse createOrder(CreateOrderRequest request) {
         log.info("创建订单: merchantId={}, merchantOrderNo={}, amount={}",
                 request.getMerchantId(), request.getMerchantOrderNo(), request.getAmount());
+
+        // 0. 风控校验（不通过直接抛出异常）
+        riskCheckService.checkCreateOrder(request);
 
         // 1. 检查商户订单号重复
         Long exist = orderMapper.selectCount(

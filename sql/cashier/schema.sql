@@ -8,8 +8,8 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 -- Table: merchants 商户表
 -- ----------------------------
-DROP TABLE IF EXISTS `merchants`;
-CREATE TABLE `merchants` (
+DROP TABLE IF EXISTS `cashier_merchants`;
+CREATE TABLE `cashier_merchants` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
   `merchant_id` VARCHAR(64) NOT NULL COMMENT '商户号',
   `merchant_name` VARCHAR(128) NOT NULL COMMENT '商户名称',
@@ -31,8 +31,8 @@ CREATE TABLE `merchants` (
 -- ----------------------------
 -- Table: orders 订单表
 -- ----------------------------
-DROP TABLE IF EXISTS `orders`;
-CREATE TABLE `orders` (
+DROP TABLE IF EXISTS `cashier_orders`;
+CREATE TABLE `cashier_orders` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
   `order_id` VARCHAR(64) NOT NULL COMMENT '平台订单号',
   `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '商户号',
@@ -63,8 +63,8 @@ CREATE TABLE `orders` (
 -- ----------------------------
 -- Table: pay_channels 支付渠道表
 -- ----------------------------
-DROP TABLE IF EXISTS `pay_channels`;
-CREATE TABLE `pay_channels` (
+DROP TABLE IF EXISTS `cashier_channels`;
+CREATE TABLE `cashier_channels` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `channel_code` VARCHAR(64) NOT NULL COMMENT '渠道编码',
   `channel_name` VARCHAR(128) NOT NULL COMMENT '渠道名称',
@@ -80,8 +80,8 @@ CREATE TABLE `pay_channels` (
 -- ----------------------------
 -- Table: pay_channel_accounts 渠道账户表
 -- ----------------------------
-DROP TABLE IF EXISTS `pay_channel_accounts`;
-CREATE TABLE `pay_channel_accounts` (
+DROP TABLE IF EXISTS `cashier_channel_accounts`;
+CREATE TABLE `cashier_channel_accounts` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `channel_id` BIGINT NOT NULL COMMENT '所属渠道ID',
   `account_code` VARCHAR(64) NOT NULL COMMENT '账户编码',
@@ -98,8 +98,8 @@ CREATE TABLE `pay_channel_accounts` (
 -- ----------------------------
 -- Table: pay_channel_merchant_routes 商户渠道路由表
 -- ----------------------------
-DROP TABLE IF EXISTS `pay_channel_merchant_routes`;
-CREATE TABLE `pay_channel_merchant_routes` (
+DROP TABLE IF EXISTS `cashier_channel_merchant_routes`;
+CREATE TABLE `cashier_channel_merchant_routes` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
   `channel_account_id` BIGINT NOT NULL COMMENT '渠道账户ID',
   `merchant_id` VARCHAR(64) NOT NULL COMMENT '商户号',
@@ -114,8 +114,8 @@ CREATE TABLE `pay_channel_merchant_routes` (
 -- ----------------------------
 -- Table: payments 支付记录表
 -- ----------------------------
-DROP TABLE IF EXISTS `payments`;
-CREATE TABLE `payments` (
+DROP TABLE IF EXISTS `cashier_payments`;
+CREATE TABLE `cashier_payments` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
   `payment_id` VARCHAR(64) NOT NULL COMMENT '支付记录ID',
   `order_id` VARCHAR(64) DEFAULT NULL COMMENT '关联订单号',

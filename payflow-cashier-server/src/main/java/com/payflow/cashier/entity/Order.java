@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("orders")
+@TableName("cashier_orders")
 @Schema(name = "Order", description = "订单实体")
 public class Order {
 

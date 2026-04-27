@@ -15,7 +15,12 @@ public class MerchantPaymentMethodServiceImpl implements MerchantPaymentMethodSe
     private final MerchantPaymentMethodMapper mapper;
 
     @Override
-    public List<MerchantPaymentMethod> listByMerchantId(Long merchantId) {
+    public List<MerchantPaymentMethod> listAll() {
+        return mapper.selectList(null);
+    }
+
+    @Override
+    public List<MerchantPaymentMethod> listByMerchantId(String merchantId) {
         return mapper.selectList(new LambdaQueryWrapper<MerchantPaymentMethod>()
                 .eq(MerchantPaymentMethod::getMerchantId, merchantId));
     }
@@ -43,9 +48,20 @@ public class MerchantPaymentMethodServiceImpl implements MerchantPaymentMethodSe
     }
 
     @Override
-    public void deleteByMerchantAndMethod(Long merchantId, Long paymentMethodId) {
+    public void deleteByMerchantAndMethod(String merchantId, Long paymentMethodId) {
         mapper.delete(new LambdaQueryWrapper<MerchantPaymentMethod>()
                 .eq(MerchantPaymentMethod::getMerchantId, merchantId)
                 .eq(MerchantPaymentMethod::getPaymentMethodId, paymentMethodId));
+    }
+
+    @Override
+    public void deleteByMerchant(String merchantId) {
+        mapper.delete(new LambdaQueryWrapper<MerchantPaymentMethod>()
+                .eq(MerchantPaymentMethod::getMerchantId, merchantId));
+    }
+
+    @Override
+    public MerchantPaymentMethod getById(Long id) {
+        return mapper.selectById(id);
     }
 }

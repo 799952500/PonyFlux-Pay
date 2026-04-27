@@ -50,9 +50,9 @@
         <el-table-column label="支付方式名称" prop="methodName" min-width="160">
           <template #default="{ row }"><span class="font-medium">{{ row.methodName }}</span></template>
         </el-table-column>
-        <el-table-column label="所属渠道" prop="channel" width="120">
+        <el-table-column label="所属渠道" prop="channelType" width="120">
           <template #default="{ row }">
-            <el-tag size="small" :type="channelTagType[row.channel]">{{ channelLabel[row.channel] ?? row.channel }}</el-tag>
+            <el-tag size="small" :type="channelTagType[row.channelType]">{{ channelLabel[row.channelType] ?? row.channelType }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="appId" prop="appId" min-width="200">
@@ -85,8 +85,8 @@
     <!-- 新建/编辑弹窗 -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑支付方式' : '新建支付方式'" width="620px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="130px" size="default">
-        <el-form-item label="所属渠道" prop="channel">
-          <el-select v-model="form.channel" placeholder="请选择渠道" style="width: 100%">
+        <el-form-item label="所属渠道" prop="channelType">
+          <el-select v-model="form.channelType" placeholder="请选择渠道" style="width: 100%">
             <el-option label="微信支付" value="WECHAT" />
             <el-option label="支付宝" value="ALIPAY" />
             <el-option label="银联" value="UNIONPAY" />
@@ -134,7 +134,7 @@
           <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
             <dt class="text-gray-400">支付方式编号</dt><dd class="text-gray-800 font-medium">{{ currentRow.methodCode }}</dd>
             <dt class="text-gray-400">支付方式名称</dt><dd class="text-gray-800">{{ currentRow.methodName }}</dd>
-            <dt class="text-gray-400">所属渠道</dt><dd><el-tag size="small" :type="channelTagType[currentRow.channel]">{{ channelLabel[currentRow.channel] ?? currentRow.channel }}</el-tag></dd>
+            <dt class="text-gray-400">所属渠道</dt><dd><el-tag size="small" :type="channelTagType[currentRow.channelId]">{{ currentRow.channelName }}</el-tag></dd>
             <dt class="text-gray-400">状态</dt><dd><el-tag size="small" :type="currentRow.status === 'ACTIVE' ? 'success' : 'danger'">{{ currentRow.status === 'ACTIVE' ? '启用' : '停用' }}</el-tag></dd>
             <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800">{{ currentRow.createdAt }}</dd>
           </dl>
@@ -166,8 +166,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { listPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod } from '@/api/payment-method'
-import { listChannels } from '@/api/channel-api'
+import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels } from '@/api/admin'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -192,7 +191,7 @@ const queryForm = reactive({
 const formRef = ref<FormInstance>()
 const form = reactive({
   id: '',
-  channel: '',
+  channelType: '',
   methodCode: '',
   methodName: '',
   appId: '',
@@ -205,7 +204,7 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  channel: [{ required: true, message: '请选择所属渠道', trigger: 'change' }],
+  channelType: [{ required: true, message: '请选择所属渠道', trigger: 'change' }],
   methodCode: [{ required: true, message: '请输入支付方式编号', trigger: 'blur' }],
   methodName: [{ required: true, message: '请输入支付方式名称', trigger: 'blur' }],
 }
@@ -228,14 +227,19 @@ function maskValue(val: string | undefined) {
   return val.substring(0, 4) + '****' + val.substring(val.length - 4)
 }
 
+async function loadChannels() {
+  try {
+    const res: any = await getChannels()
+    channelOptions.value = Array.isArray(res) ? res : (res?.list ?? [])
+  } catch {
+    // ignore
+  }
+}
+
 async function loadData() {
   loading.value = true
   try {
-    const params = { ...queryForm }
-    if (!params.channel) delete params.channel
-    if (!params.name) delete params.name
-    if (!params.status) delete params.status
-    const res: any = await listPaymentMethods(params)
+    const res: any = await getPaymentMethods({ page: queryForm.page, pageSize: queryForm.pageSize })
     tableData.value = Array.isArray(res) ? res : (res.list ?? [])
     total.value = res.total ?? tableData.value.length
   } catch {
@@ -264,7 +268,7 @@ function handleChannelChange() {
 function openAdd() {
   isEdit.value = false
   Object.assign(form, {
-    id: '', channel: '', methodCode: '', methodName: '',
+    id: '', channelType: '', methodCode: '', methodName: '',
     appId: '', appSecret: '', mchId: '',
     certPath: '', certPassword: '', extraConfig: '', remark: '',
   })
@@ -275,7 +279,7 @@ function openEdit(row: any) {
   isEdit.value = true
   Object.assign(form, {
     id: row.id,
-    channel: row.channel,
+    channelType: row.channelType,
     methodCode: row.methodCode,
     methodName: row.methodName,
     appId: row.appId ?? '',
@@ -300,7 +304,13 @@ async function handleSubmit() {
     if (!valid) return
     submitLoading.value = true
     try {
-      const payload = { ...form }
+      const payload: Record<string, any> = { ...form }
+      // channelType 字符串转 channelId 数字（channelOptions 来自 getChannels）
+      const selected = channelOptions.value.find(c => c.channelType === form.channelType)
+      if (selected) {
+        payload.channelId = selected.id
+      }
+      delete payload.channelType
       // 不传空字符串的敏感字段
       if (!payload.appSecret) delete payload.appSecret
       if (!payload.certPassword) delete payload.certPassword
@@ -335,6 +345,7 @@ async function handleDelete(row: any) {
 
 onMounted(() => {
   loadData()
+  loadChannels()
 })
 </script>
 

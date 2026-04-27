@@ -3,10 +3,8 @@ import { ref } from 'vue'
 import type { AdminLoginResponse } from '@/types'
 
 export const useAdminStore = defineStore('admin', () => {
-  const user = ref<AdminLoginResponse | null>(() => {
-    const stored = localStorage.getItem('adminUser')
-    return stored ? JSON.parse(stored) : null
-  })
+  const stored = localStorage.getItem('adminUser')
+  const user = ref<AdminLoginResponse | null>(stored ? JSON.parse(stored) : null)
 
   const token = ref(localStorage.getItem('adminToken') ?? '')
 
