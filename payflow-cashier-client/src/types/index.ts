@@ -9,7 +9,7 @@ export type OrderStatus = 'CREATED' | 'PAYING' | 'PAID' | 'EXPIRED' | 'FAILED' |
 export type PayChannel = 'ALIPAY' | 'WECHAT_PAY' | 'UNION_PAY' | 'CASH' | 'CARD'
 
 // 支付动作（后端返回的操作指引）
-export type PaymentAction = 'INVOKE' | 'QR_CODE' | 'REDIRECT'
+export type PaymentAction = 'INVOKE' | 'QR_CODE' | 'REDIRECT' | 'FORM'
 
 // 设备类型
 export type DeviceType = 'WEB' | 'H5' | 'APP_IOS' | 'APP_ANDROID' | 'MINIAPP'
@@ -65,6 +65,8 @@ export interface CashierInfo {
   expireTime: string
   status: string
   paymentMethods: PaymentMethod[]
+  successUrl?: string
+  failUrl?: string
   returnUrl?: string
 }
 
@@ -79,6 +81,7 @@ export interface PaymentResult {
   qrCodeUrl?: string
   qrCodeImage?: string
   redirectUrl?: string
+  formHtml?: string
   invokeParams?: Record<string, string>
 }
 

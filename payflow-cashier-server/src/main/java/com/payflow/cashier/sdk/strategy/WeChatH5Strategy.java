@@ -41,7 +41,7 @@ public class WeChatH5Strategy implements PayStrategy {
                          ChannelConfigHolder account,
                          Map<String, String> extraParams) {
         String h5Url = wxPayH5Handler.createH5Order(
-                orderId, amount, subject, notifyUrl, account);
+                orderId, amount, subject, notifyUrl, returnUrl, account);
 
         return PayResult.builder()
                 .status("PROCESSING")

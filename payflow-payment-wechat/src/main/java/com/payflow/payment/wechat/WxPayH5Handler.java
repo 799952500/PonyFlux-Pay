@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -55,6 +56,7 @@ public class WxPayH5Handler {
      */
     public String createH5Order(String orderId, Long amount,
                                 String description, String notifyUrl,
+                                String returnUrl,
                                 ChannelConfigHolder account) {
         WxPayAccountConfig config = WxPayConfigLoader.load(account);
 
@@ -87,6 +89,12 @@ public class WxPayH5Handler {
 
             if (h5Url == null || h5Url.isBlank()) {
                 throw new BizException(6005, "微信H5支付下单失败：未获取到 h5_url");
+            }
+
+            if (returnUrl != null && !returnUrl.isBlank()) {
+                String encoded = URLEncoder.encode(returnUrl, StandardCharsets.UTF_8);
+                String sep = h5Url.contains("?") ? "&" : "?";
+                h5Url = h5Url + sep + "redirect_url=" + encoded;
             }
 
             log.info("微信H5支付下单成功: orderId={}, h5Url={}", orderId, h5Url);

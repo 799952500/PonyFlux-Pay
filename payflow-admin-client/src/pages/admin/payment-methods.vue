@@ -316,7 +316,7 @@ async function handleSubmit() {
       if (!payload.certPassword) delete payload.certPassword
 
       if (isEdit.value) {
-        await updatePaymentMethod(form.id, payload)
+        await updatePaymentMethod(Number(form.id), payload)
         ElMessage.success('更新成功')
       } else {
         await createPaymentMethod(payload)

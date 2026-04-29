@@ -48,6 +48,8 @@ CREATE TABLE `cashier_orders` (
   `notify_url` VARCHAR(256) DEFAULT NULL COMMENT '异步通知地址',
   `merchant_notify_url` VARCHAR(256) DEFAULT NULL COMMENT '商户回调地址',
   `return_url` VARCHAR(256) DEFAULT NULL COMMENT '回跳地址',
+  `success_url` VARCHAR(256) DEFAULT NULL COMMENT '商户支付成功跳转地址',
+  `fail_url` VARCHAR(256) DEFAULT NULL COMMENT '商户支付失败跳转地址',
   `expire_time` DATETIME DEFAULT NULL COMMENT '过期时间',
   `pay_time` DATETIME DEFAULT NULL COMMENT '支付时间',
   `created_at` DATETIME DEFAULT NULL COMMENT '创建时间',

@@ -82,7 +82,8 @@
     <PaymentResult
       v-if="payResult"
       :status="payResult"
-      :return-url="cashierStore.orderInfo?.returnUrl"
+    :success-url="cashierStore.orderInfo?.successUrl"
+    :fail-url="cashierStore.orderInfo?.failUrl"
       @retry="handleRetry"
     />
   </div>
@@ -159,6 +160,11 @@ onMounted(async () => {
   try {
     const info = await getCashierInfo(orderId, sig ?? '')
     cashierStore.setOrderInfo(info)
+    if (info.status === 'PAID') {
+      payResult.value = 'success'
+    } else if (info.status === 'FAILED' || info.status === 'CLOSED' || info.status === 'EXPIRED') {
+      payResult.value = 'failed'
+    }
   } catch {
     ElMessage.error('加载收银台信息失败')
   } finally {
@@ -187,6 +193,15 @@ async function handlePay() {
       cashierStore.openQR(result.qrCodeUrl)
     } else if (result.action === 'REDIRECT' && result.redirectUrl) {
       window.location.href = result.redirectUrl
+    } else if (result.action === 'FORM' && result.formHtml) {
+      const container = document.createElement('div')
+      container.style.display = 'none'
+      container.innerHTML = result.formHtml
+      document.body.appendChild(container)
+      const form = container.querySelector('form')
+      if (form) {
+        form.submit()
+      }
     } else if (result.action === 'INVOKE' && result.invokeParams) {
       const params = new URLSearchParams(result.invokeParams as Record<string, string>)
       window.location.href = `${(result.invokeParams as Record<string, string>)['schema'] ?? 'payflow'}:${params.toString()}`

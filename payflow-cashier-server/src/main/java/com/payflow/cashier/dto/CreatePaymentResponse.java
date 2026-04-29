@@ -40,7 +40,14 @@ public class CreatePaymentResponse {
     @Schema(description = "扫码二维码Base64图片")
     private String qrCodeImage;
 
+    @Schema(description = "REDIRECT 调起URL")
+    private String redirectUrl;
+
+    @Schema(description = "FORM HTML 表单")
+    private String formHtml;
+
     public static final String ACTION_INVOKE = "INVOKE";
     public static final String ACTION_QR_CODE = "QR_CODE";
     public static final String ACTION_REDIRECT = "REDIRECT";
+    public static final String ACTION_FORM = "FORM";
 }

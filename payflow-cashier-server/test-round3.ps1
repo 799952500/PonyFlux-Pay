@@ -120,8 +120,9 @@ function InvokeAndLog($name, $method, $url, $hdrs=@{}) {
 Log "=== STEP 3: API Tests ==="
 
 InvokeAndLog "Health" -method "GET" -url "$BaseUrl/actuator/health"
-InvokeAndLog "GET /cashier/ORD001" -method "GET" -url "$BaseUrl/api/v1/cashier/ORD001"
-InvokeAndLog "GET /payments/status/PAY001" -method "GET" -url "$BaseUrl/api/v1/payments/status/PAY001"
+InvokeAndLog "GET /cashier/ORD20260420002 (PAID, should include successUrl/failUrl)" -method "GET" -url "$BaseUrl/api/v1/cashier/ORD20260420002"
+InvokeAndLog "GET /cashier/ORD20260420003 (EXPIRED, should include successUrl/failUrl)" -method "GET" -url "$BaseUrl/api/v1/cashier/ORD20260420003"
+InvokeAndLog "GET /payments/status/PAY20260420002A" -method "GET" -url "$BaseUrl/api/v1/payments/status/PAY20260420002A"
 InvokeAndLog "GET /merchant/orders (no auth)" -method "GET" -url "$BaseUrl/api/v1/merchant/orders?page=1&size=10"
 
 # Scenario 1: Valid Signature

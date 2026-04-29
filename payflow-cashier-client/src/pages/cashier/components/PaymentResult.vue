@@ -29,7 +29,7 @@
 
       <!-- 返回商户 -->
       <el-button
-        v-if="returnUrl"
+        v-if="destUrl"
         type="primary"
         class="w-full !h-[44px] !rounded-full"
         @click="goReturn"
@@ -59,19 +59,40 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed, onMounted, onUnmounted } from 'vue'
+
+const props = defineProps<{
   status: 'success' | 'failed'
-  returnUrl?: string
+  successUrl?: string
+  failUrl?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'retry'): void
 }>()
 
+const destUrl = computed(() => {
+  return props.status === 'success' ? props.successUrl : props.failUrl
+})
+
+let timer: number | undefined
+
 function goReturn() {
-  const url = new URLSearchParams(window.location.search).get('returnUrl')
-  if (url) window.location.href = url
+  if (destUrl.value) window.location.href = destUrl.value
 }
+
+onMounted(() => {
+  // 自动跳转：给用户 1s 观察完成状态
+  if (destUrl.value) {
+    timer = window.setTimeout(() => {
+      if (destUrl.value) window.location.href = destUrl.value
+    }, 1000)
+  }
+})
+
+onUnmounted(() => {
+  if (timer != null) clearTimeout(timer)
+})
 
 function close() {
   window.close()

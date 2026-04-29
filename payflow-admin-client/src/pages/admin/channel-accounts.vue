@@ -129,7 +129,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getChannelAccounts, createChannelAccount, updateChannelAccount, toggleChannelAccount, deleteChannelAccount, getChannels } from '@/api/admin'
 
-interface ChannelAccount {
+interface LocalChannelAccount {
   id?: number
   accountNo: string
   accountName: string
@@ -144,11 +144,11 @@ interface ChannelAccount {
 
 const loading = ref(false)
 const submitting = ref(false)
-const accountList = ref<ChannelAccount[]>([])
-const allAccounts = ref<ChannelAccount[]>([])
+const accountList = ref<LocalChannelAccount[]>([])
+const allAccounts = ref<LocalChannelAccount[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const currentAccount = ref<ChannelAccount | null>(null)
+const currentAccount = ref<LocalChannelAccount | null>(null)
 const formRef = ref<FormInstance>()
 const page = ref(1)
 const pageSize = ref(20)
@@ -237,7 +237,7 @@ function openCreateDialog() {
   dialogVisible.value = true
 }
 
-function openEditDialog(row: ChannelAccount) {
+function openEditDialog(row: LocalChannelAccount) {
   isEdit.value = true
   currentAccount.value = row
   Object.assign(form, {
@@ -258,10 +258,10 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value && currentAccount.value?.id) {
-      await updateChannelAccount(currentAccount.value.id, form)
+      await updateChannelAccount(currentAccount.value.id, form as unknown as Partial<import('@/types').ChannelAccount>)
       ElMessage.success('账户更新成功')
     } else {
-      await createChannelAccount(form)
+      await createChannelAccount(form as unknown as Partial<import('@/types').ChannelAccount>)
       ElMessage.success('账户创建成功')
     }
     dialogVisible.value = false
@@ -273,7 +273,7 @@ async function handleSubmit() {
   }
 }
 
-async function handleToggle(row: ChannelAccount) {
+async function handleToggle(row: LocalChannelAccount) {
   const action = row.status === 'ENABLED' ? '禁用' : '启用'
   try {
     if (!row.id) return
@@ -285,7 +285,7 @@ async function handleToggle(row: ChannelAccount) {
   }
 }
 
-async function handleDelete(row: ChannelAccount) {
+async function handleDelete(row: LocalChannelAccount) {
   try {
     await ElMessageBox.confirm(`确认删除账户「${row.accountName}」？删除后不可恢复。`, '删除确认', {
       confirmButtonText: '删除',

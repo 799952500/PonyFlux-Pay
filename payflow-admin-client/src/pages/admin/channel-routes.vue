@@ -146,8 +146,9 @@ interface ChannelAccount {
   status: 'ENABLED' | 'DISABLED' | string
 }
 
-interface ChannelRoute {
-  routeId: number
+interface LocalChannelRoute {
+  id: number
+  routeId?: number
   merchantId: string
   merchantName?: string
   channelId: string
@@ -163,7 +164,7 @@ interface ChannelRoute {
 
 const loading = ref(false)
 const submitting = ref(false)
-const routeList = ref<ChannelRoute[]>([])
+const routeList = ref<LocalChannelRoute[]>([])
 const merchantList = ref<Array<{ merchantId: string; merchantName: string }>>([])
 const allAccounts = ref<ChannelAccount[]>([])
 const dialogVisible = ref(false)
@@ -222,7 +223,8 @@ async function loadMerchants() {
 
 async function loadAccounts() {
   try {
-    allAccounts.value = await getChannelAccounts()
+    const res: any = await getChannelAccounts()
+    allAccounts.value = Array.isArray(res) ? res : (res?.list ?? [])
   } catch { /* ignore */ }
 }
 
@@ -249,7 +251,7 @@ async function handleSubmit() {
       priority: form.priority,
       enabled: true,
     }
-    await createChannelRoute(payload)
+    await createChannelRoute(payload as unknown as Partial<import('@/types').ChannelRoute>)
     ElMessage.success('路由创建成功')
     dialogVisible.value = false
     loadRoutes()
@@ -260,7 +262,7 @@ async function handleSubmit() {
   }
 }
 
-async function handleToggle(row: ChannelRoute) {
+async function handleToggle(row: LocalChannelRoute) {
   const action = row.enabled ? '禁用' : '启用'
   try {
     await toggleChannelRoute(row.id)
@@ -271,7 +273,7 @@ async function handleToggle(row: ChannelRoute) {
   }
 }
 
-async function handleDelete(row: ChannelRoute) {
+async function handleDelete(row: LocalChannelRoute) {
   try {
     await ElMessageBox.confirm('确认删除该路由规则？删除后不可恢复。', '删除确认', {
       confirmButtonText: '删除',

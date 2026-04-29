@@ -131,6 +131,9 @@ export const deleteMerchantPayment = (id: number) =>
 export const toggleMerchantPayment = (id: number) =>
   request.put(`/admin/merchant-payment-methods/${id}/toggle`)
 
+export const createMerchantPayment = (data: { merchantId: string; paymentMethodId: string | number; priority?: number }) =>
+  request.post('/admin/merchant-payment-methods', data)
+
 // -------------------------------------------------------------------
 // 风控规则
 // -------------------------------------------------------------------

@@ -91,9 +91,10 @@ public class PaymentServiceImpl implements PaymentService {
         orderService.updateOrderStatus(orderId, Order.STATUS_PAYING, null);
 
         String notifyUrl = buildNotifyUrl(payChannel);
+        String internalReturnUrl = buildInternalReturnUrl(orderId);
         CreatePaymentResponse response = dispatchToHandler(
                 orderId, order.getAmount(), order.getSubject(), payMethod,
-                request.getReturnUrl(), notifyUrl, account);
+                internalReturnUrl, notifyUrl, account);
 
         response.setPaymentId(paymentId);
         response.setOrderId(orderId);
@@ -145,15 +146,29 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private CreatePaymentResponse convertToResponse(PayResult r) {
-        CreatePaymentResponse.CreatePaymentResponseBuilder builder = CreatePaymentResponse.builder()
-                .status(r.getStatus())
-                .action(r.getAction());
-
-        if ("QR_CODE".equals(r.getAction()) || "REDIRECT".equals(r.getAction())) {
-            builder.qrCodeUrl(r.getQrCodeUrl() != null ? r.getQrCodeUrl() : r.getH5Url());
+        String rawAction = r.getAction();
+        String action = rawAction;
+        if ("INVOKE_APP".equals(rawAction)) {
+            action = CreatePaymentResponse.ACTION_INVOKE;
         }
 
-        if ("INVOKE_APP".equals(r.getAction())) {
+        CreatePaymentResponse.CreatePaymentResponseBuilder builder = CreatePaymentResponse.builder()
+                .status(r.getStatus())
+                .action(action);
+
+        if ("QR_CODE".equals(rawAction)) {
+            builder.qrCodeUrl(r.getQrCodeUrl());
+        }
+
+        if ("REDIRECT".equals(rawAction)) {
+            builder.redirectUrl(r.getH5Url());
+        }
+
+        if ("FORM".equals(rawAction)) {
+            builder.formHtml(r.getAppParams());
+        }
+
+        if ("INVOKE_APP".equals(rawAction)) {
             if (r.getInvokeParams() != null) {
                 var params = r.getInvokeParams();
                 builder.invokeParams(InvokeParams.builder()
@@ -170,10 +185,6 @@ public class PaymentServiceImpl implements PaymentService {
                         .package_(r.getAppParams())
                         .build());
             }
-        }
-
-        if ("FORM".equals(r.getAction())) {
-            builder.qrCodeUrl(r.getAppParams());
         }
 
         return builder.build();
@@ -199,5 +210,17 @@ public class PaymentServiceImpl implements PaymentService {
             return base + n.getAlipayPath();
         }
         return base + n.getUnifiedPath();
+    }
+
+    /**
+     * 支付完成后，渠道重定向/回跳统一落到收银台内部页面。
+     * <p>
+     * 该 URL 本质是消费者页面地址（`/cashier/{orderId}`），不依赖 JWT。
+     * </p>
+     */
+    private String buildInternalReturnUrl(String orderId) {
+        String baseUrl = payflowProperties.getCashier().getBaseUrl();
+        String sig = SignUtils.sign(payflowProperties.getSignature().getSecret(), orderId);
+        return baseUrl + "/cashier/" + orderId + "?sig=" + sig;
     }
 }

@@ -51,4 +51,12 @@ public class CashierResponse {
     /** 可用支付方式列表 */
     @Schema(description = "可用支付方式列表")
     private List<PaymentMethodDTO> paymentMethods;
+
+    /** 商户支付成功跳转地址 */
+    @Schema(description = "商户支付成功跳转地址")
+    private String successUrl;
+
+    /** 商户支付失败跳转地址 */
+    @Schema(description = "商户支付失败跳转地址")
+    private String failUrl;
 }

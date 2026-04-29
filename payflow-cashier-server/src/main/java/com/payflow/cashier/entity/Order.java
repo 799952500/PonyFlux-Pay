@@ -74,6 +74,14 @@ public class Order {
     @Schema(description = "支付完成回跳地址")
     private String returnUrl;
 
+    @TableField("success_url")
+    @Schema(description = "商户支付成功跳转地址")
+    private String successUrl;
+
+    @TableField("fail_url")
+    @Schema(description = "商户支付失败跳转地址")
+    private String failUrl;
+
     @TableField("expire_time")
     @Schema(description = "过期时间")
     private LocalDateTime expireTime;

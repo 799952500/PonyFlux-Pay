@@ -55,6 +55,14 @@ public class CreateOrderRequest {
     @Schema(description = "支付完成回跳地址")
     private String returnUrl;
 
+    /** 商户支付成功跳转地址（用于订单支付成功后的前端跳转） */
+    @Schema(description = "商户支付成功跳转地址")
+    private String successUrl;
+
+    /** 商户支付失败跳转地址（用于订单支付失败后的前端跳转） */
+    @Schema(description = "商户支付失败跳转地址")
+    private String failUrl;
+
     /** 订单过期时间（分钟） */
     @Builder.Default
     @Schema(description = "订单过期时间（分钟）")

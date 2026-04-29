@@ -94,6 +94,8 @@ public class OrderServiceImpl implements OrderService {
                 .notifyUrl(request.getNotifyUrl())
                 .merchantNotifyUrl(request.getNotifyUrl()) // 支付成功回调地址
                 .returnUrl(request.getReturnUrl())
+                .successUrl(request.getSuccessUrl())
+                .failUrl(request.getFailUrl())
                 .expireTime(expireTime)
                 .createdAt(now)
                 .updatedAt(now)
@@ -161,6 +163,8 @@ public class OrderServiceImpl implements OrderService {
                     .expireTime(order.getExpireTime() != null
                             ? order.getExpireTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                     .status(order.getStatus())
+                    .successUrl(order.getSuccessUrl())
+                    .failUrl(order.getFailUrl())
                     .build();
         }
 
@@ -184,6 +188,8 @@ public class OrderServiceImpl implements OrderService {
                         ? order.getExpireTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .status(order.getStatus())
                 .paymentMethods(buildPaymentMethods(order.getChannel()))
+                .successUrl(order.getSuccessUrl())
+                .failUrl(order.getFailUrl())
                 .build();
     }
 
