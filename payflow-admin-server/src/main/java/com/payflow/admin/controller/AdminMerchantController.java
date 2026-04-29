@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * 商户管理 Controller
+  * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/merchants")

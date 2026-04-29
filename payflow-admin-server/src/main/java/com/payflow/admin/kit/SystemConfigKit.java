@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   3. 未命中则从 Redis 读（跨进程共享，可选）
  *   4. Redis 也没有则查数据库（Cache-Aside）
  *   5. 配置变更后调用 SystemConfigKit.refresh() 热更新本地缓存
+  * @author Lucas
  */
 @Slf4j
 @Component

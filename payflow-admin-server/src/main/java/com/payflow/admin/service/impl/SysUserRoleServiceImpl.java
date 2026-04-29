@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class SysUserRoleServiceImpl implements SysUserRoleService {
 
     private final SysUserRoleMapper sysUserRoleMapper;

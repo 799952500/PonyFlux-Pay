@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("admin_system_configs")
+/**
+ * @author Lucas
+ */
 public class SystemConfig {
 
     @TableId(type = IdType.AUTO)

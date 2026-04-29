@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * 商户管理 Controller
+  * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/merchants")

@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("risk_rules")
+/**
+ * @author Lucas
+ */
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)

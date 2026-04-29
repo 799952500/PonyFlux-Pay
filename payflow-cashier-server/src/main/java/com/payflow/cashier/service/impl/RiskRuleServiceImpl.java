@@ -11,6 +11,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class RiskRuleServiceImpl implements RiskRuleService {
 
     private final RiskRuleMapper mapper;

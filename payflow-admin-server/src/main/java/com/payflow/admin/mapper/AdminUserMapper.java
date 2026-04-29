@@ -5,5 +5,8 @@ import com.payflow.admin.entity.AdminUser;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface AdminUserMapper extends BaseMapper<AdminUser> {
 }

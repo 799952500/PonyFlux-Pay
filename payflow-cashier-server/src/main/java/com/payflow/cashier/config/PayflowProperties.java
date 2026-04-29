@@ -76,8 +76,6 @@ public class PayflowProperties {
         /** 为 true 时微信/支付宝均使用统一回调路径（需与渠道后台配置一致） */
         private boolean useUnifiedPath = true;
         private String unifiedPath = "/api/v1/callbacks";
-        private String wechatPath = "/api/v1/callbacks/wxpay";
-        private String alipayPath = "/api/v1/callbacks/alipay";
     }
 
     /**

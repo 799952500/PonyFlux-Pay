@@ -19,6 +19,9 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("sys_menus")
+/**
+ * @author Lucas
+ */
 public class SysMenu {
 
     @TableId(type = IdType.AUTO)

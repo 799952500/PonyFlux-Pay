@@ -22,6 +22,7 @@ import java.util.Map;
  * {@code X-Merchant-Id}、{@code X-Timestamp}（Unix 秒）、{@code X-Sign}（HMAC-SHA256 十六进制小写）。
  * 签名原文：HTTP_METHOD + "\n" + path + "\n" + 按字典序排序的 queryString + "\n" + timestamp
  * </p>
+  * @author Lucas
  */
 @Slf4j
 @RestController

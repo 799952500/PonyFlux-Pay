@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * @author Lucas
+ */
 public class AdminUserVO {
 
     private Long id;

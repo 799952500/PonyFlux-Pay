@@ -10,6 +10,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     private final PaymentMethodMapper paymentMethodMapper;

@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("admin_channel_routes")
+/**
+ * @author Lucas
+ */
 public class ChannelRoute {
 
     @TableId(type = IdType.AUTO)

@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface PaymentAccountMapper extends BaseMapper<PaymentAccount> {
 
     @Select("SELECT pa.*, c.channel_name " +

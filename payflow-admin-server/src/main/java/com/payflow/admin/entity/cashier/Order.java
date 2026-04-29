@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * 订单实体类（来自 cashier 库）
+  * @author Lucas
  */
 @Data
 @Builder

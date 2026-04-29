@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "jwt")
+/**
+ * @author Lucas
+ */
 public class JwtProperties {
 
     private String secret = "PayFlowAdminSecretKey2026VeryLongAndSecureKeyForHS256Algorithm";

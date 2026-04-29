@@ -9,6 +9,7 @@ import java.util.List;
 
 /**
  * 支付 SDK 注册：由渠道子模块提供 {@link PayStrategy} Bean，此处汇总为注册表。
+ * @author Lucas
  */
 @Configuration
 public class PaymentSdkConfiguration {

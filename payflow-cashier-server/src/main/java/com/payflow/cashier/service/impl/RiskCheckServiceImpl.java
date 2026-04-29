@@ -17,6 +17,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class RiskCheckServiceImpl implements RiskCheckService {
 
     private static final String RULE_TYPE_AMOUNT_SINGLE = "AMOUNT_SINGLE";

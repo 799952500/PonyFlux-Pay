@@ -5,5 +5,8 @@ import com.payflow.admin.entity.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface SysUserMapper extends BaseMapper<SysUser> {
 }

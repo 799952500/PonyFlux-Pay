@@ -7,6 +7,9 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface PaymentMethodMapper extends BaseMapper<PaymentMethod> {
     
     @Select("SELECT pm.*, c.channel_name, c.channel_type " +

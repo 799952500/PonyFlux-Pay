@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * 单笔支付方式的策略（由渠道子模块实现并注册）。
+  * @author Lucas
  */
 public interface PayStrategy {
 

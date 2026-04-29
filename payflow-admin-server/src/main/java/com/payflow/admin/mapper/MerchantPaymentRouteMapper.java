@@ -5,6 +5,9 @@ import com.payflow.admin.entity.MerchantPaymentRoute;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface MerchantPaymentRouteMapper extends BaseMapper<MerchantPaymentRoute> {
 }
 

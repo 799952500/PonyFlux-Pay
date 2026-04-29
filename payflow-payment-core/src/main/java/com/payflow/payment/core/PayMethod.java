@@ -2,6 +2,7 @@ package com.payflow.payment.core;
 
 /**
  * 支付方式编码（商户传入的 payMethod）。
+  * @author Lucas
  */
 public enum PayMethod {
 

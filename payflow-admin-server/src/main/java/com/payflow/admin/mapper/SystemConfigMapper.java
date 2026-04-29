@@ -5,5 +5,8 @@ import com.payflow.admin.entity.SystemConfig;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface SystemConfigMapper extends BaseMapper<SystemConfig> {
 }

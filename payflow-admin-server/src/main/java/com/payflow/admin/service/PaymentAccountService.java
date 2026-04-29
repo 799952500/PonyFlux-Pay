@@ -4,6 +4,9 @@ import com.payflow.admin.entity.PaymentAccount;
 
 import java.util.List;
 import java.util.Map;
+/**
+ * @author Lucas
+ */
 
 public interface PaymentAccountService {
     List<PaymentAccount> listAll();

@@ -14,6 +14,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class PaymentAccountServiceImpl implements PaymentAccountService {
 
     private final PaymentAccountMapper mapper;

@@ -3,6 +3,9 @@ package com.payflow.admin.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.payflow.admin.entity.SysUser;
 import java.util.List;
+/**
+ * @author Lucas
+ */
 
 public interface SysUserService extends IService<SysUser> {
     List<SysUser> listUsers();

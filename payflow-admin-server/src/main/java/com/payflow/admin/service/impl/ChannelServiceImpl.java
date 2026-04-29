@@ -9,6 +9,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class ChannelServiceImpl implements ChannelService {
 
     private final ChannelMapper channelMapper;

@@ -13,6 +13,9 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * @author Lucas
+ */
 public class LoginResponse {
 
     private String token;

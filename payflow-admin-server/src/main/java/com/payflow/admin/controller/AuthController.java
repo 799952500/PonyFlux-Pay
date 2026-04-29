@@ -12,6 +12,7 @@ import java.util.Map;
 
 /**
  * 管理员身份认证 Controller
+  * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/auth")

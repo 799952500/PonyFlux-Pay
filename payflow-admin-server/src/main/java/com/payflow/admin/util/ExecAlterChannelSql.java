@@ -7,6 +7,7 @@ import java.sql.Statement;
 /**
  * One-off utility to ALTER TABLE admin_channels ADD COLUMN icon.
  * Run via: mvn exec:java -Dexec.mainClass="com.payflow.admin.util.ExecAlterChannelSql"
+  * @author Lucas
  */
 public class ExecAlterChannelSql {
 

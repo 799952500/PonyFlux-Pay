@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("sys_role_menus")
+/**
+ * @author Lucas
+ */
 public class SysRoleMenu {
 
     @TableId(type = IdType.AUTO)

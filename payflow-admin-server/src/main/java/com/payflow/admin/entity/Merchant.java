@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("merchants")
+/**
+ * @author Lucas
+ */
 public class Merchant {
 
     @TableId(type = IdType.AUTO)

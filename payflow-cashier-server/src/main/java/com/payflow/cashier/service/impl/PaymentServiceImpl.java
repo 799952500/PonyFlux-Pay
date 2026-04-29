@@ -28,6 +28,7 @@ import java.util.Map;
 
 /**
  * 支付服务实现：通过 {@link PayStrategyRegistry} 路由渠道策略。
+  * @author Lucas
  */
 @Slf4j
 @Service
@@ -200,15 +201,6 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BizException(6002, "未配置 payflow.payment-notify.base-url");
         }
         base = base.replaceAll("/+$", "");
-        if (n.isUseUnifiedPath()) {
-            return base + n.getUnifiedPath();
-        }
-        if ("WECHAT_PAY".equals(payChannel)) {
-            return base + n.getWechatPath();
-        }
-        if ("ALIPAY".equals(payChannel)) {
-            return base + n.getAlipayPath();
-        }
         return base + n.getUnifiedPath();
     }
 

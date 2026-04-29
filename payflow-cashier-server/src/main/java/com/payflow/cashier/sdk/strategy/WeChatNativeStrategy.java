@@ -19,6 +19,7 @@ import java.util.Map;
 
 /**
  * 微信 Native 扫码支付策略。
+  * @author Lucas
  */
 @Slf4j
 @Component

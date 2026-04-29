@@ -10,6 +10,9 @@ import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
         DataSourceAutoConfiguration.class,
         MybatisPlusAutoConfiguration.class
 })
+/**
+ * @author Lucas
+ */
 public class AdminApplication {
 
     public static void main(String[] args) {

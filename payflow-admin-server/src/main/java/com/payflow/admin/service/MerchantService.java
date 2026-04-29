@@ -3,6 +3,9 @@ package com.payflow.admin.service;
 import com.payflow.admin.entity.Merchant;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
+/**
+ * @author Lucas
+ */
 
 public interface MerchantService {
     List<Merchant> listAll();

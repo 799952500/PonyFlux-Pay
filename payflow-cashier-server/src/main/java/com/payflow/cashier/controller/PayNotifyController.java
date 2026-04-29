@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 支付回调统一入口：委托 {@link PayStrategyRegistry} 识别渠道。
+  * @author Lucas
  */
 @Slf4j
 @RestController

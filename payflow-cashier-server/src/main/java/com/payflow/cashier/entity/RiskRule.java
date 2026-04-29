@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @Data
 @TableName("cashier_risk_rules")
 @Schema(name = "RiskRule", description = "风控规则")
+/**
+ * @author Lucas
+ */
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)

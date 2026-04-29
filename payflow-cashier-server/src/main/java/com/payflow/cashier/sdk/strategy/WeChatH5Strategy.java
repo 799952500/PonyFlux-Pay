@@ -20,6 +20,7 @@ import java.util.Map;
 
 /**
  * 微信 H5 支付策略。
+  * @author Lucas
  */
 @Slf4j
 @Component

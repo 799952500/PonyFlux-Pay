@@ -4,6 +4,9 @@ import com.payflow.admin.entity.ChannelRoute;
 
 import java.util.List;
 import java.util.Map;
+/**
+ * @author Lucas
+ */
 
 public interface ChannelRouteService {
     List<Map<String, Object>> listWithDetails();

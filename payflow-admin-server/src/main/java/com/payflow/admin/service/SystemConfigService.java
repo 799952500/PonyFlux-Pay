@@ -3,6 +3,9 @@ package com.payflow.admin.service;
 import com.payflow.admin.entity.SystemConfig;
 import java.util.List;
 import java.util.Map;
+/**
+ * @author Lucas
+ */
 
 public interface SystemConfigService {
 

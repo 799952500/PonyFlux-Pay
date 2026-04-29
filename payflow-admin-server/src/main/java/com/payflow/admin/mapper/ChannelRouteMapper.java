@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper
+/**
+ * @author Lucas
+ */
 public interface ChannelRouteMapper extends BaseMapper<ChannelRoute> {
 
     @Select("SELECT r.id, r.merchant_id, r.channel_id, r.payment_account_id, " +

@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * 支付策略注册表：由 Spring 注入全部 {@link PayStrategy} 后构建，避免按类名 switch。
+ *
+ * @author Lucas
  */
 @Slf4j
 public final class PayStrategyRegistry {

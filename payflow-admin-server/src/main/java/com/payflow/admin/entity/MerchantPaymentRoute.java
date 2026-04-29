@@ -19,6 +19,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("merchant_payment_routes")
+/**
+ * @author Lucas
+ */
 public class MerchantPaymentRoute {
 
     @TableId(type = IdType.AUTO)

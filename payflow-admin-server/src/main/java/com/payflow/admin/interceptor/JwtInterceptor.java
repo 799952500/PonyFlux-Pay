@@ -12,6 +12,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class JwtInterceptor implements HandlerInterceptor {
 
     private final JwtProperties jwtProperties;

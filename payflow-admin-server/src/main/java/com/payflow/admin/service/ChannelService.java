@@ -2,6 +2,9 @@ package com.payflow.admin.service;
 
 import com.payflow.admin.entity.Channel;
 import java.util.List;
+/**
+ * @author Lucas
+ */
 
 public interface ChannelService {
     List<Channel> listAll();

@@ -11,6 +11,7 @@ import java.util.Map;
 
 /**
  * 商户支付方式配置 Controller
+  * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/merchant-payment-methods")

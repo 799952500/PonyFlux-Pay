@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * 支付记录 Mapper（cashier 库）
+  * @author Lucas
  */
 @Mapper
 public interface PaymentMapper extends BaseMapper<Payment> {

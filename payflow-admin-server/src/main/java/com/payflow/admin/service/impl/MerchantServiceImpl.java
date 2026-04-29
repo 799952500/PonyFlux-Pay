@@ -12,6 +12,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class MerchantServiceImpl implements MerchantService {
 
     private final MerchantMapper merchantMapper;

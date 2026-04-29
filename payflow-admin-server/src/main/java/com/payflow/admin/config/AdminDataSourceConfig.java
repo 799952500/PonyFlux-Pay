@@ -45,6 +45,7 @@ import javax.sql.DataSource;
  * 解决方案：移除 @MapperScan，在配置类中手动用 MapperFactoryBean 定义每个 admin mapper。
  * 被手动定义的 mapper 不会被 MyBatis-Plus 的自动扫描重复注册，
  * cashier 包下的 mapper 则由 CashierDataSourceConfig 的 @MapperScan 正确处理。
+  * @author Lucas
  */
 @Configuration
 public class AdminDataSourceConfig {

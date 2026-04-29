@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+/**
+ * @author Lucas
+ */
 public class SystemConfigServiceImpl implements SystemConfigService {
 
     private final SystemConfigMapper systemConfigMapper;

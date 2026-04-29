@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 统一异步通知解析结果。
+  * @author Lucas
  */
 @Data
 @Builder

@@ -21,6 +21,7 @@ import javax.sql.DataSource;
  * 包含：订单、支付记录等
  *
  * 精确扫描 cashier 子包，确保 OrderMapper/PaymentMapper 使用 cashier 数据源。
+  * @author Lucas
  */
 @Configuration
 @MapperScan(

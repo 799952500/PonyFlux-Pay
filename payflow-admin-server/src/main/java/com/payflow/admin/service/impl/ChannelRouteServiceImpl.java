@@ -12,6 +12,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class ChannelRouteServiceImpl implements ChannelRouteService {
 
     private final ChannelRouteMapper mapper;

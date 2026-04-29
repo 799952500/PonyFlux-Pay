@@ -19,6 +19,7 @@ import java.util.Map;
 
 /**
  * 支付宝扫码支付（Native）策略。
+  * @author Lucas
  */
 @Slf4j
 @Component

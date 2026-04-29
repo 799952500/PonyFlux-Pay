@@ -10,6 +10,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class MerchantPaymentMethodServiceImpl implements MerchantPaymentMethodService {
 
     private final MerchantPaymentMethodMapper mapper;

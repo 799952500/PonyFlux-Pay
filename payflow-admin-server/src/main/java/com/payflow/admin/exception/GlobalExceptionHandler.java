@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+/**
+ * @author Lucas
+ */
 public class GlobalExceptionHandler {
 
     public static class ApiResponse<T> {

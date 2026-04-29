@@ -15,6 +15,9 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class JwtUtils {
 
     private final JwtProperties jwtProperties;

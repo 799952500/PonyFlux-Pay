@@ -9,6 +9,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtInterceptor jwtInterceptor;

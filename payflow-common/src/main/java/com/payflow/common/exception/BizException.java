@@ -4,6 +4,7 @@ import lombok.Getter;
 
 /**
  * 业务异常（收银台、支付渠道模块共用）
+  * @author Lucas
  */
 @Getter
 public class BizException extends RuntimeException {

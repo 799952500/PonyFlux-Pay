@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 /**
  * 渠道支付账号管理 Controller
+  * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/channels/accounts")

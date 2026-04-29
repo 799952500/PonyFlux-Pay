@@ -20,6 +20,9 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * @author Lucas
+ */
 public class AdminAuthServiceImpl implements AdminAuthService {
 
     private final AdminUserMapper adminUserMapper;

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 /**
  * 商户异步通知 HTTP 投递与签名（供主消费与重试消费复用）。
+  * @author Lucas
  */
 @Slf4j
 @Component

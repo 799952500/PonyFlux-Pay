@@ -9,6 +9,7 @@ import java.util.Map;
 
 /**
  * 统一支付结果。
+  * @author Lucas
  */
 @Data
 @Builder

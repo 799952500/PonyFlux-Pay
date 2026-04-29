@@ -2,6 +2,9 @@ package com.payflow.admin.service;
 
 import com.payflow.admin.entity.MerchantPaymentMethod;
 import java.util.List;
+/**
+ * @author Lucas
+ */
 
 public interface MerchantPaymentMethodService {
     List<MerchantPaymentMethod> listAll();

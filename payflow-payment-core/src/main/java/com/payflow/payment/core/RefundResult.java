@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 统一退款结果。
+  * @author Lucas
  */
 @Data
 @Builder
