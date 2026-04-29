@@ -150,4 +150,27 @@ CREATE TABLE `cashier_risk_rules` (
   KEY `idx_risk_rule_enabled` (`enabled`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则表';
 
+-- ----------------------------
+-- Table: refunds 退款记录表
+-- ----------------------------
+DROP TABLE IF EXISTS `cashier_refunds`;
+CREATE TABLE `cashier_refunds` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  `refund_id` VARCHAR(64) NOT NULL COMMENT '退款记录ID',
+  `payment_id` VARCHAR(64) NOT NULL COMMENT '关联支付记录ID',
+  `order_id` VARCHAR(64) NOT NULL COMMENT '关联订单号',
+  `pay_channel` VARCHAR(32) NOT NULL COMMENT '支付渠道',
+  `refund_amount` BIGINT NOT NULL COMMENT '退款金额（分）',
+  `reason` VARCHAR(512) DEFAULT NULL COMMENT '退款原因',
+  `status` VARCHAR(16) NOT NULL DEFAULT 'REFUNDING' COMMENT '退款状态',
+  `channel_refund_no` VARCHAR(128) DEFAULT NULL COMMENT '渠道退款单号',
+  `merchant_refund_no` VARCHAR(64) DEFAULT NULL COMMENT '商户侧退款单号',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY `uk_refund_id` (`refund_id`),
+  KEY `idx_payment_id` (`payment_id`),
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款记录表';
+
 SET FOREIGN_KEY_CHECKS = 1;

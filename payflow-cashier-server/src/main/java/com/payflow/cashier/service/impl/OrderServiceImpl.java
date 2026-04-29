@@ -6,7 +6,7 @@ import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.dto.*;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
-import com.payflow.cashier.exception.BizException;
+import com.payflow.common.exception.BizException;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
 import com.payflow.cashier.service.OrderCacheService;

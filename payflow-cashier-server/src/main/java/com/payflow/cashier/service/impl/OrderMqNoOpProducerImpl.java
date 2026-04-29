@@ -33,6 +33,12 @@ public class OrderMqNoOpProducerImpl implements OrderMqProducer {
     }
 
     @Override
+    public void sendRefundResultNotify(String orderId, String paymentStatus, String paymentId,
+                                       String refundId, Long refundAmount) {
+        log.debug("[MQ-Stub] 跳过发送退款结果通知消息: orderId={}, refundId={}", orderId, refundId);
+    }
+
+    @Override
     public void sendMerchantNotifyRetry(com.payflow.cashier.dto.MqMessage message, long delaySeconds) {
         log.debug("[MQ-Stub] 跳过发送商户回调重试消息: delaySeconds={}", delaySeconds);
     }

@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 渠道支付账号管理 Controller
+ */
 @RestController
 @RequestMapping("/api/v1/admin/channels/accounts")
 @RequiredArgsConstructor
@@ -43,9 +46,21 @@ public class AdminChannelAccountController {
                 .collect(Collectors.toList());
 
         int total = filtered.size();
+        if (total == 0) {
+            return ResponseEntity.ok(Map.of(
+                    "code", 0,
+                    "message", "success",
+                    "data", Map.of(
+                            "list", List.of(),
+                            "total", 0,
+                            "page", page,
+                            "pageSize", pageSize
+                    )
+            ));
+        }
         int fromIndex = Math.max(0, (page - 1) * pageSize);
         int toIndex = Math.min(total, fromIndex + pageSize);
-        List<PaymentAccount> pageList = fromIndex >= total ? List.of() : filtered.subList(fromIndex, toIndex);
+        List<PaymentAccount> pageList = filtered.subList(fromIndex, toIndex);
 
         List<Map<String, Object>> safeList = pageList.stream()
                 .map(this::toSafeMap)
@@ -70,7 +85,7 @@ public class AdminChannelAccountController {
      * @return 创建成功的账号（脱敏后）
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(@RequestBody PaymentAccount account) {
+    public ResponseEntity<Map<String, Object>> createAccount(@RequestBody PaymentAccount account) {
         PaymentAccount created = service.create(account);
         return ResponseEntity.ok(Map.of(
                 "code", 0,
@@ -87,7 +102,7 @@ public class AdminChannelAccountController {
      * @return 更新后的账号（脱敏后）
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> update(
+    public ResponseEntity<Map<String, Object>> updateAccount(
             @PathVariable Long id,
             @RequestBody PaymentAccount account) {
         account.setId(id);
@@ -113,7 +128,7 @@ public class AdminChannelAccountController {
      * @return 操作后的账号（脱敏后）
      */
     @PutMapping("/{id}/toggle")
-    public ResponseEntity<Map<String, Object>> toggle(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> toggleStatus(@PathVariable Long id) {
         PaymentAccount account = service.getById(id);
         if (account == null) {
             return ResponseEntity.ok(Map.of(
@@ -139,7 +154,7 @@ public class AdminChannelAccountController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> deleteAccount(@PathVariable Long id) {
         try {
             service.delete(id);
             return ResponseEntity.ok(Map.of(

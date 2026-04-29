@@ -2,15 +2,24 @@ package com.payflow.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @TableName("channels")
 public class Channel {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    @EqualsAndHashCode.Include
+    @ToString.Include    private Long id;
 
     private String channelCode;
     private String channelName;

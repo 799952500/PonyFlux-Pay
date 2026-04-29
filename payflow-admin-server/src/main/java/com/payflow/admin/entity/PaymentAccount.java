@@ -6,15 +6,24 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @TableName("payment_accounts")
 public class PaymentAccount {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    @EqualsAndHashCode.Include
+    @ToString.Include    private Long id;
 
     private Long channelId;
 

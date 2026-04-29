@@ -70,6 +70,12 @@ payflow:
     timestamp-tolerance: 300
   cashier:
     base-url: http://localhost:5173
+  payment-notify:
+    base-url: http://localhost:3002
+    use-unified-path: true
+    unified-path: /api/v1/callbacks
+    wechat-path: /api/v1/callbacks/wxpay
+    alipay-path: /api/v1/callbacks/alipay
   # 商户签名密钥配置（兜底配置，优先于数据库）
   # 生产环境建议从 merchant_app_secret 表读取
   merchants:

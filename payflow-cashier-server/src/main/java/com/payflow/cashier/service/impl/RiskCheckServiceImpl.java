@@ -2,7 +2,7 @@ package com.payflow.cashier.service.impl;
 
 import com.payflow.cashier.dto.CreateOrderRequest;
 import com.payflow.cashier.entity.RiskRule;
-import com.payflow.cashier.exception.BizException;
+import com.payflow.common.exception.BizException;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.service.RiskCheckService;
 import com.payflow.cashier.service.RiskRuleService;

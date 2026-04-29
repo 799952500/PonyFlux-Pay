@@ -40,6 +40,12 @@ public class MqMessage {
     /** 扩展字段3 */
     private String ext3;
 
+    /** 退款单号（商户退款结果通知时使用） */
+    private String refundId;
+
+    /** 本次退款金额，分（商户退款结果通知时使用） */
+    private Long refundAmount;
+
     // ==================== 工厂方法 ====================
 
     public static MqMessage of(String orderId) {
@@ -59,6 +65,23 @@ public class MqMessage {
                 .createTime(LocalDateTime.now())
                 .ext1(ext1)
                 .ext2(ext2)
+                .build();
+    }
+
+    /**
+     * 退款成功后通知商户：ext1=支付单最新状态，ext2=paymentId，附带 refundId/refundAmount。
+     */
+    public static MqMessage ofRefundMerchantNotify(String orderId, String paymentStatus,
+                                                   String paymentId, String refundId, Long refundAmount) {
+        return MqMessage.builder()
+                .orderId(orderId)
+                .retryCount(0)
+                .maxRetries(3)
+                .createTime(LocalDateTime.now())
+                .ext1(paymentStatus)
+                .ext2(paymentId)
+                .refundId(refundId)
+                .refundAmount(refundAmount)
                 .build();
     }
 

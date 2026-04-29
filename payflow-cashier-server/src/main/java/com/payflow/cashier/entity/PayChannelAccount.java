@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.payflow.payment.core.ChannelConfigHolder;
 
 import java.time.LocalDateTime;
 
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("cashier_channel_accounts")
-public class PayChannelAccount {
+public class PayChannelAccount implements ChannelConfigHolder {
 
     @TableId(type = IdType.AUTO)
     private Long id;

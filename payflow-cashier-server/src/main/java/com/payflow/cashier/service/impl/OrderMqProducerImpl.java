@@ -107,32 +107,58 @@ public class OrderMqProducerImpl implements OrderMqProducer {
     }
 
     @Override
+    public void sendRefundResultNotify(String orderId, String paymentStatus, String paymentId,
+                                       String refundId, Long refundAmount) {
+        try {
+            MqMessage message = MqMessage.ofRefundMerchantNotify(
+                    orderId, paymentStatus, paymentId, refundId, refundAmount);
+
+            @SuppressWarnings("unchecked")
+            Message<MqMessage> typedMessage = MessageBuilder.withPayload(message).build();
+            Message<?> rawMessage = (Message<?>) (Message<?>) typedMessage;
+
+            rocketMQTemplate.asyncSend(
+                    MqConfig.TOPIC_MERCHANT_NOTIFY + ":notify",
+                    rawMessage,
+                    new SendCallback() {
+                        @Override
+                        public void onSuccess(SendResult sendResult) {
+                            log.info("退款结果通知消息发送成功: orderId={}, refundId={}, msgId={}",
+                                    orderId, refundId, sendResult.getMsgId());
+                        }
+
+                        @Override
+                        public void onException(Throwable e) {
+                            log.error("退款结果通知消息发送失败: orderId={}, refundId={}, error={}",
+                                    orderId, refundId, e.getMessage());
+                        }
+                    },
+                    3000L
+            );
+            log.info("发送退款结果通知消息: orderId={}, paymentStatus={}, refundId={}",
+                    orderId, paymentStatus, refundId);
+        } catch (Exception e) {
+            log.error("发送退款结果通知消息异常: orderId={}, refundId={}, error={}",
+                    orderId, refundId, e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void sendMerchantNotifyRetry(MqMessage message, long delaySeconds) {
         try {
             @SuppressWarnings("unchecked")
             Message<MqMessage> typedMessage = MessageBuilder.withPayload(message).build();
             Message<?> rawMessage = (Message<?>) (Message<?>) typedMessage;
 
-            long delayLevel = computeDelayLevel(delaySeconds);
-            rocketMQTemplate.asyncSend(
+            int delayLevel = (int) computeDelayLevel(delaySeconds);
+            SendResult sendResult = rocketMQTemplate.syncSend(
                     MqConfig.TOPIC_MERCHANT_NOTIFY + ":retry",
                     rawMessage,
-                    new SendCallback() {
-                        @Override
-                        public void onSuccess(SendResult sendResult) {
-                            log.info("商户回调重试消息发送成功: delaySeconds={}, msgId={}",
-                                    delaySeconds, sendResult.getMsgId());
-                        }
-
-                        @Override
-                        public void onException(Throwable e) {
-                            log.error("商户回调重试消息发送失败: delaySeconds={}, error={}",
-                                    delaySeconds, e.getMessage());
-                        }
-                    },
-                    3000L
+                    3000,
+                    delayLevel
             );
-            log.info("发送商户回调重试消息: delaySeconds={}, delayLevel={}", delaySeconds, delayLevel);
+            log.info("发送商户回调重试消息: delaySeconds={}, delayLevel={}, msgId={}",
+                    delaySeconds, delayLevel, sendResult.getMsgId());
         } catch (Exception e) {
             log.error("发送商户回调重试消息异常: delaySeconds={}, error={}",
                     delaySeconds, e.getMessage(), e);

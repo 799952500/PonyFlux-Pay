@@ -1,5 +1,6 @@
 package com.payflow.cashier.exception;
 
+import com.payflow.common.exception.BizException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

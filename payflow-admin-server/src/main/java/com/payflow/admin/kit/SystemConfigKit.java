@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -199,6 +200,29 @@ public class SystemConfigKit {
      */
     public static long getLong(String key) {
         return getLong(key, 0L);
+    }
+
+    /**
+     * 获取 BigDecimal 配置值（适合金额等高精度场景）
+     * @param key 配置 key
+     * @param defaultVal 查不到时返回的默认值
+     */
+    public static BigDecimal getDecimal(String key, BigDecimal defaultVal) {
+        String val = get(key);
+        if (val == null) return defaultVal;
+        try {
+            return new BigDecimal(val.trim());
+        } catch (NumberFormatException e) {
+            log.warn("[SystemConfigKit] 配置值非BigDecimal key={}, value={}", key, val);
+            return defaultVal;
+        }
+    }
+
+    /**
+     * 获取 BigDecimal 配置值（查不到返回 null）
+     */
+    public static BigDecimal getDecimal(String key) {
+        return getDecimal(key, null);
     }
 
     /**

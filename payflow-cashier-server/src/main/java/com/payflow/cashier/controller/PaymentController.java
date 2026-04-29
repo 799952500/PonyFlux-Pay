@@ -3,9 +3,11 @@ package com.payflow.cashier.controller;
 import com.payflow.cashier.dto.CreatePaymentRequest;
 import com.payflow.cashier.dto.CreatePaymentResponse;
 import com.payflow.cashier.exception.R;
+import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import com.payflow.cashier.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -31,16 +33,19 @@ public class PaymentController {
     }
 
     /**
-     * POST /api/v1/payments - 发起支付（公开，无需认证）
-     * 消费者直接从收银台页面调用，无需 JWT Token
+     * POST /api/v1/payments - 发起支付（须商户 HMAC 请求头，与 {@code /api/v1/merchant/**} 相同规则）。
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "发起支付", description = "根据订单发起支付，返回调起参数或二维码（无需认证）")
-    public R<CreatePaymentResponse> createPayment(@Valid @RequestBody CreatePaymentRequest request) {
-        log.info("发起支付: orderId={}, payChannel={}, payMethod={}",
-                request.getOrderId(), request.getPayChannel(), request.getPayMethod());
-        CreatePaymentResponse response = paymentService.createPayment(request);
+    @Operation(summary = "发起支付", description = "商户签名验证通过后发起支付，返回调起参数或二维码")
+    public R<CreatePaymentResponse> createPayment(
+            @Valid @RequestBody CreatePaymentRequest request,
+            HttpServletRequest httpRequest) {
+        // 从拦截器注入的请求属性中获取已验证的商户 ID
+        String merchantId = (String) httpRequest.getAttribute(MerchantSignatureInterceptor.ATTR_MERCHANT_ID);
+        log.info("发起支付: merchantId={}, orderId={}, payChannel={}, payMethod={}",
+                merchantId, request.getOrderId(), request.getPayChannel(), request.getPayMethod());
+        CreatePaymentResponse response = paymentService.createPayment(merchantId, request);
         return R.ok(response);
     }
 

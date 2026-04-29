@@ -1,11 +1,9 @@
-package com.payflow.cashier.exception;
+package com.payflow.common.exception;
 
 import lombok.Getter;
 
 /**
- * 业务异常
- *
- * @author PayFlow Team
+ * 业务异常（收银台、支付渠道模块共用）
  */
 @Getter
 public class BizException extends RuntimeException {

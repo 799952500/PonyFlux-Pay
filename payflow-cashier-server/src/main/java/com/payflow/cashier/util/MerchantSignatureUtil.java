@@ -116,9 +116,9 @@ public final class MerchantSignatureUtil {
     }
 
     /**
-     * HMAC-SHA256 签名，返回 hex 小写
+     * HMAC-SHA256 签名，返回 hex 小写（商户 HTTP 请求签、回调体签等共用）
      */
-    private static String hmacSha256Hex(String data, String secret) {
+    public static String hmacSha256Hex(String data, String secret) {
         try {
             Mac mac = Mac.getInstance(ALGORITHM);
             SecretKeySpec keySpec = new SecretKeySpec(

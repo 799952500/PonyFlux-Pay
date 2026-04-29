@@ -26,11 +26,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // ── 商户签名拦截器：拦截 /api/v1/merchant/** ──────────────────────────
-        // 商户通过 HMAC-SHA256 签名调用查询接口
+        // ── 商户签名拦截器：拦截 /api/v1/merchant/** + /api/v1/payments/** ──
+        // 商户通过 HMAC-SHA256 签名调用查询接口和支付接口
         registry.addInterceptor(merchantSignatureInterceptor)
-                .addPathPatterns("/api/v1/merchant/**")
+                .addPathPatterns("/api/v1/merchant/**", "/api/v1/payments/**", "/api/v1/refunds/**")
                 .excludePathPatterns(
+                        // payments/status 轮询无需签名（消费者前端轮询，不带商户头）
+                        "/api/v1/payments/status/**",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/h2-console/**",

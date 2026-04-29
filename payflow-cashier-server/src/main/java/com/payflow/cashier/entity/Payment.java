@@ -65,6 +65,9 @@ public class Payment {
     public static final String STATUS_PROCESSING = "PROCESSING";
     public static final String STATUS_SUCCESS = "SUCCESS";
     public static final String STATUS_FAILED = "FAILED";
+    public static final String STATUS_REFUNDED = "REFUNDED";
+    /** 部分退款成功，仍可继续退款 */
+    public static final String STATUS_PARTIAL_REFUND = "PARTIAL_REFUND";
 
     // ==================== 支付方式常量 ====================
 

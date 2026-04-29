@@ -2,14 +2,23 @@ package com.payflow.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @TableName("payment_methods")
 public class PaymentMethod {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    @EqualsAndHashCode.Include
+    @ToString.Include    private Long id;
 
     private String methodCode;
     private String methodName;

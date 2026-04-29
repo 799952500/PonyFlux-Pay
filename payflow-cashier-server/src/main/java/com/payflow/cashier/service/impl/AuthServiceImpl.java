@@ -5,7 +5,7 @@ import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.dto.LoginRequest;
 import com.payflow.cashier.dto.LoginResponse;
 import com.payflow.cashier.entity.Merchant;
-import com.payflow.cashier.exception.BizException;
+import com.payflow.common.exception.BizException;
 import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.service.AuthService;
 import com.payflow.cashier.util.JwtUtils;

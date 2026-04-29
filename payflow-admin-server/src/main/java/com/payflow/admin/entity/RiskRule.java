@@ -6,16 +6,25 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(onlyExplicitlyIncluded = true)
 @TableName("risk_rules")
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)
-    private Long id;
+    @EqualsAndHashCode.Include
+    @ToString.Include    private Long id;
 
     private String ruleCode;
 

@@ -27,6 +27,9 @@ public class PayflowProperties {
     /** 收银台配置 */
     private Cashier cashier = new Cashier();
 
+    /** 渠道异步通知 URL（收银台公网根地址与路径） */
+    private PaymentNotify paymentNotify = new PaymentNotify();
+
     /** 商户签名密钥配置列表（兜底配置，优先于数据库） */
     private List<MerchantConfig> merchants = new ArrayList<>();
 
@@ -61,6 +64,20 @@ public class PayflowProperties {
     @Data
     public static class Cashier {
         private String baseUrl = "http://localhost:5173";
+    }
+
+    /**
+     * 支付渠道回调 notify_url 拼接配置。
+     */
+    @Data
+    public static class PaymentNotify {
+        /** 公网根地址，不含末尾斜杠，如 https://cashier.example.com */
+        private String baseUrl = "http://localhost:3002";
+        /** 为 true 时微信/支付宝均使用统一回调路径（需与渠道后台配置一致） */
+        private boolean useUnifiedPath = true;
+        private String unifiedPath = "/api/v1/callbacks";
+        private String wechatPath = "/api/v1/callbacks/wxpay";
+        private String alipayPath = "/api/v1/callbacks/alipay";
     }
 
     /**

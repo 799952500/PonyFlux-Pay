@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * 渠道管理 Controller
+ */
 @RestController
 @RequestMapping("/api/v1/admin/channels")
 @RequiredArgsConstructor
@@ -89,11 +92,10 @@ public class AdminChannelController {
     public ResponseEntity<Map<String, Object>> toggleChannel(@PathVariable Long id) {
         Channel channel = channelService.getById(id);
         if (channel == null) {
-            return ResponseEntity.ok(Map.of("code", 404, "message", "渠道不存在", "data", null));
-        } else {
-            channel.setEnabled(channel.getEnabled() == null || !channel.getEnabled());
-            channelService.update(id, channel);
+            return ResponseEntity.ok(Map.of("code", 404, "message", "渠道不存在", "data", Map.of()));
         }
+        channel.setEnabled(channel.getEnabled() == null || !channel.getEnabled());
+        channelService.update(id, channel);
         return ResponseEntity.ok(Map.of(
                 "code", 0, "message", "success", "data",
                 channel

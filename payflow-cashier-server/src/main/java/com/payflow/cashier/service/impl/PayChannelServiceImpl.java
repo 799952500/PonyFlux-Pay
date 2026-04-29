@@ -8,7 +8,7 @@ import com.payflow.cashier.dto.ChannelRouteDTO;
 import com.payflow.cashier.entity.PayChannel;
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.entity.PayChannelMerchantRoute;
-import com.payflow.cashier.exception.BizException;
+import com.payflow.common.exception.BizException;
 import com.payflow.cashier.exception.R;
 import com.payflow.cashier.mapper.PayChannelAccountMapper;
 import com.payflow.cashier.mapper.PayChannelMapper;

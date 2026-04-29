@@ -43,4 +43,7 @@ public class CreatePaymentRequest {
 
     @Schema(description = "支付宝 UserId")
     private String alipayUserId;
+
+    @Schema(description = "支付完成跳转地址（WAP支付）")
+    private String returnUrl;
 }

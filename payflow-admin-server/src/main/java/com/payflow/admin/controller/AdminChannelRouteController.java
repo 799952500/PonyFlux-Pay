@@ -13,6 +13,21 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin/channels/routes")
 @RequiredArgsConstructor
+/**
+ * 支付渠道路由管理 Controller
+ * <p>提供渠道路由的 CRUD 操作，包括：
+ * <ul>
+ *   <li>GET    /channels/routes        - 查询所有渠道路由（支持按 channelId/priority 筛选）</li>
+ *   <li>GET    /channels/routes/{id}   - 根据 ID 查询路由详情</li>
+ *   <li>POST   /channels/routes        - 新增渠道路由</li>
+ *   <li>PUT    /channels/routes/{id}   - 更新渠道路由</li>
+ *   <li>DELETE /channels/routes/{id}  - 删除渠道路由</li>
+ *   <li>PUT    /channels/routes/{id}/toggle - 启用/禁用渠道路由</li>
+ * </ul>
+ *
+ * @author Auto-generated
+ * @since 2026-04-13
+ */
 public class AdminChannelRouteController {
 
     private final ChannelRouteService service;

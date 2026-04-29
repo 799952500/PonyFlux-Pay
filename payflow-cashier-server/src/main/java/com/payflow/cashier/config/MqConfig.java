@@ -32,6 +32,9 @@ public class MqConfig {
     /** 商户回调 ConsumerGroup */
     public static final String CG_MERCHANT_NOTIFY = "payflow-cashier-consumer-notify";
 
+    /** 商户回调重试 ConsumerGroup */
+    public static final String CG_MERCHANT_NOTIFY_RETRY = "payflow-cashier-consumer-notify-retry";
+
     /** 支付结果 ConsumerGroup */
     public static final String CG_PAYMENT_RESULT = "payflow-cashier-consumer-payment";
 }

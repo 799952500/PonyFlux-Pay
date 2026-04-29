@@ -1,72 +1,86 @@
 package com.payflow.cashier.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.dto.CreatePaymentRequest;
 import com.payflow.cashier.dto.CreatePaymentResponse;
 import com.payflow.cashier.dto.InvokeParams;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
-import com.payflow.cashier.exception.BizException;
+import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.common.exception.BizException;
+import com.payflow.payment.core.PayResult;
+import com.payflow.payment.core.PayStrategy;
+import com.payflow.payment.core.PayStrategyRegistry;
 import com.payflow.cashier.service.OrderService;
 import com.payflow.cashier.service.PaymentService;
+import com.payflow.cashier.service.PayChannelService;
 import com.payflow.cashier.util.SignUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Map;
 
 /**
- * 支付服务实现
- *
- * @author PayFlow Team
+ * 支付服务实现：通过 {@link PayStrategyRegistry} 路由渠道策略。
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
     private final OrderService orderService;
-
-    public PaymentServiceImpl(PaymentMapper paymentMapper, OrderMapper orderMapper,
-                              OrderService orderService) {
-        this.paymentMapper = paymentMapper;
-        this.orderMapper = orderMapper;
-        this.orderService = orderService;
-    }
+    private final PayChannelService payChannelService;
+    private final PayStrategyRegistry payStrategyRegistry;
+    private final PayflowProperties payflowProperties;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
+    public CreatePaymentResponse createPayment(String merchantId, CreatePaymentRequest request) {
         String orderId = request.getOrderId();
-        log.info("发起支付: orderId={}, payChannel={}, payMethod={}",
-                orderId, request.getPayChannel(), request.getPayMethod());
+        String payChannel = request.getPayChannel();
+        String payMethod = request.getPayMethod();
 
-        // 1. 查询订单
+        log.info("发起支付: merchantId={}, orderId={}, payChannel={}, payMethod={}",
+                merchantId, orderId, payChannel, payMethod);
+
         Order order = orderMapper.selectOne(
                 new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
         if (order == null) {
             throw new BizException(6001, "订单不存在: " + orderId);
         }
 
-        // 2. 校验订单状态
+        if (!merchantId.equals(order.getMerchantId())) {
+            log.error("商户身份校验失败: 签名商户ID={}, 订单所属商户ID={}, orderId={}",
+                    merchantId, order.getMerchantId(), orderId);
+            throw new BizException(6005, "无权操作此订单");
+        }
+
         if (!Order.STATUS_CREATED.equals(order.getStatus())) {
             throw new BizException(6003, "订单状态异常: " + order.getStatus() + "，无法发起支付");
         }
 
-        // 3. 生成支付记录
+        PayChannelAccount account = payChannelService.routeToAccount(order.getMerchantId(), payChannel);
+        if (account == null) {
+            log.error("无可用支付账户: merchantId={}, payChannel={}", order.getMerchantId(), payChannel);
+            throw new BizException(6002, "无可用支付账户，请联系商户配置");
+        }
+
         String paymentId = SignUtils.generatePaymentId();
         LocalDateTime now = LocalDateTime.now();
 
         Payment payment = Payment.builder()
                 .paymentId(paymentId)
                 .orderId(orderId)
-                .payChannel(request.getPayChannel())
-                .payMethod(request.getPayMethod())
+                .payChannel(payChannel)
+                .payMethod(payMethod)
                 .amount(order.getAmount())
                 .status(Payment.STATUS_PROCESSING)
                 .createdAt(now)
@@ -74,11 +88,21 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
         paymentMapper.insert(payment);
 
-        // 4. 更新订单状态为 PAYING
         orderService.updateOrderStatus(orderId, Order.STATUS_PAYING, null);
 
-        // 5. 根据支付方式生成响应（模拟）
-        return buildPaymentResponse(request, paymentId, orderId);
+        String notifyUrl = buildNotifyUrl(payChannel);
+        CreatePaymentResponse response = dispatchToHandler(
+                orderId, order.getAmount(), order.getSubject(), payMethod,
+                request.getReturnUrl(), notifyUrl, account);
+
+        response.setPaymentId(paymentId);
+        response.setOrderId(orderId);
+        response.setStatus("PROCESSING");
+
+        log.info("支付下单完成: orderId={}, paymentId={}, action={}",
+                orderId, paymentId, response.getAction());
+
+        return response;
     }
 
     @Override
@@ -91,44 +115,89 @@ public class PaymentServiceImpl implements PaymentService {
         return payment.getStatus();
     }
 
-    private CreatePaymentResponse buildPaymentResponse(CreatePaymentRequest request,
-                                                         String paymentId, String orderId) {
-        String payMethod = request.getPayMethod();
-
-        // 模拟生成调起参数或二维码
-        if ("WECHAT_APP".equals(payMethod) || "WECHAT_NATIVE".equals(payMethod)) {
-            return CreatePaymentResponse.builder()
-                    .paymentId(paymentId)
-                    .orderId(orderId)
-                    .status("PROCESSING")
-                    .action(CreatePaymentResponse.ACTION_QR_CODE)
-                    .qrCodeUrl("weixin://wxpay/bizpayurl?pr=模拟微信二维码URL")
-                    .qrCodeImage("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
-                    .build();
-        } else if ("ALIPAY_APP".equals(payMethod) || "ALIPAY_WAP".equals(payMethod)) {
-            return CreatePaymentResponse.builder()
-                    .paymentId(paymentId)
-                    .orderId(orderId)
-                    .status("PROCESSING")
-                    .action(CreatePaymentResponse.ACTION_REDIRECT)
-                    .invokeParams(InvokeParams.builder()
-                            .appId("2021000000000000")
-                            .partnerId("2088000000000000")
-                            .prepayId("prepay_id=" + UUID.randomUUID().toString().replace("-", ""))
-                            .nonceStr(UUID.randomUUID().toString())
-                            .timestamp(String.valueOf(System.currentTimeMillis() / 1000))
-                            .package_("sign=模拟支付宝签名")
-                            .sign("模拟签名")
-                            .build())
-                    .build();
-        } else {
-            return CreatePaymentResponse.builder()
-                    .paymentId(paymentId)
-                    .orderId(orderId)
-                    .status("PROCESSING")
-                    .action(CreatePaymentResponse.ACTION_QR_CODE)
-                    .qrCodeUrl("https://example.com/mock-qr?orderId=" + orderId)
-                    .build();
+    @Override
+    public String getPaymentStatusForMerchant(String merchantId, String paymentId) {
+        Payment payment = paymentMapper.selectOne(
+                new LambdaQueryWrapper<Payment>().eq(Payment::getPaymentId, paymentId));
+        if (payment == null) {
+            throw new BizException(6004, "支付记录不存在: " + paymentId);
         }
+        Order order = orderMapper.selectOne(
+                new LambdaQueryWrapper<Order>().eq(Order::getOrderId, payment.getOrderId()));
+        if (order == null || !merchantId.equals(order.getMerchantId())) {
+            throw new BizException(6005, "无权查询此支付记录");
+        }
+        return payment.getStatus();
+    }
+
+    private CreatePaymentResponse dispatchToHandler(
+            String orderId, Long amount, String subject,
+            String payMethod,
+            String returnUrl, String notifyUrl,
+            PayChannelAccount account) {
+
+        PayStrategy strategy = payStrategyRegistry.requireByCode(payMethod);
+
+        PayResult result = strategy.pay(orderId, amount, subject,
+                returnUrl, notifyUrl, account, Map.of());
+
+        return convertToResponse(result);
+    }
+
+    private CreatePaymentResponse convertToResponse(PayResult r) {
+        CreatePaymentResponse.CreatePaymentResponseBuilder builder = CreatePaymentResponse.builder()
+                .status(r.getStatus())
+                .action(r.getAction());
+
+        if ("QR_CODE".equals(r.getAction()) || "REDIRECT".equals(r.getAction())) {
+            builder.qrCodeUrl(r.getQrCodeUrl() != null ? r.getQrCodeUrl() : r.getH5Url());
+        }
+
+        if ("INVOKE_APP".equals(r.getAction())) {
+            if (r.getInvokeParams() != null) {
+                var params = r.getInvokeParams();
+                builder.invokeParams(InvokeParams.builder()
+                        .appId(params.get("appid"))
+                        .partnerId(params.get("partnerid"))
+                        .prepayId(params.get("prepayid"))
+                        .package_(params.get("package"))
+                        .nonceStr(params.get("noncestr"))
+                        .timestamp(params.get("timestamp"))
+                        .sign(params.get("sign"))
+                        .build());
+            } else if (r.getAppParams() != null) {
+                builder.invokeParams(InvokeParams.builder()
+                        .package_(r.getAppParams())
+                        .build());
+            }
+        }
+
+        if ("FORM".equals(r.getAction())) {
+            builder.qrCodeUrl(r.getAppParams());
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * 按渠道生成 notify_url（须与微信/支付宝商户平台配置一致）。
+     */
+    private String buildNotifyUrl(String payChannel) {
+        PayflowProperties.PaymentNotify n = payflowProperties.getPaymentNotify();
+        String base = n.getBaseUrl();
+        if (base == null || base.isBlank()) {
+            throw new BizException(6002, "未配置 payflow.payment-notify.base-url");
+        }
+        base = base.replaceAll("/+$", "");
+        if (n.isUseUnifiedPath()) {
+            return base + n.getUnifiedPath();
+        }
+        if ("WECHAT_PAY".equals(payChannel)) {
+            return base + n.getWechatPath();
+        }
+        if ("ALIPAY".equals(payChannel)) {
+            return base + n.getAlipayPath();
+        }
+        return base + n.getUnifiedPath();
     }
 }
