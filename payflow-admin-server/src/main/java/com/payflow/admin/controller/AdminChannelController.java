@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.Channel;
+import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.Map;
 public class AdminChannelController {
 
     private final ChannelService channelService;
+    private final CashierConfigRefreshPublisher refreshPublisher;
 
     /**
      * 查询所有渠道列表
@@ -55,6 +57,7 @@ public class AdminChannelController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createChannel(@RequestBody Channel channel) {
         channelService.create(channel);
+        refreshPublisher.publish("channel:create");
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", channel));
     }
 
@@ -68,6 +71,7 @@ public class AdminChannelController {
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateChannel(@PathVariable Long id, @RequestBody Channel channel) {
         channelService.update(id, channel);
+        refreshPublisher.publish("channel:update");
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", channel));
     }
 
@@ -80,6 +84,7 @@ public class AdminChannelController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteChannel(@PathVariable Long id) {
         channelService.delete(id);
+        refreshPublisher.publish("channel:delete");
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", true));
     }
 
@@ -97,6 +102,7 @@ public class AdminChannelController {
         }
         channel.setEnabled(channel.getEnabled() == null || !channel.getEnabled());
         channelService.update(id, channel);
+        refreshPublisher.publish("channel:toggle");
         return ResponseEntity.ok(Map.of(
                 "code", 0, "message", "success", "data",
                 channel

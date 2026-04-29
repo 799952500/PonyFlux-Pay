@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentAccount;
+import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.PaymentAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class AdminChannelAccountController {
 
     private final PaymentAccountService service;
+    private final CashierConfigRefreshPublisher refreshPublisher;
 
     /**
      * 分页查询支付账号列表
@@ -88,6 +90,7 @@ public class AdminChannelAccountController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createAccount(@RequestBody PaymentAccount account) {
         PaymentAccount created = service.create(account);
+        refreshPublisher.publish("payment_account:create");
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -115,6 +118,7 @@ public class AdminChannelAccountController {
                     "data", Map.of()
             ));
         }
+        refreshPublisher.publish("payment_account:update");
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -141,6 +145,7 @@ public class AdminChannelAccountController {
             account.setEnabled(account.getEnabled() == null || !account.getEnabled());
             service.update(account);
         }
+        refreshPublisher.publish("payment_account:toggle");
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -158,6 +163,7 @@ public class AdminChannelAccountController {
     public ResponseEntity<Map<String, Object>> deleteAccount(@PathVariable Long id) {
         try {
             service.delete(id);
+            refreshPublisher.publish("payment_account:delete");
             return ResponseEntity.ok(Map.of(
                     "code", 0,
                     "message", "success",

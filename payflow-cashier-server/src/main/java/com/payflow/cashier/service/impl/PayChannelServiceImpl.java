@@ -13,6 +13,7 @@ import com.payflow.cashier.exception.R;
 import com.payflow.cashier.mapper.PayChannelAccountMapper;
 import com.payflow.cashier.mapper.PayChannelMapper;
 import com.payflow.cashier.mapper.PayChannelMerchantRouteMapper;
+import com.payflow.cashier.registry.PayChannelAccountRegistry;
 import com.payflow.cashier.service.PayChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class PayChannelServiceImpl implements PayChannelService {
     private final PayChannelAccountMapper payChannelAccountMapper;
     private PayChannelMerchantRouteMapper payChannelMerchantRouteMapper;
     private final ObjectMapper objectMapper;
+    private final PayChannelAccountRegistry payChannelAccountRegistry;
 
     // 注入方式改为 set 注入，避免循环
     @org.springframework.beans.factory.annotation.Autowired
@@ -220,6 +222,10 @@ public class PayChannelServiceImpl implements PayChannelService {
 
     @Override
     public PayChannelAccount routeToAccount(String merchantId, String channelCode) {
+        PayChannelAccount cached = payChannelAccountRegistry.routeToAccount(merchantId, channelCode);
+        if (cached != null) {
+            return cached;
+        }
         // 1. 根据 merchantId + channelCode 找到对应渠道的账户ID
         LambdaQueryWrapper<PayChannelMerchantRoute> routeWrapper = new LambdaQueryWrapper<>();
         routeWrapper.eq(PayChannelMerchantRoute::getMerchantId, merchantId)

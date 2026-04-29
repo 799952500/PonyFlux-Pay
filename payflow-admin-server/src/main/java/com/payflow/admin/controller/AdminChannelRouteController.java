@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.ChannelRoute;
+import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,7 @@ import java.util.Map;
 public class AdminChannelRouteController {
 
     private final ChannelRouteService service;
+    private final CashierConfigRefreshPublisher refreshPublisher;
 
     /**
      * 分页查询渠道路由列表
@@ -84,6 +86,7 @@ public class AdminChannelRouteController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody ChannelRoute route) {
         ChannelRoute created = service.create(route);
+        refreshPublisher.publish("channel_route:create");
         Map<String, Object> resp = new HashMap<>();
         resp.put("code", 0);
         resp.put("message", "success");
@@ -101,6 +104,7 @@ public class AdminChannelRouteController {
     public ResponseEntity<Map<String, Object>> toggle(@PathVariable Long id) {
         try {
             service.toggle(id);
+            refreshPublisher.publish("channel_route:toggle");
             Map<String, Object> resp = new HashMap<>();
             resp.put("code", 0);
             resp.put("message", "success");
@@ -124,6 +128,7 @@ public class AdminChannelRouteController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         service.delete(id);
+        refreshPublisher.publish("channel_route:delete");
         Map<String, Object> resp = new HashMap<>();
         resp.put("code", 0);
         resp.put("message", "success");
