@@ -31,6 +31,21 @@ public class PayChannelOpenServiceLocator {
     }
 
     /**
+     * 根据渠道编码定位 OpenService（用于回调路径显式传入渠道编码的场景）。
+     * <p>
+     * 约定：渠道编码 = BeanName 前缀，例如 wxpay -> wxpayOpenService，alipay -> alipayOpenService。
+     * </p>
+     *
+     * @param channelCode 渠道编码（例如 wxpay / alipay）
+     * @return 渠道开放服务
+     */
+    public PayChannelOpenService requireByChannelCode(String channelCode) {
+        String safeCode = channelCode == null ? "" : channelCode.trim().toLowerCase(Locale.ROOT);
+        String beanName = safeCode + "OpenService";
+        return applicationContext.getBean(beanName, PayChannelOpenService.class);
+    }
+
+    /**
      * 将订单渠道转换为 OpenService 的 BeanName。
      * <p>
      * 说明：

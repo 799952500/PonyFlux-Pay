@@ -10,10 +10,10 @@ import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenService;
+import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenServiceLocator;
 import com.payflow.common.exception.BizException;
 import com.payflow.payment.core.PayResult;
-import com.payflow.payment.core.PayStrategy;
-import com.payflow.payment.core.PayStrategyRegistry;
 import com.payflow.cashier.service.OrderService;
 import com.payflow.cashier.service.PaymentService;
 import com.payflow.cashier.service.PayChannelService;
@@ -27,8 +27,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 支付服务实现：通过 {@link PayStrategyRegistry} 路由渠道策略。
-  * @author Lucas
+ * 支付服务实现：按渠道路由到 {channelCode}PaymentOpenService（如 alipayPaymentOpenService、wxpayPaymentOpenService）。
+ *
+ * @author Lucas
  */
 @Slf4j
 @Service
@@ -39,7 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderMapper orderMapper;
     private final OrderService orderService;
     private final PayChannelService payChannelService;
-    private final PayStrategyRegistry payStrategyRegistry;
+    private final PayChannelPaymentOpenServiceLocator paymentOpenServiceLocator;
     private final PayflowProperties payflowProperties;
 
     @Override
@@ -94,7 +95,7 @@ public class PaymentServiceImpl implements PaymentService {
         String notifyUrl = buildNotifyUrl(payChannel);
         String internalReturnUrl = buildInternalReturnUrl(orderId);
         CreatePaymentResponse response = dispatchToHandler(
-                orderId, order.getAmount(), order.getSubject(), payMethod,
+                orderId, order.getAmount(), order.getSubject(), payChannel, payMethod,
                 internalReturnUrl, notifyUrl, account);
 
         response.setPaymentId(paymentId);
@@ -134,14 +135,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private CreatePaymentResponse dispatchToHandler(
             String orderId, Long amount, String subject,
+            String payChannel,
             String payMethod,
             String returnUrl, String notifyUrl,
             PayChannelAccount account) {
 
-        PayStrategy strategy = payStrategyRegistry.requireByCode(payMethod);
-
-        PayResult result = strategy.pay(orderId, amount, subject,
-                returnUrl, notifyUrl, account, Map.of());
+        String channelCode = toNotifyChannelCode(payChannel);
+        PayChannelPaymentOpenService openService = paymentOpenServiceLocator.requireByChannelCode(channelCode);
+        PayResult result = openService.pay(orderId, amount, subject, payMethod, returnUrl, notifyUrl, account);
 
         return convertToResponse(result);
     }
@@ -201,7 +202,25 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BizException(6002, "未配置 payflow.payment-notify.base-url");
         }
         base = base.replaceAll("/+$", "");
-        return base + n.getUnifiedPath();
+        // 约定：回调路径强制携带“渠道编码”，避免服务端轮询解析
+        String channelCode = toNotifyChannelCode(payChannel);
+        return base + n.getUnifiedPath() + "/" + channelCode;
+    }
+
+    /**
+     * 将订单/支付中的 payChannel 转换为回调路径使用的渠道编码。
+     *
+     * @param payChannel 订单/支付渠道（例如 WECHAT_PAY / ALIPAY）
+     * @return 渠道编码（wxpay/alipay）
+     */
+    private String toNotifyChannelCode(String payChannel) {
+        if (Order.CHANNEL_WECHAT_PAY.equals(payChannel)) {
+            return "wxpay";
+        }
+        if (Order.CHANNEL_ALIPAY.equals(payChannel)) {
+            return "alipay";
+        }
+        throw new BizException(6007, "不支持的支付渠道: " + payChannel);
     }
 
     /**

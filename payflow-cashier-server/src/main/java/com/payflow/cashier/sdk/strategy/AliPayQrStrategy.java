@@ -22,7 +22,7 @@ import java.util.Map;
   * @author Lucas
  */
 @Slf4j
-@Component
+@Component("alipay_qrPayStrategy")
 @RequiredArgsConstructor
 public class AliPayQrStrategy implements PayStrategy {
 

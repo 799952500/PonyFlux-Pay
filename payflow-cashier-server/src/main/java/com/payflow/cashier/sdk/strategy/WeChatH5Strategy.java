@@ -23,7 +23,7 @@ import java.util.Map;
   * @author Lucas
  */
 @Slf4j
-@Component
+@Component("wechat_h5PayStrategy")
 @RequiredArgsConstructor
 public class WeChatH5Strategy implements PayStrategy {
 

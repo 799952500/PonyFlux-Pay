@@ -1,0 +1,73 @@
+package com.payflow.cashier.openservice.payment.impl;
+
+import com.payflow.cashier.entity.PayChannelAccount;
+import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenService;
+import com.payflow.cashier.sdk.PayStrategyLocator;
+import com.payflow.common.exception.BizException;
+import com.payflow.payment.core.PayMethod;
+import com.payflow.payment.core.PayResult;
+import com.payflow.payment.core.PayStrategy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+
+/**
+ * 微信支付下单开放服务。
+ *
+ * @author Lucas
+ */
+@Slf4j
+@Service("wxpayPaymentOpenService")
+@RequiredArgsConstructor
+public class WxPayPaymentOpenService implements PayChannelPaymentOpenService {
+
+    /** 支付策略定位器：按 payMethod 定位具体策略（WECHAT_NATIVE/WECHAT_H5/WECHAT_APP） */
+    private final PayStrategyLocator payStrategyLocator;
+
+    /**
+     * 微信渠道编码（小写）。
+     *
+     * @return wxpay
+     */
+    @Override
+    public String channelCode() {
+        return "wxpay";
+    }
+
+    /**
+     * 发起微信下单。
+     *
+     * @param orderId 平台订单号
+     * @param amount 支付金额（分）
+     * @param subject 标题
+     * @param payMethod 支付方式编码
+     * @param returnUrl 回跳地址
+     * @param notifyUrl 异步通知地址
+     * @param account 渠道账号配置
+     * @return 下单结果
+     */
+    @Override
+    public PayResult pay(String orderId,
+                         Long amount,
+                         String subject,
+                         String payMethod,
+                         String returnUrl,
+                         String notifyUrl,
+                         PayChannelAccount account) {
+        PayMethod methodEnum = PayMethod.fromCode(payMethod);
+        if (methodEnum == null) {
+            throw new BizException(6007, "不支持的支付方式: " + payMethod);
+        }
+        if (!methodEnum.getCode().startsWith("WECHAT_")) {
+            throw new BizException(7103, "支付方式与渠道不匹配: channel=WECHAT_PAY, payMethod=" + payMethod);
+        }
+
+        PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(payMethod);
+        PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, Map.of());
+        log.info("微信下单完成: orderId={}, payMethod={}, action={}", orderId, payMethod, result.getAction());
+        return result;
+    }
+}
+
