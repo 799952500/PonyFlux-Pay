@@ -47,6 +47,8 @@ export const getRefunds = (params: {
   pageSize: number
   status?: string
   keyword?: string
+  startDate?: string
+  endDate?: string
 }): Promise<PageResult<RefundItem>> =>
   request.get('/admin/refunds', { params })
 
@@ -171,16 +173,16 @@ export const getPaymentAccounts = (params: {
   channelId?: number
   keyword?: string
 }): Promise<PageResult<PaymentAccount>> =>
-  request.get('/admin/payment-accounts', { params })
+  request.get('/admin/channels/accounts', { params })
 
 export const createPaymentAccount = (data: Partial<PaymentAccount>) =>
-  request.post('/admin/payment-accounts', data)
+  request.post('/admin/channels/accounts', data)
 
 export const updatePaymentAccount = (id: number, data: Partial<PaymentAccount>) =>
-  request.put(`/admin/payment-accounts/${id}`, data)
+  request.put(`/admin/channels/accounts/${id}`, data)
 
 export const deletePaymentAccount = (id: number) =>
-  request.delete(`/admin/payment-accounts/${id}`)
+  request.delete(`/admin/channels/accounts/${id}`)
 
 // -------------------------------------------------------------------
 // 渠道账号（ChannelAccount 池）

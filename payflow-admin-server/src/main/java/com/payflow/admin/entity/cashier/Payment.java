@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("payments")
+@TableName("cashier_payments")
 public class Payment {
 
     @TableId(type = IdType.ASSIGN_ID)

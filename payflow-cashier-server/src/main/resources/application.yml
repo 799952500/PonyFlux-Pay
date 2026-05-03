@@ -7,6 +7,12 @@ spring:
   application:
     name: payflow-cashier-server
 
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 3000ms
+
   # MySQL 生产数据库配置
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -35,19 +41,6 @@ mybatis-plus:
       table-prefix: ""
   ddl-auto: none
 
-  # Redis 配置（暂时禁用，无本地 Redis）
-  # data:
-  #   redis:
-  #     host: 127.0.0.1
-  #     port: 6379
-  #     password:
-  #     database: 0
-  #     lettuce:
-  #       pool:
-  #         max-active: 8
-  #         max-idle: 8
-  #         min-idle: 0
-
 # RocketMQ 配置（暂时禁用，无本地 RocketMQ）
 # rocketmq:
 #   name-server: 127.0.0.1:9876
@@ -56,6 +49,10 @@ mybatis-plus:
 
 # PayFlow 收银台自定义配置
 payflow:
+  cache:
+    redis:
+      # 启用后加载 RedisConfig、Pub/Sub 与渠道账号缓存热更新（需本地先启动 redis-server）
+      enabled: true
   # MQ 功能开关（无 MQ 环境时设为 false 优雅降级）
   mq:
     enabled: false
@@ -73,7 +70,8 @@ payflow:
   payment-notify:
     base-url: http://localhost:3002
     use-unified-path: true
-    unified-path: /api/v1/callbacks
+    # 回调路径前缀；完整 notify_url = base-url + unified-path + /{channelCode}，例如 .../notify/wxpay
+    unified-path: /notify
   # 商户签名密钥配置（兜底配置，优先于数据库）
   # 生产环境建议从 merchant_app_secret 表读取
   merchants:

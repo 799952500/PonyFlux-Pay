@@ -36,4 +36,8 @@ public class LoginResponse {
     /** Token 过期时间（ISO 8601 格式） */
     @Schema(description = "Token过期时间")
     private String expireTime;
+
+    /** 商户状态（数据库原始值，如 ACTIVE/SUSPENDED） */
+    @Schema(description = "商户状态")
+    private String merchantStatus;
 }

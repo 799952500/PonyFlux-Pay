@@ -4,6 +4,7 @@ import com.payflow.admin.entity.ChannelRoute;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelRouteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,13 +27,16 @@ import java.util.Map;
  *   <li>PUT    /channels/routes/{id}/toggle - 启用/禁用渠道路由</li>
  * </ul>
  *
- * @author Auto-generated
+ * @author Lucas
  * @since 2026-04-13
  */
 public class AdminChannelRouteController {
 
     private final ChannelRouteService service;
-    private final CashierConfigRefreshPublisher refreshPublisher;
+
+    /** 可选依赖：Redis 未启用时为 null */
+    @Autowired(required = false)
+    private CashierConfigRefreshPublisher refreshPublisher;
 
     /**
      * 分页查询渠道路由列表
@@ -86,7 +90,9 @@ public class AdminChannelRouteController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody ChannelRoute route) {
         ChannelRoute created = service.create(route);
-        refreshPublisher.publish("channel_route:create");
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("channel_route:create");
+        }
         Map<String, Object> resp = new HashMap<>();
         resp.put("code", 0);
         resp.put("message", "success");
@@ -104,7 +110,9 @@ public class AdminChannelRouteController {
     public ResponseEntity<Map<String, Object>> toggle(@PathVariable Long id) {
         try {
             service.toggle(id);
-            refreshPublisher.publish("channel_route:toggle");
+            if (refreshPublisher != null) {
+                refreshPublisher.publish("channel_route:toggle");
+            }
             Map<String, Object> resp = new HashMap<>();
             resp.put("code", 0);
             resp.put("message", "success");
@@ -128,7 +136,9 @@ public class AdminChannelRouteController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         service.delete(id);
-        refreshPublisher.publish("channel_route:delete");
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("channel_route:delete");
+        }
         Map<String, Object> resp = new HashMap<>();
         resp.put("code", 0);
         resp.put("message", "success");

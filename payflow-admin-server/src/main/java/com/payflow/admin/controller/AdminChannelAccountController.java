@@ -4,6 +4,7 @@ import com.payflow.admin.entity.PaymentAccount;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.PaymentAccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +15,8 @@ import java.util.stream.Collectors;
 
 /**
  * 渠道支付账号管理 Controller
-  * @author Lucas
+ *
+ * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/channels/accounts")
@@ -22,7 +24,10 @@ import java.util.stream.Collectors;
 public class AdminChannelAccountController {
 
     private final PaymentAccountService service;
-    private final CashierConfigRefreshPublisher refreshPublisher;
+
+    /** 可选依赖：Redis 未启用时为 null */
+    @Autowired(required = false)
+    private CashierConfigRefreshPublisher refreshPublisher;
 
     /**
      * 分页查询支付账号列表
@@ -90,7 +95,9 @@ public class AdminChannelAccountController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createAccount(@RequestBody PaymentAccount account) {
         PaymentAccount created = service.create(account);
-        refreshPublisher.publish("payment_account:create");
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("payment_account:create");
+        }
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -118,7 +125,9 @@ public class AdminChannelAccountController {
                     "data", Map.of()
             ));
         }
-        refreshPublisher.publish("payment_account:update");
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("payment_account:update");
+        }
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -145,7 +154,9 @@ public class AdminChannelAccountController {
             account.setEnabled(account.getEnabled() == null || !account.getEnabled());
             service.update(account);
         }
-        refreshPublisher.publish("payment_account:toggle");
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("payment_account:toggle");
+        }
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -163,7 +174,9 @@ public class AdminChannelAccountController {
     public ResponseEntity<Map<String, Object>> deleteAccount(@PathVariable Long id) {
         try {
             service.delete(id);
-            refreshPublisher.publish("payment_account:delete");
+            if (refreshPublisher != null) {
+                refreshPublisher.publish("payment_account:delete");
+            }
             return ResponseEntity.ok(Map.of(
                     "code", 0,
                     "message", "success",

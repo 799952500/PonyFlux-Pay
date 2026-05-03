@@ -151,4 +151,28 @@ public class AdminMerchantController {
         resp.put("data", existing);
         return ResponseEntity.ok(resp);
     }
+
+    /**
+     * 删除商户（按商户号）
+     *
+     * @param merchantId 商户号
+     * @return 操作结果
+     */
+    @DeleteMapping("/{merchantId}")
+    public ResponseEntity<Map<String, Object>> deleteMerchant(@PathVariable String merchantId) {
+        Merchant existing = merchantService.getByMerchantId(merchantId);
+        if (existing == null) {
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("code", 404);
+            resp.put("message", "商户不存在");
+            resp.put("data", Map.of());
+            return ResponseEntity.ok(resp);
+        }
+        merchantService.delete(existing.getId());
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("code", 0);
+        resp.put("message", "success");
+        resp.put("data", Map.of());
+        return ResponseEntity.ok(resp);
+    }
 }

@@ -82,7 +82,10 @@ async function loadRefunds() {
   loading.value = true
   try {
     const params: Record<string, unknown> = { ...queryForm }
-    if (dateRange.value) params.dateRange = dateRange.value
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.startDate = dateRange.value[0]
+      params.endDate = dateRange.value[1]
+    }
     const resp = await getRefunds(params as Parameters<typeof getRefunds>[0])
     refundList.value = resp.list
     total.value = resp.total

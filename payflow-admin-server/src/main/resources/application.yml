@@ -22,9 +22,20 @@ spring:
       jdbc-url: jdbc:mysql://127.0.0.1:3306/payflow_cashier?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       username: root
       password: root
+  # Redis：默认连接本机 6379。Windows 下可执行文件目录示例 D:\apps\Redis，需先运行 redis-server.exe
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 3000ms
   sql:
     init:
       mode: never
+
+payflow:
+  cache:
+    redis:
+      enabled: true
 
 mybatis-plus:
   configuration:

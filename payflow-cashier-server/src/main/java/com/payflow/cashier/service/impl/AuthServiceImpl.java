@@ -76,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
                 .merchantId(merchant.getMerchantId())
                 .merchantName(merchant.getMerchantName())
                 .expireTime(JwtUtils.calcExpireTimeStr(expireSeconds))
+                .merchantStatus(merchant.getStatus())
                 .build();
 
         log.info("商户登录成功: merchantId={}, merchantName={}", merchantId, merchant.getMerchantName());
