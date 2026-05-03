@@ -24,8 +24,18 @@ import type {
 // -------------------------------------------------------------------
 // Dashboard
 // -------------------------------------------------------------------
-export const getDashboardStats = (): Promise<DashboardStats> =>
-  request.get('/admin/dashboard')
+export const getDashboardStats = (trendDays: number = 7): Promise<DashboardStats> =>
+  request.get('/admin/dashboard', { params: { trendDays } })
+
+/** 登录页功能开关（无需 Token；依赖 Vite proxy 转发 /api） */
+export const getLoginFeatures = async (): Promise<{ loginCaptchaEnabled: boolean; loginMaxFailures: number }> => {
+  const res = await fetch('/api/v1/admin/meta/features')
+  const json = await res.json()
+  if (json.code !== 0) {
+    throw new Error(json.message || '加载功能开关失败')
+  }
+  return json.data
+}
 
 // -------------------------------------------------------------------
 // 订单管理

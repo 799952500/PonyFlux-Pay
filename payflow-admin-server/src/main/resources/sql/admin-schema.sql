@@ -16,10 +16,26 @@ CREATE TABLE `admin_users` (
   `role` VARCHAR(32) DEFAULT NULL COMMENT '角色 SUPER_ADMIN/ADMIN/FINANCE/RISK',
   `nickname` VARCHAR(64) DEFAULT NULL COMMENT '昵称',
   `status` VARCHAR(16) DEFAULT NULL COMMENT '状态 ACTIVE/DISABLED',
+  `data_merchant_ids` VARCHAR(512) DEFAULT NULL COMMENT '数据权限：可见商户号列表，逗号分隔；空则仅 SUPER_ADMIN 看全量',
   `created_at` DATETIME DEFAULT NULL,
   `updated_at` DATETIME DEFAULT NULL,
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员账号表';
+
+-- ----------------------------
+-- Table: admin_audit_logs 操作审计
+-- ----------------------------
+DROP TABLE IF EXISTS `admin_audit_logs`;
+CREATE TABLE `admin_audit_logs` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `username` VARCHAR(64) DEFAULT NULL COMMENT '操作者',
+  `action` VARCHAR(32) DEFAULT NULL COMMENT 'HTTP 方法',
+  `resource_path` VARCHAR(512) DEFAULT NULL COMMENT '请求路径',
+  `detail` VARCHAR(1024) DEFAULT NULL COMMENT '摘要',
+  `client_ip` VARCHAR(64) DEFAULT NULL COMMENT '客户端 IP',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '记录时间',
+  KEY `idx_audit_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理端审计日志';
 
 -- ----------------------------
 -- Table: channels 支付渠道表

@@ -56,6 +56,12 @@ public class Order {
     @TableField("return_url")
     private String returnUrl;
 
+    @TableField("success_url")
+    private String successUrl;
+
+    @TableField("fail_url")
+    private String failUrl;
+
     @TableField("expire_time")
     private LocalDateTime expireTime;
 

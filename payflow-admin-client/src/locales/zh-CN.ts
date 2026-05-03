@@ -1,0 +1,27 @@
+export default {
+  menu: {
+    dashboard: '数据概览',
+    notifications: '通知中心',
+    groupWorkspace: '工作台',
+    groupTrade: '交易与订单',
+    groupChannelPay: '渠道与支付',
+    groupMerchantRisk: '商户与风控',
+    groupSystem: '系统与设置',
+    orders: '订单列表',
+    refunds: '退款管理',
+    channels: '渠道管理',
+    paymentMethods: '支付方式',
+    paymentAccounts: '支付账号',
+    merchants: '商户管理',
+    risk: '风控管理',
+    settings: '系统设置',
+    roles: '角色管理',
+    menus: '菜单管理',
+    users: '用户管理',
+  },
+  notifications: {
+    title: '通知中心',
+    pendingRefunds: '待处理退款笔数',
+    emptyAnnouncements: '暂无系统公告',
+  },
+}

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- KPI 卡片区 -->
     <el-row :gutter="16" class="mb-5">
       <el-col v-for="kpi in kpiCards" :key="kpi.label" :xs="12" :sm="12" :md="6">
         <div class="content-card">
@@ -14,17 +13,17 @@
           <p v-if="kpi.sub" class="text-xs text-[#64748B]">
             昨日 {{ kpi.sub }}
             <span
+              v-if="kpi.trend !== undefined && kpi.trend !== null"
               class="ml-1 font-medium"
-              :class="kpi.trend > 0 ? 'text-[#EF4444]' : 'text-[#047857]'"
+              :class="Number(kpi.trend) > 0 ? 'text-[#047857]' : 'text-[#EF4444]'"
             >
-              {{ kpi.trend > 0 ? '↑' : '↓' }}{{ Math.abs(kpi.trend) }}%
+              {{ Number(kpi.trend) >= 0 ? '↑' : '↓' }}{{ Math.abs(Number(kpi.trend)) }}%
             </span>
           </p>
         </div>
       </el-col>
     </el-row>
 
-    <!-- 图表区 -->
     <el-row :gutter="16" class="mb-5">
       <el-col :xs="24" :md="16">
         <div class="content-card">
@@ -47,7 +46,6 @@
       </el-col>
     </el-row>
 
-    <!-- 最新交易 -->
     <div class="content-card">
       <div class="flex items-center justify-between p-5 pb-3">
         <p class="text-[#0F172A] font-semibold text-sm">最新交易</p>
@@ -64,7 +62,7 @@
         <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="140" />
         <el-table-column label="金额" prop="amount" width="110">
           <template #default="{ row }">
-            <span class="font-medium">¥{{ (row.amount / 100).toFixed(2) }}</span>
+            <span class="font-medium">¥{{ ((Number(row.amount) || 0) / 100).toFixed(2) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="渠道" prop="channel" width="90">
@@ -74,22 +72,21 @@
         </el-table-column>
         <el-table-column label="状态" prop="status" width="90">
           <template #default="{ row }">
-            <el-tag
-              size="small"
-              :type="statusTypeMap[row.status] ?? 'info'"
-            >
-              {{ statusLabelMap[row.status] }}
+            <el-tag size="small" :type="orderStatusTagType(row.status)">
+              {{ orderStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="170" />
       </el-table>
+      <p v-if="!loading && recentOrders.length === 0" class="px-5 pb-5 text-sm text-[#64748B]">暂无订单数据</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts/core'
 import { LineChart, PieChart } from 'echarts/charts'
 import {
@@ -100,11 +97,13 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { Order } from '@/types'
+import type { ChannelDistItem, TrendDataItem } from '@/types'
+import { getDashboardStats } from '@/api/admin'
 
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 
 const loading = ref(false)
-const trendRange = ref('7d')
+const trendRange = ref<'7d' | '30d'>('7d')
 const trendChartRef = ref<HTMLDivElement | null>(null)
 const pieChartRef = ref<HTMLDivElement | null>(null)
 
@@ -112,99 +111,204 @@ let trendChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
 const kpiCards = reactive([
-  { label: '今日收入', value: '¥12,580.00', sub: '¥9,230.00', trend: 36, icon: '💰' },
-  { label: '今日订单', value: '256', sub: '198', trend: 29, icon: '📋' },
-  { label: '已付订单', value: '231', sub: '182', trend: 27, icon: '✅' },
-  { label: '转化率', value: '90.2%', sub: '91.9%', trend: -2, icon: '📈' },
+  { label: '今日收入', value: '—', sub: '—', trend: 0 as number | undefined, icon: '💰' },
+  { label: '今日订单', value: '—', sub: '—', trend: 0 as number | undefined, icon: '📋' },
+  { label: '今日已付', value: '—', sub: '—', trend: 0 as number | undefined, icon: '✅' },
+  { label: '转化率', value: '—', sub: '—', trend: undefined as number | undefined, icon: '📈' },
 ])
 
-const recentOrders = ref<Order[]>([
-  { orderId: 'PF202604100001', merchantId: 'M001', merchantOrderNo: 'ORD20260410001', subject: '测试商品', amount: 10000, currency: 'CNY', channel: 'ALIPAY', status: 'PAID', expireTime: '', createdAt: '2026-04-10 20:30:00', updatedAt: '2026-04-10 20:31:00' },
-  { orderId: 'PF202604100002', merchantId: 'M001', merchantOrderNo: 'ORD20260410002', subject: 'VIP会员', amount: 29900, currency: 'CNY', channel: 'WECHAT_PAY', status: 'PAID', expireTime: '', createdAt: '2026-04-10 19:45:00', updatedAt: '2026-04-10 19:47:00' },
-  { orderId: 'PF202604100003', merchantId: 'M001', merchantOrderNo: 'ORD20260410003', subject: '企业认证', amount: 50000, currency: 'CNY', channel: 'ALIPAY', status: 'CREATED', expireTime: '', createdAt: '2026-04-10 19:00:00', updatedAt: '2026-04-10 19:00:00' },
-])
-
-const trendData = [
-  { date: '04-04', orders: 180, revenue: 890000 },
-  { date: '04-05', orders: 195, revenue: 920000 },
-  { date: '04-06', orders: 210, revenue: 1050000 },
-  { date: '04-07', orders: 188, revenue: 870000 },
-  { date: '04-08', orders: 230, revenue: 1180000 },
-  { date: '04-09', orders: 198, revenue: 923000 },
-  { date: '04-10', orders: 256, revenue: 1258000 },
-]
-
-const channelData = [
-  { name: '支付宝', value: 58 },
-  { name: '微信支付', value: 35 },
-  { name: '银联', value: 7 },
-]
+const recentOrders = ref<Partial<Order>[]>([])
 
 const statusTypeMap: Record<string, string> = {
-  PAID: 'success', PAYING: 'warning', CREATED: 'info', EXPIRED: 'info', FAILED: 'danger',
+  PAID: 'success',
+  SUCCESS: 'success',
+  PAYING: 'warning',
+  CREATED: 'info',
+  EXPIRED: 'info',
+  FAILED: 'danger',
 }
 
 const statusLabelMap: Record<string, string> = {
-  PAID: '已支付', PAYING: '支付中', CREATED: '待支付', EXPIRED: '已过期', FAILED: '失败',
+  PAID: '已支付',
+  SUCCESS: '成功',
+  PAYING: '支付中',
+  CREATED: '待支付',
+  EXPIRED: '已过期',
+  FAILED: '失败',
 }
 
-function initTrendChart() {
-  if (!trendChartRef.value) return
-  trendChart = echarts.init(trendChartRef.value)
-  trendChart.setOption({
+function orderStatusTagType(status: unknown): string {
+  const s = String(status ?? '')
+  return statusTypeMap[s] ?? 'info'
+}
+
+function orderStatusLabel(status: unknown): string {
+  const s = String(status ?? '')
+  return statusLabelMap[s] ?? s
+}
+
+function pctChange(curr: number, prev: number): number {
+  if (prev === 0) {
+    return curr === 0 ? 0 : 100
+  }
+  return Math.round(((curr - prev) / prev) * 1000) / 10
+}
+
+function fmtMoneyYuan(n: number): string {
+  return `¥${Number(n || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function formatTrendDate(d: string): string {
+  if (!d) return ''
+  const parts = d.split('-')
+  if (parts.length >= 3) {
+    return `${parts[1]}-${parts[2]}`
+  }
+  return d.slice(5)
+}
+
+function ensureTrendChart() {
+  if (!trendChartRef.value) return null
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+  return trendChart
+}
+
+function ensurePieChart() {
+  if (!pieChartRef.value) return null
+  if (!pieChart) {
+    pieChart = echarts.init(pieChartRef.value)
+  }
+  return pieChart
+}
+
+function renderTrend(rows: TrendDataItem[]) {
+  const chart = ensureTrendChart()
+  if (!chart) return
+  const dates = rows.map((d) => formatTrendDate(d.date))
+  chart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { show: false },
     grid: { top: 10, right: 10, bottom: 30, left: 10, containLabel: true },
     xAxis: {
-      type: 'category', data: trendData.map((d) => d.date),
-      boundaryGap: false, axisLine: { show: false }, axisTick: { show: false },
+      type: 'category',
+      data: dates,
+      boundaryGap: false,
+      axisLine: { show: false },
+      axisTick: { show: false },
       axisLabel: { color: '#9ca3af', fontSize: 11 },
     },
-    yAxis: [{ type: 'value', show: false, max: 300 }, { type: 'value', show: false, max: 1500000 }],
+    yAxis: [
+      { type: 'value', show: false },
+      { type: 'value', show: false },
+    ],
     series: [
       {
-        name: '订单数', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
-        lineStyle: { color: '#047857', width: 2 }, itemStyle: { color: '#047857' },
-        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(5,150,105,0.2)' }, { offset: 1, color: 'rgba(5,150,105,0)' }]) },
-        data: trendData.map((d) => d.orders),
+        name: '订单数',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: { color: '#047857', width: 2 },
+        itemStyle: { color: '#047857' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(5,150,105,0.2)' },
+            { offset: 1, color: 'rgba(5,150,105,0)' },
+          ]),
+        },
+        data: rows.map((d) => d.orders),
       },
       {
-        name: '收入', type: 'line', smooth: true, symbol: 'none',
-        lineStyle: { color: '#0d9488', width: 1.5 }, yAxisIndex: 1,
-        data: trendData.map((d) => d.revenue),
+        name: '收入(元)',
+        type: 'line',
+        smooth: true,
+        symbol: 'none',
+        lineStyle: { color: '#0d9488', width: 1.5 },
+        yAxisIndex: 1,
+        data: rows.map((d) => Number(d.revenue) || 0),
       },
     ],
   })
 }
 
-function initPieChart() {
-  if (!pieChartRef.value) return
-  pieChart = echarts.init(pieChartRef.value)
-  pieChart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+const pieColors = ['#065f46', '#0d9488', '#F59E0B', '#6366f1', '#94a3b8']
+
+function renderPie(dist: ChannelDistItem[]) {
+  const chart = ensurePieChart()
+  if (!chart) return
+  const data = dist.map((item, index) => ({
+    name: item.name || item.channel,
+    value: item.value,
+    itemStyle: { color: pieColors[index % pieColors.length] },
+  }))
+  chart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#6b7280', fontSize: 12 } },
-    series: [{
-      type: 'pie', radius: ['50%', '75%'], center: ['35%', '50%'],
-      avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: false } },
-      data: channelData.map((item, index) => ({
-        ...item,
-        itemStyle: { color: ['#065f46', '#0d9488', '#F59E0B'][index] },
-      })),
-    }],
+    series: [
+      {
+        type: 'pie',
+        radius: ['50%', '75%'],
+        center: ['35%', '50%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        emphasis: { label: { show: false } },
+        data,
+      },
+    ],
   })
+}
+
+async function loadDashboard() {
+  loading.value = true
+  try {
+    const days = trendRange.value === '30d' ? 30 : 7
+    const data = await getDashboardStats(days)
+
+    kpiCards[0].value = fmtMoneyYuan(data.todayRevenue)
+    kpiCards[0].sub = fmtMoneyYuan(data.yesterdayRevenue)
+    kpiCards[0].trend = pctChange(data.todayRevenue, data.yesterdayRevenue)
+
+    kpiCards[1].value = String(data.todayOrders ?? 0)
+    kpiCards[1].sub = String(data.yesterdayOrders ?? 0)
+    kpiCards[1].trend = pctChange(data.todayOrders ?? 0, data.yesterdayOrders ?? 0)
+
+    kpiCards[2].value = String(data.todayPaid ?? 0)
+    kpiCards[2].sub = '—'
+    kpiCards[2].trend = undefined
+
+    const rate = data.conversionRate ?? 0
+    kpiCards[3].value = `${rate}%`
+    kpiCards[3].sub = '按今日订单'
+    kpiCards[3].trend = undefined
+
+    recentOrders.value = data.recentOrders ?? []
+
+    renderTrend(data.trendData ?? [])
+    renderPie(data.channelDistribution ?? [])
+  } catch {
+    ElMessage.error('加载仪表盘数据失败')
+    recentOrders.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
-  initTrendChart()
-  initPieChart()
+  loadDashboard()
   resizeObserver = new ResizeObserver(() => {
     trendChart?.resize()
     pieChart?.resize()
   })
   if (trendChartRef.value) resizeObserver.observe(trendChartRef.value)
+  if (pieChartRef.value) resizeObserver.observe(pieChartRef.value)
+})
+
+watch(trendRange, () => {
+  loadDashboard()
 })
 
 onUnmounted(() => {
@@ -215,7 +319,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 内容卡片统一样式 */
 .content-card {
   background: #FFFFFF;
   border-radius: 16px;
@@ -229,7 +332,6 @@ onUnmounted(() => {
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
 }
 
-/* 表格样式 */
 .data-table :deep(th) {
   background: linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.04) 100%) !important;
   color: #374151;

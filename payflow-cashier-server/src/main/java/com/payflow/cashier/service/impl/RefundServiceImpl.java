@@ -184,6 +184,90 @@ public class RefundServiceImpl implements RefundService {
                 .build();
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RefundResponse executeApprovedRefund(String refundId) {
+        Refund refund = refundMapper.selectOne(
+                new LambdaQueryWrapper<Refund>().eq(Refund::getRefundId, refundId));
+        if (refund == null) {
+            throw new BizException(6004, "退款记录不存在: " + refundId);
+        }
+        if (!Refund.STATUS_REFUNDING.equals(refund.getStatus())) {
+            throw new BizException(6012, "当前状态不允许执行渠道退款: " + refund.getStatus());
+        }
+
+        Payment payment = paymentMapper.selectOne(
+                new LambdaQueryWrapper<Payment>().eq(Payment::getPaymentId, refund.getPaymentId()));
+        if (payment == null) {
+            throw new BizException(6004, "支付记录不存在: " + refund.getPaymentId());
+        }
+
+        Order order = orderMapper.selectOne(
+                new LambdaQueryWrapper<Order>().eq(Order::getOrderId, payment.getOrderId()));
+        if (order == null) {
+            throw new BizException(6001, "关联订单不存在: " + payment.getOrderId());
+        }
+
+        PayChannelAccount account = payChannelService.routeToAccount(order.getMerchantId(), payment.getPayChannel());
+        if (account == null) {
+            throw new BizException(6002, "找不到支付账户，无法处理退款");
+        }
+
+        String channelRefundNo;
+        try {
+            if (CHANNEL_WECHAT.equals(payment.getPayChannel())) {
+                channelRefundNo = invokeWxRefund(
+                        payment.getOrderId(), refundId, refund.getRefundAmount(),
+                        payment.getAmount(), refund.getReason(), account);
+            } else if (CHANNEL_ALIPAY.equals(payment.getPayChannel())) {
+                channelRefundNo = invokeAliRefund(
+                        payment.getChannelTransactionId(), refundId,
+                        refund.getRefundAmount(), refund.getReason(), account);
+            } else {
+                throw new BizException(6007, "暂不支持该渠道的退款: " + payment.getPayChannel());
+            }
+        } catch (BizException e) {
+            refund.setStatus(Refund.STATUS_FAILED);
+            refund.setUpdatedAt(LocalDateTime.now());
+            refundMapper.updateById(refund);
+            throw e;
+        }
+
+        refund.setChannelRefundNo(channelRefundNo);
+        refund.setStatus(Refund.STATUS_REFUNDED);
+        refund.setUpdatedAt(LocalDateTime.now());
+        refundMapper.updateById(refund);
+
+        long alreadyRefunded = sumRefundedAmount(refund.getPaymentId());
+        boolean fullRefund = alreadyRefunded + refund.getRefundAmount() >= payment.getAmount();
+        payment.setStatus(fullRefund ? Payment.STATUS_REFUNDED : Payment.STATUS_PARTIAL_REFUND);
+        payment.setUpdatedAt(LocalDateTime.now());
+        paymentMapper.updateById(payment);
+
+        log.info("内部审批退款成功: paymentId={}, refundId={}, channelRefundNo={}",
+                refund.getPaymentId(), refundId, channelRefundNo);
+
+        try {
+            orderMqProducer.sendRefundResultNotify(
+                    payment.getOrderId(),
+                    fullRefund ? Payment.STATUS_REFUNDED : Payment.STATUS_PARTIAL_REFUND,
+                    refund.getPaymentId(),
+                    refundId,
+                    refund.getRefundAmount());
+        } catch (Exception e) {
+            log.warn("发送退款结果商户通知失败: orderId={}, error={}",
+                    payment.getOrderId(), e.getMessage());
+        }
+
+        return RefundResponse.builder()
+                .refundId(refundId)
+                .paymentId(refund.getPaymentId())
+                .channelRefundNo(channelRefundNo)
+                .status(Refund.STATUS_REFUNDED)
+                .refundAmount(refund.getRefundAmount())
+                .build();
+    }
+
     private long sumRefundedAmount(String paymentId) {
         List<Refund> list = refundMapper.selectList(
                 new LambdaQueryWrapper<Refund>()

@@ -3,6 +3,7 @@ package com.payflow.admin.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.payflow.admin.client.CashierInternalRefundClient;
 import com.payflow.admin.entity.cashier.Order;
 import com.payflow.admin.entity.cashier.Refund;
 import com.payflow.admin.mapper.cashier.OrderMapper;
@@ -14,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * 管理端退款查询与简易审批（更新 cashier_refunds 状态）。
+ * 管理端退款查询与审批（通过后调用收银台执行渠道退款）。
  *
  * @author Lucas
  */
@@ -27,6 +30,7 @@ public class AdminRefundService {
 
     private final RefundMapper refundMapper;
     private final OrderMapper orderMapper;
+    private final CashierInternalRefundClient cashierInternalRefundClient;
 
     /**
      * 分页查询退款列表（可选关键词、状态、日期）。
@@ -40,8 +44,10 @@ public class AdminRefundService {
      * @return 分页数据（records 已转换为前端视图字段）
      */
     public IPage<Map<String, Object>> page(int page, int pageSize, String status, String keyword,
-                                           LocalDate startDate, LocalDate endDate) {
+                                           LocalDate startDate, LocalDate endDate,
+                                           List<String> merchantScopeIds) {
         LambdaQueryWrapper<Refund> w = new LambdaQueryWrapper<>();
+        applyMerchantScope(w, merchantScopeIds);
         String dbStatus = toDbStatusFilter(status);
         if (dbStatus != null) {
             w.eq(Refund::getStatus, dbStatus);
@@ -67,18 +73,49 @@ public class AdminRefundService {
     }
 
     /**
-     * 审批通过：将退款中记录标记为已成功（管理端确认；实际渠道退款需后续对接）。
+     * 审批通过：调用收银台内部接口执行渠道退款并落库。
      *
      * @param refundId 退款单号
      */
-    @Transactional(transactionManager = "cashierTransactionManager")
-    public void approve(String refundId) {
+    public void approve(String refundId, List<String> merchantScopeIds) {
         Refund r = requireRefund(refundId);
+        assertRefundMerchantAllowed(r, merchantScopeIds);
         if (!Refund.STATUS_REFUNDING.equals(r.getStatus())) {
             throw new IllegalStateException("当前状态不允许审批通过: " + r.getStatus());
         }
-        r.setStatus(Refund.STATUS_REFUNDED);
-        refundMapper.updateById(r);
+        cashierInternalRefundClient.executeRefund(refundId);
+    }
+
+    private void assertRefundMerchantAllowed(Refund r, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return;
+        }
+        if (merchantScopeIds.isEmpty()) {
+            throw new IllegalStateException("无权操作该退款");
+        }
+        Order o = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderId, r.getOrderId()));
+        if (o == null || o.getMerchantId() == null || !merchantScopeIds.contains(o.getMerchantId())) {
+            throw new IllegalStateException("无权操作该退款");
+        }
+    }
+
+    private void applyMerchantScope(LambdaQueryWrapper<Refund> w, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return;
+        }
+        if (merchantScopeIds.isEmpty()) {
+            w.apply("1 = 0");
+            return;
+        }
+        String inList = merchantScopeIds.stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> "'" + s.replace("'", "''") + "'")
+                .collect(Collectors.joining(","));
+        if (inList.isEmpty()) {
+            return;
+        }
+        w.apply("order_id IN (SELECT order_id FROM cashier_orders WHERE merchant_id IN (" + inList + "))");
     }
 
     /**
@@ -87,8 +124,9 @@ public class AdminRefundService {
      * @param refundId 退款单号
      */
     @Transactional(transactionManager = "cashierTransactionManager")
-    public void reject(String refundId) {
+    public void reject(String refundId, List<String> merchantScopeIds) {
         Refund r = requireRefund(refundId);
+        assertRefundMerchantAllowed(r, merchantScopeIds);
         if (!Refund.STATUS_REFUNDING.equals(r.getStatus())) {
             throw new IllegalStateException("当前状态不允许拒绝: " + r.getStatus());
         }

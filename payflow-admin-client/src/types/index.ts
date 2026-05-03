@@ -45,6 +45,8 @@ export interface DashboardStats {
   conversionRate: number
   channelDistribution: ChannelDistItem[]
   trendData: TrendDataItem[]
+  /** 后端聚合接口返回的最近订单（用于仪表盘表格） */
+  recentOrders?: Partial<Order>[]
 }
 
 export interface ChannelDistItem {
@@ -267,6 +269,8 @@ export interface PageResult<T> {
 export interface AdminLoginDTO {
   username: string
   password: string
+  captchaId?: string
+  captchaAnswer?: string
 }
 
 export interface AdminLoginResponse {

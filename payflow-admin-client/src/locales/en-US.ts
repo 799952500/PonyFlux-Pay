@@ -1,0 +1,27 @@
+export default {
+  menu: {
+    dashboard: 'Dashboard',
+    notifications: 'Notifications',
+    groupWorkspace: 'Workspace',
+    groupTrade: 'Orders & refunds',
+    groupChannelPay: 'Channels & payments',
+    groupMerchantRisk: 'Merchants & risk',
+    groupSystem: 'System',
+    orders: 'Orders',
+    refunds: 'Refunds',
+    channels: 'Channels',
+    paymentMethods: 'Payment methods',
+    paymentAccounts: 'Payment accounts',
+    merchants: 'Merchants',
+    risk: 'Risk rules',
+    settings: 'Settings',
+    roles: 'Roles',
+    menus: 'Menus',
+    users: 'Users',
+  },
+  notifications: {
+    title: 'Notifications',
+    pendingRefunds: 'Pending refunds',
+    emptyAnnouncements: 'No announcements',
+  },
+}

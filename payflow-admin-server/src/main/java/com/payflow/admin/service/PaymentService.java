@@ -1,5 +1,6 @@
 package com.payflow.admin.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.cashier.Payment;
 import com.payflow.admin.mapper.cashier.PaymentMapper;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class PaymentService {
      * 根据支付ID查询
      */
     public Payment getByPaymentId(String paymentId) {
-        return paymentMapper.selectById(paymentId);
+        return paymentMapper.selectOne(
+                new LambdaQueryWrapper<Payment>().eq(Payment::getPaymentId, paymentId));
     }
 }

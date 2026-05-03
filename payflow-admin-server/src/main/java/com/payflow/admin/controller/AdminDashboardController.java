@@ -1,54 +1,33 @@
 package com.payflow.admin.controller;
 
-import com.payflow.admin.kit.SystemConfigKit;
+import com.payflow.admin.service.DashboardAggregationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 数据概览仪表盘 Controller
-  * @author Lucas
+ *
+ * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
+    private final DashboardAggregationService dashboardAggregationService;
+
     /**
-     * 数据概览首页（根端点）
-     *
-     * @return 统计数据
+     * 数据概览首页（根端点）：一次返回 KPI、趋势、渠道占比、最新订单。
      */
     @GetMapping("")
-    public ResponseEntity<Map<String, Object>> dashboard() {
-        return stats();
-    }
-
-    /**
-     * 获取今日核心统计指标
-     *
-     * @return 包含今日收入、订单数、退款数、商户数、成功率的数据
-     */
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> stats() {
-        BigDecimal revenue = SystemConfigKit.getDecimal("dashboard_today_revenue", new BigDecimal("128450.00"));
-        int orders = SystemConfigKit.getInt("dashboard_today_orders", 3847);
-        int refunds = SystemConfigKit.getInt("dashboard_today_refunds", 23);
-        int merchants = SystemConfigKit.getInt("dashboard_active_merchants", 156);
-        String rate = SystemConfigKit.get("dashboard_success_rate", "99.2%");
-
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("todayRevenue", revenue);
-        data.put("todayOrders", orders);
-        data.put("todayRefunds", refunds);
-        data.put("activeMerchants", merchants);
-        data.put("successRate", rate);
-
+    public ResponseEntity<Map<String, Object>> dashboard(
+            @RequestParam(defaultValue = "7") int trendDays) {
+        Map<String, Object> data = dashboardAggregationService.buildDashboardPayload(trendDays);
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -57,47 +36,55 @@ public class AdminDashboardController {
     }
 
     /**
+     * 获取今日核心统计指标（兼容旧客户端；数据源于聚合服务）。
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> stats(
+            @RequestParam(defaultValue = "7") int trendDays) {
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(trendDays);
+        Map<String, Object> legacy = new LinkedHashMap<>();
+        legacy.put("todayRevenue", full.get("todayRevenue"));
+        legacy.put("todayOrders", full.get("todayOrders"));
+        legacy.put("todayRefunds", full.get("todayRefunds"));
+        legacy.put("activeMerchants", full.get("activeMerchants"));
+        legacy.put("successRate", full.get("successRate"));
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", legacy
+        ));
+    }
+
+    /**
      * 收入趋势数据
-     *
-     * @param days 统计天数（默认7天）
-     * @return 每日收入与订单数列表
      */
     @GetMapping("/trend")
     public ResponseEntity<Map<String, Object>> trend(
             @RequestParam(defaultValue = "7") int days) {
-        // TODO: 接入真实数据库查询，替换为动态SQL
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(days);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> trendData = (List<Map<String, Object>>) full.get("trendData");
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
-                "data", List.of(
-                        Map.of("date", "2026-04-06", "revenue", 115200, "orders", 3420),
-                        Map.of("date", "2026-04-07", "revenue", 98200, "orders", 2890),
-                        Map.of("date", "2026-04-08", "revenue", 134500, "orders", 4100),
-                        Map.of("date", "2026-04-09", "revenue", 121300, "orders", 3650),
-                        Map.of("date", "2026-04-10", "revenue", 108900, "orders", 3200),
-                        Map.of("date", "2026-04-11", "revenue", 145600, "orders", 4380),
-                        Map.of("date", "2026-04-12", "revenue", 128450, "orders", 3847)
-                )
+                "data", trendData != null ? trendData : List.of()
         ));
     }
 
     /**
      * 各渠道交易分布
-     *
-     * @return 各渠道笔数、金额、占比
      */
     @GetMapping("/channel-dist")
-    public ResponseEntity<Map<String, Object>> channelDist() {
-        // TODO: 接入真实数据库查询，替换为动态SQL
+    public ResponseEntity<Map<String, Object>> channelDist(
+            @RequestParam(defaultValue = "7") int trendDays) {
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(trendDays);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> channelDistribution =
+                (List<Map<String, Object>>) full.get("channelDistribution");
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
-                "data", List.of(
-                        Map.of("channel", "Alipay", "count", 4521, "amount", 589200, "ratio", "38.5%"),
-                        Map.of("channel", "WeChat Pay", "count", 3890, "amount", 476300, "ratio", "32.2%"),
-                        Map.of("channel", "UnionPay", "count", 2340, "amount", 298700, "ratio", "20.1%"),
-                        Map.of("channel", "Credit Card", "count", 1100, "amount", 189000, "ratio", "9.2%")
-                )
+                "data", channelDistribution != null ? channelDistribution : List.of()
         ));
     }
 }

@@ -25,12 +25,27 @@ public class OrderService {
     /**
      * 分页查询订单
      */
-    public IPage<Order> page(int pageNum, int pageSize, String merchantId, String status, 
-                              LocalDateTime startTime, LocalDateTime endTime) {
+    public IPage<Order> page(int pageNum, int pageSize, String merchantId, String status,
+                              LocalDateTime startTime, LocalDateTime endTime,
+                              java.util.List<String> merchantScopeIds) {
         Page<Order> page = new Page<>(pageNum, pageSize);
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            page.setTotal(0);
+            return page;
+        }
         LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
-        
-        if (merchantId != null && !merchantId.isEmpty()) {
+
+        if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            if (merchantId != null && !merchantId.isEmpty()) {
+                if (!merchantScopeIds.contains(merchantId)) {
+                    page.setTotal(0);
+                    return page;
+                }
+                wrapper.eq(Order::getMerchantId, merchantId);
+            } else {
+                wrapper.in(Order::getMerchantId, merchantScopeIds);
+            }
+        } else if (merchantId != null && !merchantId.isEmpty()) {
             wrapper.eq(Order::getMerchantId, merchantId);
         }
         if (status != null && !status.isEmpty()) {
@@ -89,5 +104,41 @@ public class OrderService {
      */
     public long count() {
         return orderMapper.selectCount(null);
+    }
+
+    /**
+     * 导出用：按与分页列表相同的筛选条件取最多 maxRows 条。
+     */
+    public List<Order> listForExport(int maxRows, String merchantId, String status,
+                                     LocalDateTime startTime, LocalDateTime endTime,
+                                     List<String> merchantScopeIds) {
+        int cap = Math.min(Math.max(maxRows, 1), 5000);
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            return List.of();
+        }
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            if (merchantId != null && !merchantId.isEmpty()) {
+                if (!merchantScopeIds.contains(merchantId)) {
+                    return List.of();
+                }
+                wrapper.eq(Order::getMerchantId, merchantId);
+            } else {
+                wrapper.in(Order::getMerchantId, merchantScopeIds);
+            }
+        } else if (merchantId != null && !merchantId.isEmpty()) {
+            wrapper.eq(Order::getMerchantId, merchantId);
+        }
+        if (status != null && !status.isEmpty()) {
+            wrapper.eq(Order::getStatus, status);
+        }
+        if (startTime != null) {
+            wrapper.ge(Order::getCreatedAt, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(Order::getCreatedAt, endTime);
+        }
+        wrapper.orderByDesc(Order::getCreatedAt).last("LIMIT " + cap);
+        return orderMapper.selectList(wrapper);
     }
 }

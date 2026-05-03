@@ -18,4 +18,10 @@ public interface RefundService {
      * 查询退款记录。
      */
     RefundResponse getRefund(String merchantId, String refundId);
+
+    /**
+     * 运营审批通过后执行渠道退款（内部调用，须已由网关校验内部令牌）。
+     * 仅处理 {@code REFUNDING} 状态的记录。
+     */
+    RefundResponse executeApprovedRefund(String refundId);
 }

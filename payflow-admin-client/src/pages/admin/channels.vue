@@ -28,47 +28,49 @@
       <el-row :gutter="16" class="mb-1" v-if="channelList.length">
         <el-col v-for="channel in channelList" :key="channel.channelCode || channel.id" :xs="24" :sm="12" :md="6">
           <div class="content-card mb-4">
-            <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                :style="{ background: channelIconBg[channel.channelCode] ?? '#f3f4f6' }">
-                <img v-if="channel.icon" :src="channel.icon" class="w-6 h-6 object-contain" />
-                <span v-else>{{ channelIcon[channel.channelCode] ?? '🏦' }}</span>
+            <div class="channel-card-head">
+              <div class="channel-card-head-main">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0"
+                    :style="{ background: channelIconBg[channel.channelCode] ?? '#f3f4f6' }">
+                    <img v-if="channel.icon" :src="channel.icon" class="w-6 h-6 object-contain" />
+                    <span v-else>{{ channelIcon[channel.channelCode] ?? '🏦' }}</span>
+                  </div>
+                  <div class="channel-card-text min-w-0">
+                    <p class="channel-card-title">{{ channel.channelName || '未命名渠道' }}</p>
+                    <p class="channel-card-code">{{ channel.channelCode || '—' }}</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p class="font-semibold text-[#0F172A] text-sm">{{ channel.channelName || '未命名渠道' }}</p>
-                <p class="text-xs text-[#64748B]">{{ channel.channelCode || '—' }}</p>
+              <div class="channel-card-actions">
+                <el-button
+                  class="card-action-btn"
+                  type="primary"
+                  plain
+                  size="small"
+                  @click.stop="openEditDialog(channel)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  class="card-action-btn"
+                  type="danger"
+                  plain
+                  size="small"
+                  @click.stop="handleDelete(channel)"
+                >
+                  删除
+                </el-button>
+                <el-switch
+                  v-model="channel.enabled"
+                  :active-value="true"
+                  :inactive-value="false"
+                  active-color="#10b981"
+                  inactive-color="#d1d5db"
+                  @change="handleToggle(channel)"
+                />
               </div>
             </div>
-            <div class="flex items-center gap-2">
-              <el-button
-                class="card-action-btn"
-                type="primary"
-                plain
-                size="small"
-                @click.stop="openEditDialog(channel)"
-              >
-                编辑
-              </el-button>
-              <el-button
-                class="card-action-btn"
-                type="danger"
-                plain
-                size="small"
-                @click.stop="handleDelete(channel)"
-              >
-                删除
-              </el-button>
-              <el-switch
-                v-model="channel.enabled"
-                :active-value="true"
-                :inactive-value="false"
-                active-color="#10b981"
-                inactive-color="#d1d5db"
-                @change="handleToggle(channel)"
-              />
-            </div>
-          </div>
           <div class="text-xs text-[#64748B] mb-2 line-clamp-2">{{ channel.description ?? '暂无描述' }}</div>
           <div class="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
             <span class="text-xs text-[#64748B]">优先级</span>
@@ -340,5 +342,57 @@ onMounted(() => { loadChannels() })
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 卡片头部：网格分区，避免标题与操作区在窄卡片内重叠 */
+.channel-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.channel-card-text {
+  overflow: hidden;
+}
+
+.channel-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-card-code {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .channel-card-head {
+    grid-template-columns: 1fr;
+  }
+
+  .channel-card-actions {
+    justify-content: flex-start;
+  }
 }
 </style>

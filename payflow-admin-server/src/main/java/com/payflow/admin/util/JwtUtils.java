@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -26,16 +27,18 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, String role, Long merchantId) {
+    public String generateToken(String username, String role, String dataMerchantIds) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
+        Map<String, Object> claims = new HashMap<>(4);
+        claims.put("role", role != null ? role : "");
+        claims.put("merchantId", "");
+        claims.put("dataMerchantIds", dataMerchantIds != null ? dataMerchantIds : "");
+
         return Jwts.builder()
                 .subject(username)
-                .claims(Map.of(
-                        "role", role,
-                        "merchantId", merchantId != null ? merchantId : ""
-                ))
+                .claims(claims)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())

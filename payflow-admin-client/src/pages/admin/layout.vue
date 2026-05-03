@@ -12,80 +12,85 @@
         </div>
       </div>
 
-      <!-- 菜单 -->
-      <el-menu :default-active="activeMenu" class="flex-1 overflow-y-auto border-none admin-menu" router>
-        <!-- 数据概览 -->
-        <el-menu-item index="/admin/dashboard">
-          <span class="menu-icon">📊</span>
-          <span class="menu-text">数据概览</span>
-        </el-menu-item>
+      <!-- 菜单：侧栏为静态模板；后端 SysMenu / 登录 menus 用于角色权限配置页，未与此处联动 -->
+      <el-menu
+        :key="sidebarMenuKey"
+        :default-active="activeMenu"
+        :default-openeds="menuDefaultOpeneds"
+        class="flex-1 overflow-y-auto border-none admin-menu"
+        router
+      >
+        <el-sub-menu index="workspace-group">
+          <template #title>
+            <span class="menu-icon">🏠</span>
+            <span class="menu-text">{{ t('menu.groupWorkspace') }}</span>
+          </template>
+          <el-menu-item index="/admin/dashboard">
+            <span class="menu-text">{{ t('menu.dashboard') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/notifications">
+            <span class="menu-text">{{ t('menu.notifications') }}</span>
+          </el-menu-item>
+        </el-sub-menu>
 
-        <!-- 订单管理 -->
-        <el-sub-menu index="order-group">
+        <el-sub-menu index="trade-group">
           <template #title>
             <span class="menu-icon">📋</span>
-            <span class="menu-text">订单管理</span>
+            <span class="menu-text">{{ t('menu.groupTrade') }}</span>
           </template>
           <el-menu-item index="/admin/orders">
-            <span class="menu-text">订单列表</span>
+            <span class="menu-text">{{ t('menu.orders') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/refunds">
-            <span class="menu-text">退款管理</span>
+            <span class="menu-text">{{ t('menu.refunds') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 渠道管理 -->
-        <el-menu-item index="/admin/channels">
-          <span class="menu-icon">💳</span>
-          <span class="menu-text">渠道管理</span>
-        </el-menu-item>
-
-        <!-- 支付管理（子菜单）-->
-        <el-sub-menu index="payment-group">
+        <el-sub-menu index="channel-pay-group">
           <template #title>
-            <span class="menu-icon">💰</span>
-            <span class="menu-text">支付管理</span>
+            <span class="menu-icon">💳</span>
+            <span class="menu-text">{{ t('menu.groupChannelPay') }}</span>
           </template>
+          <el-menu-item index="/admin/channels">
+            <span class="menu-text">{{ t('menu.channels') }}</span>
+          </el-menu-item>
           <el-menu-item index="/admin/payment-methods">
-            <span class="menu-text">支付方式</span>
+            <span class="menu-text">{{ t('menu.paymentMethods') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/payment-accounts">
-            <span class="menu-text">支付账号</span>
+            <span class="menu-text">{{ t('menu.paymentAccounts') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
-        <!-- 商户管理 -->
-        <el-menu-item index="/admin/merchants">
-          <span class="menu-icon">🏪</span>
-          <span class="menu-text">商户管理</span>
-        </el-menu-item>
+        <el-sub-menu index="merchant-risk-group">
+          <template #title>
+            <span class="menu-icon">🏪</span>
+            <span class="menu-text">{{ t('menu.groupMerchantRisk') }}</span>
+          </template>
+          <el-menu-item index="/admin/merchants">
+            <span class="menu-text">{{ t('menu.merchants') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/risk">
+            <span class="menu-text">{{ t('menu.risk') }}</span>
+          </el-menu-item>
+        </el-sub-menu>
 
-        <!-- 风控管理 -->
-        <el-menu-item index="/admin/risk">
-          <span class="menu-icon">⚖️</span>
-          <span class="menu-text">风控管理</span>
-        </el-menu-item>
-
-        <!-- 系统设置 -->
-        <el-menu-item index="/admin/settings">
-          <span class="menu-icon">⚙️</span>
-          <span class="menu-text">系统设置</span>
-        </el-menu-item>
-
-        <!-- 系统管理（子菜单）-->
         <el-sub-menu index="system-group">
           <template #title>
-            <span class="menu-icon">🔧</span>
-            <span class="menu-text">系统管理</span>
+            <span class="menu-icon">⚙️</span>
+            <span class="menu-text">{{ t('menu.groupSystem') }}</span>
           </template>
+          <el-menu-item index="/admin/settings">
+            <span class="menu-text">{{ t('menu.settings') }}</span>
+          </el-menu-item>
           <el-menu-item index="/admin/roles">
-            <span class="menu-text">角色管理</span>
+            <span class="menu-text">{{ t('menu.roles') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/menus">
-            <span class="menu-text">菜单管理</span>
+            <span class="menu-text">{{ t('menu.menus') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/users">
-            <span class="menu-text">用户管理</span>
+            <span class="menu-text">{{ t('menu.users') }}</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -140,15 +145,49 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useAdminStore } from '@/stores/admin'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
 
 const activeMenu = computed(() => route.path)
+
+const menuDefaultOpeneds = computed(() => {
+  const path = route.path
+  if (path.startsWith('/admin/dashboard') || path.startsWith('/admin/notifications')) {
+    return ['workspace-group']
+  }
+  if (path.startsWith('/admin/orders') || path.startsWith('/admin/refunds')) {
+    return ['trade-group']
+  }
+  if (
+    path.startsWith('/admin/channels')
+    || path.startsWith('/admin/payment-methods')
+    || path.startsWith('/admin/payment-accounts')
+  ) {
+    return ['channel-pay-group']
+  }
+  if (path.startsWith('/admin/merchants') || path.startsWith('/admin/risk')) {
+    return ['merchant-risk-group']
+  }
+  if (
+    path.startsWith('/admin/settings')
+    || path.startsWith('/admin/roles')
+    || path.startsWith('/admin/menus')
+    || path.startsWith('/admin/users')
+  ) {
+    return ['system-group']
+  }
+  return ['workspace-group']
+})
+
+/** 切换顶层分组时通过 :key 重挂载侧栏，使 default-openeds 与当前模块一致 */
+const sidebarMenuKey = computed(() => menuDefaultOpeneds.value[0] ?? 'workspace-group')
 
 const pageTitle = computed(() => {
   return (route.meta?.title as string) ?? '控制台'

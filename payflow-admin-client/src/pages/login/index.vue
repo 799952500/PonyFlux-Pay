@@ -69,6 +69,23 @@
             </div>
           </div>
 
+          <div v-if="captchaEnabled" class="form-item">
+            <label>验证码 <button type="button" class="link-inline" @click.prevent="refreshCaptcha">换一题</button></label>
+            <p class="captcha-question">{{ captchaQuestion }}</p>
+            <div class="input-wrap" :class="{ focused: captchaFocused }">
+              <input
+                v-model="form.captchaAnswer"
+                type="text"
+                inputmode="numeric"
+                placeholder="请输入计算结果"
+                autocomplete="off"
+                @focus="captchaFocused = true"
+                @blur="captchaFocused = false"
+                :disabled="loading"
+              />
+            </div>
+          </div>
+
           <div v-if="errorMsg" class="error-msg">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -113,17 +130,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminLogin } from '@/api/auth'
+import { getLoginFeatures } from '@/api/admin'
 
 const router = useRouter()
-const form = reactive({ username: '', password: '' })
+const form = reactive({ username: '', password: '', captchaAnswer: '' })
 const loading = ref(false)
 const errorMsg = ref('')
 const showPassword = ref(false)
 const usernameFocused = ref(false)
 const passwordFocused = ref(false)
+const captchaFocused = ref(false)
+const captchaEnabled = ref(false)
+const captchaQuestion = ref('')
+const captchaId = ref('')
+
+async function refreshCaptcha() {
+  const res = await fetch('/api/v1/admin/auth/captcha')
+  const json = await res.json()
+  if (json.code === 0 && json.data) {
+    captchaId.value = json.data.captchaId
+    captchaQuestion.value = json.data.question
+  }
+}
+
+onMounted(async () => {
+  try {
+    const f = await getLoginFeatures()
+    captchaEnabled.value = !!f.loginCaptchaEnabled
+    if (captchaEnabled.value) {
+      await refreshCaptcha()
+    }
+  } catch {
+    captchaEnabled.value = false
+  }
+})
 
 const handleLogin = async () => {
   if (!form.username.trim()) {
@@ -134,16 +177,34 @@ const handleLogin = async () => {
     errorMsg.value = '请输入密码'
     return
   }
+  if (captchaEnabled.value) {
+    if (!form.captchaAnswer.trim()) {
+      errorMsg.value = '请输入验证码'
+      return
+    }
+  }
   loading.value = true
   errorMsg.value = ''
   try {
-    const res = await adminLogin({ username: form.username, password: form.password })
+    const payload: { username: string; password: string; captchaId?: string; captchaAnswer?: string } = {
+      username: form.username,
+      password: form.password,
+    }
+    if (captchaEnabled.value) {
+      payload.captchaId = captchaId.value
+      payload.captchaAnswer = form.captchaAnswer.trim()
+    }
+    const res = await adminLogin(payload)
     localStorage.setItem('adminToken', res.token)
     const user = (res as unknown as { user?: unknown }).user ?? res
     localStorage.setItem('adminUser', JSON.stringify(user))
     router.push('/admin/dashboard')
   } catch (e: any) {
     errorMsg.value = e.message || '用户名或密码错误'
+    if (captchaEnabled.value) {
+      await refreshCaptcha()
+      form.captchaAnswer = ''
+    }
   } finally {
     loading.value = false
   }
@@ -279,6 +340,25 @@ const handleLogin = async () => {
   font-size: 13px;
   font-weight: 500;
   color: rgba(209, 250, 229, 0.85);
+}
+
+.link-inline {
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(110, 231, 183, 0.95);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.captcha-question {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ecfdf5;
+  letter-spacing: 0.04em;
 }
 
 .input-wrap {

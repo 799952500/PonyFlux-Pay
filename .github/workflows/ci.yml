@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            payflow-admin-client/package-lock.json
+            payflow-cashier-client/package-lock.json
+
+      - name: Maven compile (all modules)
+        run: mvn -B -q -DskipTests compile
+
+      - name: npm ci + build admin client
+        working-directory: payflow-admin-client
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run build
+
+      - name: npm ci + build cashier client
+        working-directory: payflow-cashier-client
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run build

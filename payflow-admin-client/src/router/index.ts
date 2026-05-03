@@ -29,6 +29,12 @@ const router = createRouter({
           meta: { title: '数据概览', requiresAuth: true },
         },
         {
+          path: 'notifications',
+          name: 'Notifications',
+          component: () => import('@/pages/admin/notifications.vue'),
+          meta: { title: '通知中心', requiresAuth: true },
+        },
+        {
           path: 'orders',
           name: 'Orders',
           component: () => import('@/pages/admin/orders/index.vue'),

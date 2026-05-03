@@ -31,6 +31,10 @@ public class AdminUser {
     private String role;       // SUPER_ADMIN / ADMIN / FINANCE / RISK
     private String nickname;
     private String status;     // ACTIVE / DISABLED
+
+    /** 数据权限：可见收银台商户号列表，逗号分隔；NULL 表示不按字段限制（仍建议配合 SUPER_ADMIN） */
+    private String dataMerchantIds;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

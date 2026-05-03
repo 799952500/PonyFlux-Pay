@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.AdminRefundService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,7 @@ public class AdminRefundController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String status,
@@ -35,7 +38,8 @@ public class AdminRefundController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
 
-        IPage<Map<String, Object>> p = adminRefundService.page(page, pageSize, status, keyword, startDate, endDate);
+        IPage<Map<String, Object>> p = adminRefundService.page(page, pageSize, status, keyword, startDate, endDate,
+                AdminRequestContext.merchantScope(request));
         Map<String, Object> data = new HashMap<>();
         data.put("list", p.getRecords());
         data.put("total", p.getTotal());
@@ -48,9 +52,9 @@ public class AdminRefundController {
      * 审批通过。
      */
     @PostMapping("/{refundId}/approve")
-    public ResponseEntity<Map<String, Object>> approve(@PathVariable String refundId) {
+    public ResponseEntity<Map<String, Object>> approve(HttpServletRequest request, @PathVariable String refundId) {
         try {
-            adminRefundService.approve(refundId);
+            adminRefundService.approve(refundId, AdminRequestContext.merchantScope(request));
             return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Map.of("code", 404, "message", e.getMessage(), "data", Map.of()));
@@ -63,9 +67,9 @@ public class AdminRefundController {
      * 审批拒绝。
      */
     @PostMapping("/{refundId}/reject")
-    public ResponseEntity<Map<String, Object>> reject(@PathVariable String refundId) {
+    public ResponseEntity<Map<String, Object>> reject(HttpServletRequest request, @PathVariable String refundId) {
         try {
-            adminRefundService.reject(refundId);
+            adminRefundService.reject(refundId, AdminRequestContext.merchantScope(request));
             return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Map.of("code", 404, "message", e.getMessage(), "data", Map.of()));

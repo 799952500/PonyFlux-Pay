@@ -49,6 +49,9 @@ mybatis-plus:
 
 # PayFlow 收银台自定义配置
 payflow:
+  # 管理端调用 /api/v1/internal/** 时必须在请求头携带相同令牌
+  internal-api:
+    token: dev-payflow-internal-token
   cache:
     redis:
       # 启用后加载 RedisConfig、Pub/Sub 与渠道账号缓存热更新（需本地先启动 redis-server）

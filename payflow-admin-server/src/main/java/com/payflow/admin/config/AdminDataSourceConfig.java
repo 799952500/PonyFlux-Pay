@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
+import com.payflow.admin.mapper.AdminAuditLogMapper;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.mapper.ChannelRouteMapper;
@@ -97,6 +98,15 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<AdminUserMapper> adminUserMapper(
             @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         MapperFactoryBean<AdminUserMapper> factory = new MapperFactoryBean<>(AdminUserMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<AdminAuditLogMapper> adminAuditLogMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<AdminAuditLogMapper> factory = new MapperFactoryBean<>(AdminAuditLogMapper.class);
         factory.setSqlSessionFactory(sqlSessionFactory);
         return factory;
     }

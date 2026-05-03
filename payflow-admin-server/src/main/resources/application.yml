@@ -32,11 +32,6 @@ spring:
     init:
       mode: never
 
-payflow:
-  cache:
-    redis:
-      enabled: true
-
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
@@ -50,3 +45,24 @@ jwt:
   expiration: 86400000   # 24 hours in milliseconds
   header: Authorization
   prefix: "Bearer "
+
+payflow:
+  cache:
+    redis:
+      enabled: true
+  cashier:
+    base-url: http://127.0.0.1:3002
+    internal-token: dev-payflow-internal-token
+  security:
+    login-captcha-enabled: false
+    login-max-failures: 5
+    login-lock-seconds: 900
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized

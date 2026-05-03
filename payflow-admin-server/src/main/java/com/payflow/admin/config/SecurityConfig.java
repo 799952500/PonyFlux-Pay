@@ -10,6 +10,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @RequiredArgsConstructor
 /**
+ * JWT 拦截策略与 CORS。
+ * 菜单「按钮显隐」应与后端接口权限一致，新增敏感接口时请同步校验角色或数据范围（{@link com.payflow.admin.kit.AdminRequestContext}）。
+ *
  * @author Lucas
  */
 public class SecurityConfig implements WebMvcConfigurer {
@@ -20,7 +23,11 @@ public class SecurityConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/v1/admin/**")
-                .excludePathPatterns("/api/v1/admin/auth/login");
+                .excludePathPatterns(
+                        "/api/v1/admin/auth/login",
+                        "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/meta/**"
+                );
     }
 
     @Override

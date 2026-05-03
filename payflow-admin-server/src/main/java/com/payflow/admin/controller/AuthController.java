@@ -3,6 +3,8 @@ package com.payflow.admin.controller;
 import com.payflow.admin.dto.LoginRequest;
 import com.payflow.admin.dto.LoginResponse;
 import com.payflow.admin.service.AdminAuthService;
+import com.payflow.admin.service.CaptchaService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,15 @@ import java.util.Map;
 public class AuthController {
 
     private final AdminAuthService adminAuthService;
+    private final CaptchaService captchaService;
+
+    /**
+     * 签发算术验证码（未启用验证码时前端可忽略）。
+     */
+    @GetMapping("/captcha")
+    public ResponseEntity<Map<String, Object>> captcha() {
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", captchaService.issue()));
+    }
 
     /**
      * 管理员登录
@@ -28,8 +39,10 @@ public class AuthController {
      * @return 登录成功返回 Token 及用户信息
      */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse data = adminAuthService.login(request);
+    public ResponseEntity<Map<String, Object>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
+        LoginResponse data = adminAuthService.login(request, httpRequest);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 }

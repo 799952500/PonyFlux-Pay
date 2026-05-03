@@ -8,10 +8,10 @@ SET NAMES utf8mb4;
 -- ----------------------------
 -- 管理员账号
 -- ----------------------------
-INSERT INTO `admin_users` (`username`, `password`, `role`, `nickname`, `status`, `created_at`, `updated_at`) VALUES
-('admin', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'SUPER_ADMIN', '超级管理员', 'ACTIVE', NOW(), NOW()),
-('finance01', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'FINANCE', '财务小明', 'ACTIVE', NOW(), NOW()),
-('risk01', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'RISK', '风控小李', 'ACTIVE', NOW(), NOW());
+INSERT INTO `admin_users` (`username`, `password`, `role`, `nickname`, `status`, `data_merchant_ids`, `created_at`, `updated_at`) VALUES
+('admin', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'SUPER_ADMIN', '超级管理员', 'ACTIVE', NULL, NOW(), NOW()),
+('finance01', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'FINANCE', '财务小明', 'ACTIVE', 'M2024040001', NOW(), NOW()),
+('risk01', '$2a$10$Yim93NmIRVYlKFwWYsbWqOpL36En0hfvui.KmREpkF51GiEHvL2im', 'RISK', '风控小李', 'ACTIVE', NULL, NOW(), NOW());
 
 -- ----------------------------
 -- 支付渠道
