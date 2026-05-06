@@ -183,6 +183,83 @@ USE payflow_admin;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- 对账表（若未执行增量脚本，则在 reseed 时补齐）
+CREATE TABLE IF NOT EXISTS `recon_task` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  `task_id` VARCHAR(64) NOT NULL COMMENT '业务任务号',
+  `channel` VARCHAR(32) NOT NULL COMMENT '对账渠道编码：alipay / wxpay',
+  `account_code` VARCHAR(64) NOT NULL COMMENT '渠道账户编码',
+  `bill_date` DATE NOT NULL COMMENT '账单日',
+  `bill_type` VARCHAR(32) NOT NULL DEFAULT 'trade' COMMENT '账单类型',
+  `status` VARCHAR(32) NOT NULL COMMENT 'INIT/DOWNLOADING/PARSING/COMPARING/SUCCESS/FAIL',
+  `file_object_key` VARCHAR(512) DEFAULT NULL COMMENT '对象存储或本地路径键',
+  `file_size` BIGINT DEFAULT NULL COMMENT '原始文件字节数',
+  `bill_total_count` INT DEFAULT NULL COMMENT '账单明细条数',
+  `bill_total_amount` BIGINT DEFAULT NULL COMMENT '账单金额合计（分）',
+  `local_total_count` INT DEFAULT NULL COMMENT '本地参与比对条数',
+  `local_total_amount` BIGINT DEFAULT NULL COMMENT '本地金额合计（分）',
+  `diff_count` INT NOT NULL DEFAULT 0 COMMENT '差异条数',
+  `elapsed_ms` BIGINT DEFAULT NULL COMMENT '耗时毫秒',
+  `error_msg` VARCHAR(1024) DEFAULT NULL COMMENT '失败原因',
+  `triggered_by` VARCHAR(32) DEFAULT NULL COMMENT 'XXL_JOB / MANUAL / API',
+  `xxl_log_id` BIGINT DEFAULT NULL COMMENT 'xxl-job 日志ID',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_recon_task_biz` (`channel`, `account_code`, `bill_date`, `bill_type`),
+  UNIQUE KEY `uk_recon_task_id` (`task_id`),
+  KEY `idx_recon_task_bill_date` (`bill_date`),
+  KEY `idx_recon_task_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账任务';
+
+CREATE TABLE IF NOT EXISTS `recon_bill_record` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `task_id` VARCHAR(64) NOT NULL COMMENT '关联 recon_task.task_id',
+  `channel` VARCHAR(32) NOT NULL,
+  `channel_trade_no` VARCHAR(128) DEFAULT NULL COMMENT '第三方交易号',
+  `out_trade_no` VARCHAR(128) DEFAULT NULL COMMENT '商户订单号/平台订单号',
+  `amount_fen` BIGINT DEFAULT NULL COMMENT '金额（分）',
+  `refund_fen` BIGINT DEFAULT NULL COMMENT '退款金额（分）',
+  `channel_status` VARCHAR(64) DEFAULT NULL,
+  `finish_time` DATETIME DEFAULT NULL,
+  `raw_line` TEXT COMMENT '原始行',
+  `parse_error` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_recon_bill_task` (`task_id`),
+  KEY `idx_recon_bill_trade` (`channel_trade_no`),
+  KEY `idx_recon_bill_out` (`out_trade_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='三方账单明细';
+
+CREATE TABLE IF NOT EXISTS `recon_diff` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `task_id` VARCHAR(64) NOT NULL,
+  `diff_type` VARCHAR(32) NOT NULL COMMENT 'CHANNEL_ONLY/LOCAL_ONLY/AMOUNT_MISMATCH/STATUS_MISMATCH',
+  `channel_trade_no` VARCHAR(128) DEFAULT NULL,
+  `local_order_id` VARCHAR(64) DEFAULT NULL,
+  `channel_amount` BIGINT DEFAULT NULL,
+  `local_amount` BIGINT DEFAULT NULL,
+  `channel_status` VARCHAR(64) DEFAULT NULL,
+  `local_status` VARCHAR(64) DEFAULT NULL,
+  `handle_status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/PROCESSED/IGNORED',
+  `handle_remark` VARCHAR(512) DEFAULT NULL,
+  `handled_by` VARCHAR(64) DEFAULT NULL,
+  `handled_at` DATETIME DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_recon_diff_task` (`task_id`),
+  KEY `idx_recon_diff_type` (`diff_type`),
+  KEY `idx_recon_diff_handle` (`handle_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账差异';
+
+CREATE TABLE IF NOT EXISTS `recon_handler_audit` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `diff_id` BIGINT NOT NULL,
+  `action` VARCHAR(32) NOT NULL,
+  `operator` VARCHAR(64) DEFAULT NULL,
+  `detail` VARCHAR(1024) DEFAULT NULL,
+  `client_ip` VARCHAR(64) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_recon_audit_diff` (`diff_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='差异处理审计';
+
 TRUNCATE TABLE sys_user_roles;
 TRUNCATE TABLE sys_role_menus;
 TRUNCATE TABLE recon_handler_audit;
@@ -218,9 +295,9 @@ ALTER TABLE merchant_payment_methods MODIFY COLUMN merchant_id VARCHAR(64) NOT N
 INSERT INTO admin_users (
   id, username, password, role, nickname, status, data_merchant_ids, created_at, updated_at
 ) VALUES
-(1, 'admin', '$2a$10$N.zmdr9k7uOCQb376CWq7uI6EBDlO1R2gRiQDsvbfmS5W3j3M5a0q',
+(1, 'admin', '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a',
  'SUPER_ADMIN', '超级管理员', 'ACTIVE', NULL, NOW(), NOW()),
-(2, 'finance_demo', '$2a$10$N.zmdr9k7uOCQb376CWq7uI6EBDlO1R2gRiQDsvbfmS5W3j3M5a0q',
+(2, 'finance_demo', '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a',
  'FINANCE', '演示财务', 'ACTIVE', 'M100001', NOW(), NOW());
 
 -- 渠道（运营配置；若表含 icon 列可自行 ALTER 补充）
@@ -451,11 +528,11 @@ SELECT 4, id, NOW() FROM sys_menus WHERE id IN (1,2,10,11,30,31,32);
 INSERT INTO sys_users (
   id, username, password, nickname, phone, email, status, created_at, updated_at
 ) VALUES
-(1, 'sys_admin', '$2a$10$N.zmdr9k7uOCQb376CWq7uI6EBDlO1R2gRiQDsvbfmS5W3j3M5a0q',
+(1, 'sys_admin', '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a',
  '系统管理员', '13800001111', 'sys_admin@demo.local', 'ACTIVE', NOW(), NOW()),
-(2, 'sys_operator', '$2a$10$N.zmdr9k7uOCQb376CWq7uI6EBDlO1R2gRiQDsvbfmS5W3j3M5a0q',
+(2, 'sys_operator', '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a',
  '运营小王', '13800002222', 'ops@demo.local', 'ACTIVE', NOW(), NOW()),
-(3, 'sys_auditor', '$2a$10$N.zmdr9k7uOCQb376CWq7uI6EBDlO1R2gRiQDsvbfmS5W3j3M5a0q',
+(3, 'sys_auditor', '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a',
  '审计（禁用演示）', '13800003333', 'audit@demo.local', 'DISABLED', NOW(), NOW());
 
 INSERT INTO sys_user_roles (user_id, role_id, created_at) VALUES
