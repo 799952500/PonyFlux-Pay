@@ -2,6 +2,7 @@ package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.MerchantPaymentRoute;
+import com.payflow.admin.kit.ClientScopesKit;
 import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
 import com.payflow.admin.service.MerchantPaymentRouteService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,78 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     }
 
     @Override
+    public MerchantPaymentRoute getById(Long id) {
+        return mapper.selectById(id);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void createRoute(MerchantPaymentRoute route) {
+        if (route.getMerchantId() == null || route.getMerchantId().isBlank()) {
+            throw new IllegalArgumentException("商户号不能为空");
+        }
+        if (route.getPaymentMethodId() == null || route.getPaymentAccountId() == null) {
+            throw new IllegalArgumentException("支付方式与支付账号不能为空");
+        }
+        if (route.getEnabled() == null) {
+            route.setEnabled(true);
+        }
+        if (route.getPriority() == null) {
+            route.setPriority(0);
+        }
+        if (route.getClientScopes() == null || route.getClientScopes().isBlank()) {
+            route.setClientScopes(ClientScopesKit.DEFAULT_DB_VALUE);
+        }
+        route.setId(null);
+        mapper.insert(route);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void updateRoute(Long id, MerchantPaymentRoute patch) {
+        MerchantPaymentRoute exist = mapper.selectById(id);
+        if (exist == null) {
+            throw new IllegalArgumentException("路由不存在: " + id);
+        }
+        if (patch.getPaymentMethodId() != null) {
+            exist.setPaymentMethodId(patch.getPaymentMethodId());
+        }
+        if (patch.getPaymentAccountId() != null) {
+            exist.setPaymentAccountId(patch.getPaymentAccountId());
+        }
+        if (patch.getEnabled() != null) {
+            exist.setEnabled(patch.getEnabled());
+        }
+        if (patch.getPriority() != null) {
+            exist.setPriority(patch.getPriority());
+        }
+        if (patch.getClientScopes() != null && !patch.getClientScopes().isBlank()) {
+            exist.setClientScopes(patch.getClientScopes());
+        }
+        mapper.updateById(exist);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void deleteRoute(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("路由ID不能为空");
+        }
+        mapper.deleteById(id);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void toggleRoute(Long id) {
+        MerchantPaymentRoute exist = mapper.selectById(id);
+        if (exist == null) {
+            throw new IllegalArgumentException("路由不存在: " + id);
+        }
+        exist.setEnabled(Boolean.FALSE.equals(exist.getEnabled()));
+        mapper.updateById(exist);
+    }
+
+    @Override
     @Transactional(transactionManager = "adminTransactionManager")
     public void replaceRoutes(String merchantId, List<MerchantPaymentRoute> routes) {
         mapper.delete(new LambdaQueryWrapper<MerchantPaymentRoute>()
@@ -45,6 +118,9 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
         for (MerchantPaymentRoute route : routes) {
             route.setId(null);
             route.setMerchantId(merchantId);
+            if (route.getClientScopes() == null || route.getClientScopes().isBlank()) {
+                route.setClientScopes(ClientScopesKit.DEFAULT_DB_VALUE);
+            }
             mapper.insert(route);
         }
     }

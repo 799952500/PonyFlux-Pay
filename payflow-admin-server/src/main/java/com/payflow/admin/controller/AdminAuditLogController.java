@@ -6,10 +6,14 @@ import com.payflow.admin.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,8 +32,14 @@ public class AdminAuditLogController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> page(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int pageSize) {
-        IPage<AdminAuditLog> p = auditLogService.page(page, pageSize);
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+        IPage<AdminAuditLog> p = auditLogService.page(page, pageSize, username, action, start, end);
         Map<String, Object> data = new HashMap<>();
         data.put("list", p.getRecords());
         data.put("total", p.getTotal());

@@ -96,7 +96,7 @@ import {
   TitleComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-import type { Order } from '@/types'
+import type { Order, OrderStatus } from '@/types'
 import type { ChannelDistItem, TrendDataItem } from '@/types'
 import { getDashboardStats } from '@/api/admin'
 
@@ -238,26 +238,55 @@ const pieColors = ['#065f46', '#0d9488', '#F59E0B', '#6366f1', '#94a3b8']
 function renderPie(dist: ChannelDistItem[]) {
   const chart = ensurePieChart()
   if (!chart) return
-  const data = dist.map((item, index) => ({
-    name: item.name || item.channel,
+  const filtered = (dist ?? []).filter((item) => Number(item.value) > 0)
+  const data = filtered.map((item, index) => ({
+    name: String(item.name || item.channel || '其他'),
     value: item.value,
     itemStyle: { color: pieColors[index % pieColors.length] },
   }))
   chart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#6b7280', fontSize: 12 } },
+    tooltip: { trigger: 'item', formatter: '{b}<br/>订单数 {c} 笔 ({d}%)' },
+    legend: {
+      type: 'scroll',
+      orient: 'horizontal',
+      bottom: 4,
+      left: 'center',
+      width: '92%',
+      itemGap: 14,
+      pageButtonItemGap: 6,
+      textStyle: { color: '#64748b', fontSize: 11 },
+      pageIconColor: '#047857',
+      pageTextStyle: { color: '#64748b' },
+    },
     series: [
       {
         type: 'pie',
-        radius: ['50%', '75%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: false,
+        radius: ['44%', '70%'],
+        center: ['50%', '44%'],
+        avoidLabelOverlap: true,
         label: { show: false },
         emphasis: { label: { show: false } },
         data,
       },
     ],
   })
+}
+
+/** 兼容后端 camelCase / snake_case，避免表格空白 */
+function normalizeRecentOrderRow(raw: Record<string, unknown>): Partial<Order> {
+  return {
+    orderId: String(raw.orderId ?? raw.order_id ?? ''),
+    merchantId: String(raw.merchantId ?? raw.merchant_id ?? ''),
+    merchantOrderNo: String(raw.merchantOrderNo ?? raw.merchant_order_no ?? ''),
+    subject: String(raw.subject ?? ''),
+    amount: Number(raw.amount ?? 0),
+    currency: String(raw.currency ?? 'CNY'),
+    channel: String(raw.channel ?? ''),
+    status: (raw.status != null ? String(raw.status) : undefined) as OrderStatus | undefined,
+    expireTime: String(raw.expireTime ?? raw.expire_time ?? ''),
+    createdAt: String(raw.createdAt ?? raw.created_at ?? '').replace('T', ' '),
+    updatedAt: String(raw.updatedAt ?? raw.updated_at ?? '').replace('T', ' '),
+  }
 }
 
 async function loadDashboard() {
@@ -283,7 +312,10 @@ async function loadDashboard() {
     kpiCards[3].sub = '按今日订单'
     kpiCards[3].trend = undefined
 
-    recentOrders.value = data.recentOrders ?? []
+    const rawRecent = data.recentOrders
+    recentOrders.value = Array.isArray(rawRecent)
+      ? rawRecent.map((r) => normalizeRecentOrderRow(r as Record<string, unknown>))
+      : []
 
     renderTrend(data.trendData ?? [])
     renderPie(data.channelDistribution ?? [])

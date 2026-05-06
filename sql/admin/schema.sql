@@ -89,7 +89,7 @@ CREATE TABLE `admin_payment_methods` (
 DROP TABLE IF EXISTS `admin_merchant_payment_methods`;
 CREATE TABLE `admin_merchant_payment_methods` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-  `merchant_id` BIGINT DEFAULT NULL COMMENT '商户ID',
+  `merchant_id` VARCHAR(64) NOT NULL COMMENT '商户号',
   `payment_method_id` BIGINT DEFAULT NULL COMMENT '支付方式ID',
   `enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
   `priority` INT DEFAULT 0 COMMENT '优先级',
@@ -136,6 +136,7 @@ CREATE TABLE `admin_merchant_payment_routes` (
   `payment_account_id` BIGINT NOT NULL COMMENT '支付账号ID',
   `enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
   `priority` INT DEFAULT 0 COMMENT '优先级',
+  `client_scopes` VARCHAR(64) NOT NULL DEFAULT 'PC,H5,APP' COMMENT '终端可见：PC,H5,APP 逗号分隔',
   `created_at` DATETIME DEFAULT NULL,
   `updated_at` DATETIME DEFAULT NULL,
   UNIQUE KEY `uk_merchant_method_account` (`merchant_id`, `payment_method_id`, `payment_account_id`),

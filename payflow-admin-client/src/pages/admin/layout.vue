@@ -31,6 +31,9 @@
           <el-menu-item index="/admin/notifications">
             <span class="menu-text">{{ t('menu.notifications') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/search">
+            <span class="menu-text">{{ t('menu.globalSearch') }}</span>
+          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="trade-group">
@@ -44,6 +47,9 @@
           <el-menu-item index="/admin/refunds">
             <span class="menu-text">{{ t('menu.refunds') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/reconcile">
+            <span class="menu-text">{{ t('menu.reconcile') }}</span>
+          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="channel-pay-group">
@@ -53,6 +59,12 @@
           </template>
           <el-menu-item index="/admin/channels">
             <span class="menu-text">{{ t('menu.channels') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/channel-routes">
+            <span class="menu-text">{{ t('menu.channelRoutes') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/merchant-payments">
+            <span class="menu-text">{{ t('menu.merchantPayments') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/payment-methods">
             <span class="menu-text">{{ t('menu.paymentMethods') }}</span>
@@ -92,6 +104,12 @@
           <el-menu-item index="/admin/users">
             <span class="menu-text">{{ t('menu.users') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/audit-logs">
+            <span class="menu-text">{{ t('menu.auditLogs') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/dicts">
+            <span class="menu-text">{{ t('menu.dicts') }}</span>
+          </el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -121,6 +139,14 @@
       <div class="admin-topbar h-[60px] shrink-0 topbar relative border-b border-white/10">
         <div class="admin-topbar__inner relative z-[1] flex h-full w-full items-center px-6">
         <h1 class="text-white/95 font-semibold text-base m-0 tracking-tight">{{ pageTitle }}</h1>
+        <el-input
+          v-model="topSearchQ"
+          clearable
+          size="default"
+          placeholder="搜索订单号 / 商户订单号…"
+          class="topbar-search ml-4 w-[min(280px,28vw)]"
+          @keyup.enter="goGlobalSearch"
+        />
         <div class="ml-auto flex items-center gap-3 topbar-actions">
           <el-badge :value="0" class="cursor-pointer" :hidden="true">
             <el-button circle class="!bg-white/10 !border-white/15 !text-slate-100">
@@ -144,11 +170,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useAdminStore } from '@/stores/admin'
+import { getAdminProfile } from '@/api/auth'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -156,10 +183,21 @@ const router = useRouter()
 const adminStore = useAdminStore()
 
 const activeMenu = computed(() => route.path)
+const topSearchQ = ref('')
+
+function goGlobalSearch() {
+  const q = topSearchQ.value.trim()
+  if (!q) return
+  router.push({ path: '/admin/search', query: { q } })
+}
 
 const menuDefaultOpeneds = computed(() => {
   const path = route.path
-  if (path.startsWith('/admin/dashboard') || path.startsWith('/admin/notifications')) {
+  if (
+    path.startsWith('/admin/dashboard')
+    || path.startsWith('/admin/notifications')
+    || path.startsWith('/admin/search')
+  ) {
     return ['workspace-group']
   }
   if (path.startsWith('/admin/orders') || path.startsWith('/admin/refunds')) {
@@ -167,6 +205,8 @@ const menuDefaultOpeneds = computed(() => {
   }
   if (
     path.startsWith('/admin/channels')
+    || path.startsWith('/admin/channel-routes')
+    || path.startsWith('/admin/merchant-payments')
     || path.startsWith('/admin/payment-methods')
     || path.startsWith('/admin/payment-accounts')
   ) {
@@ -180,6 +220,8 @@ const menuDefaultOpeneds = computed(() => {
     || path.startsWith('/admin/roles')
     || path.startsWith('/admin/menus')
     || path.startsWith('/admin/users')
+    || path.startsWith('/admin/audit-logs')
+    || path.startsWith('/admin/dicts')
   ) {
     return ['system-group']
   }
@@ -194,8 +236,25 @@ const pageTitle = computed(() => {
 })
 
 const adminName = computed(() => {
-  const user = adminStore.user
-  return user?.username ?? localStorage.getItem('adminUser') ? JSON.parse(localStorage.getItem('adminUser')!).username : '管理员'
+  const u = adminStore.user
+  if (u?.username) return u.username
+  try {
+    const raw = localStorage.getItem('adminUser')
+    if (raw) return (JSON.parse(raw) as { username?: string }).username ?? '管理员'
+  } catch {
+    /* ignore */
+  }
+  return '管理员'
+})
+
+onMounted(async () => {
+  if (!adminStore.isLoggedIn()) return
+  try {
+    const p = await getAdminProfile()
+    adminStore.applyProfile(p)
+  } catch {
+    /* 静默：Token 失效时由拦截器处理 */
+  }
 })
 
 async function handleLogout() {
@@ -419,6 +478,16 @@ async function handleLogout() {
 
 .topbar {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+}
+
+.topbar-search :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.topbar-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .topbar-actions :deep(.el-button.is-circle) {

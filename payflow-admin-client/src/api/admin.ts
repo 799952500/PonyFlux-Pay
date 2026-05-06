@@ -17,8 +17,10 @@ import type {
   SysRole,
   SysMenu,
   Channel,
-  ChannelAccount,
   ChannelRoute,
+  AuditLogItem,
+  OrderStats,
+  AdminSearchOrderHit,
 } from '@/types'
 
 // -------------------------------------------------------------------
@@ -40,14 +42,116 @@ export const getLoginFeatures = async (): Promise<{ loginCaptchaEnabled: boolean
 // -------------------------------------------------------------------
 // 订单管理
 // -------------------------------------------------------------------
-export const getOrders = (params: OrderListQuery): Promise<OrderListResponse> =>
-  request.get('/admin/orders', { params })
+export const getOrders = (params: OrderListQuery): Promise<OrderListResponse> => {
+  const q: Record<string, unknown> = {
+    page: params.page,
+    size: params.pageSize,
+  }
+  if (params.status) q.status = params.status
+  if (params.merchantId) q.merchantId = params.merchantId
+  if (params.dateRange?.length === 2) {
+    q.startTime = `${params.dateRange[0]} 00:00:00`
+    q.endTime = `${params.dateRange[1]} 23:59:59`
+  }
+  return request.get('/admin/orders', { params: q }).then((data: any) => ({
+    list: data?.list ?? [],
+    total: Number(data?.total ?? 0),
+    page: Number(data?.page ?? params.page),
+    pageSize: Number(data?.size ?? params.pageSize),
+  }))
+}
 
 export const getOrderDetail = (orderId: string): Promise<Order> =>
   request.get(`/admin/orders/${orderId}`)
 
 export const closeOrder = (orderId: string) =>
   request.post(`/admin/orders/${orderId}/close`)
+
+export const getOrderStats = (): Promise<OrderStats> =>
+  request.get('/admin/orders/stats')
+
+export const listOrdersByMerchant = (merchantId: string): Promise<Order[]> =>
+  request.get(`/admin/orders/merchant/${encodeURIComponent(merchantId)}`)
+
+/**
+ * 导出订单 CSV（走 fetch，避免 JSON 拦截器处理纯文本响应）。
+ */
+export async function exportOrdersCsv(filters: {
+  merchantId?: string
+  status?: string
+  startTime?: string
+  endTime?: string
+  maxRows?: number
+}): Promise<void> {
+  const token = localStorage.getItem('adminToken')
+  const p = new URLSearchParams()
+  if (filters.merchantId) p.set('merchantId', filters.merchantId)
+  if (filters.status) p.set('status', filters.status)
+  if (filters.startTime) p.set('startTime', filters.startTime)
+  if (filters.endTime) p.set('endTime', filters.endTime)
+  if (filters.maxRows != null) p.set('maxRows', String(filters.maxRows))
+  const res = await fetch(`/api/v1/admin/orders/export?${p.toString()}`, {
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  })
+  if (res.status === 401) {
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminUser')
+    window.location.href = '/login'
+    return
+  }
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(t || `导出失败 HTTP ${res.status}`)
+  }
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `orders-export-${Date.now()}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(a.href)
+}
+
+// -------------------------------------------------------------------
+// 全局搜索 / 字典 / 元数据 / 系统配置扩展
+// -------------------------------------------------------------------
+export const adminSearchOrders = (q: string, limit = 20): Promise<AdminSearchOrderHit[]> =>
+  request.get('/admin/search', { params: { q, limit } })
+
+export const getDicts = (): Promise<Record<string, unknown>> =>
+  request.get('/admin/dicts')
+
+export async function getMetaVersion(): Promise<{ application: string; profiles: string }> {
+  const res = await fetch('/api/v1/admin/meta/version')
+  const json = await res.json()
+  if (json.code !== 0) throw new Error(json.message || '加载版本信息失败')
+  return json.data as { application: string; profiles: string }
+}
+
+export const getSystemConfigCategories = (): Promise<string[]> =>
+  request.get('/admin/system-configs/categories')
+
+export const getSystemConfigMap = (): Promise<Record<string, string>> =>
+  request.get('/admin/system-configs/map')
+
+export const getSystemConfigValue = (key: string): Promise<string> =>
+  request.get(`/admin/system-configs/${encodeURIComponent(key)}`)
+
+// -------------------------------------------------------------------
+// 支付方式详情
+// -------------------------------------------------------------------
+export const getPaymentMethodById = (id: number): Promise<any> =>
+  request.get(`/admin/payment-methods/${id}`)
+
+export const getPaymentMethodsByChannelId = (channelId: number): Promise<any[]> =>
+  request.get(`/admin/payment-methods/channel/${channelId}`)
+
+// -------------------------------------------------------------------
+// 用户详情
+// -------------------------------------------------------------------
+export const getUserById = (id: number): Promise<any> =>
+  request.get(`/admin/users/${id}`)
 
 // -------------------------------------------------------------------
 // 退款管理
@@ -131,8 +235,10 @@ export const getMerchantsSimple = (): Promise<Array<{ merchantId: string; mercha
 // -------------------------------------------------------------------
 // 商户支付方式配置
 // -------------------------------------------------------------------
-export const getMerchantPaymentMethods = (merchantId: string): Promise<any[]> =>
-  request.get(`/admin/merchant-payment-methods?merchantId=${merchantId}`)
+export const getMerchantPaymentMethods = (merchantId?: string): Promise<any[]> =>
+  request.get('/admin/merchant-payment-methods', {
+    params: merchantId ? { merchantId } : {},
+  })
 
 export const saveMerchantPaymentMethods = (merchantId: string, paymentMethodIds: number[]) =>
   request.post('/admin/merchant-payment-methods', { merchantId, paymentMethodIds })
@@ -144,7 +250,7 @@ export const toggleMerchantPayment = (id: number) =>
   request.put(`/admin/merchant-payment-methods/${id}/toggle`)
 
 export const createMerchantPayment = (data: { merchantId: string; paymentMethodId: string | number; priority?: number }) =>
-  request.post('/admin/merchant-payment-methods', data)
+  request.post('/admin/merchant-payment-methods/item', data)
 
 // -------------------------------------------------------------------
 // 风控规则
@@ -195,30 +301,7 @@ export const deletePaymentAccount = (id: number) =>
   request.delete(`/admin/channels/accounts/${id}`)
 
 // -------------------------------------------------------------------
-// 渠道账号（ChannelAccount 池）
-// -------------------------------------------------------------------
-export const getChannelAccounts = (params?: {
-  page?: number
-  pageSize?: number
-  channelId?: number
-  keyword?: string
-}): Promise<PageResult<ChannelAccount>> =>
-  request.get('/admin/channels/accounts', { params })
-
-export const createChannelAccount = (data: Partial<ChannelAccount>) =>
-  request.post('/admin/channels/accounts', data)
-
-export const updateChannelAccount = (id: number, data: Partial<ChannelAccount>) =>
-  request.put(`/admin/channels/accounts/${id}`, data)
-
-export const toggleChannelAccount = (id: number) =>
-  request.put(`/admin/channels/accounts/${id}/toggle`)
-
-export const deleteChannelAccount = (id: number) =>
-  request.delete(`/admin/channels/accounts/${id}`)
-
-// -------------------------------------------------------------------
-// 渠道路由（ChannelRoute）
+// 支付路由（ChannelRoute 实体，管理「商户→渠道账户」的支付路由）
 // -------------------------------------------------------------------
 export const getChannelRoutes = (params?: {
   merchantId?: string
@@ -239,16 +322,56 @@ export const deleteChannelRoute = (id: number) =>
 // -------------------------------------------------------------------
 // 商户支付路由（方式+账号）
 // -------------------------------------------------------------------
-export const getMerchantPaymentRoutes = (merchantId: string): Promise<MerchantPaymentRoute[]> =>
-  request.get('/admin/merchant-payment-routes', { params: { merchantId } })
+export const getMerchantPaymentRoutes = (merchantId?: string): Promise<MerchantPaymentRoute[]> =>
+  request.get('/admin/merchant-payment-routes', { params: merchantId ? { merchantId } : {} })
 
 export const replaceMerchantPaymentRoutes = (merchantId: string, routes: Array<{
   paymentMethodId: number
   paymentAccountId: number
   enabled: boolean
   priority: number
+  clientScopes?: string[]
 }>) =>
   request.post('/admin/merchant-payment-routes/replace', { merchantId, routes })
+
+export const createMerchantPaymentRouteItem = (data: {
+  merchantId: string
+  paymentMethodId: number
+  paymentAccountId: number
+  priority?: number
+  enabled?: boolean
+  clientScopes?: string[]
+}) => request.post('/admin/merchant-payment-routes/item', data)
+
+export const updateMerchantPaymentRoute = (
+  id: number,
+  data: Partial<{
+    paymentMethodId: number
+    paymentAccountId: number
+    priority: number
+    enabled: boolean
+    clientScopes: string[]
+  }>
+) => request.put(`/admin/merchant-payment-routes/${id}`, data)
+
+export const toggleMerchantPaymentRoute = (id: number) =>
+  request.put(`/admin/merchant-payment-routes/${id}/toggle`)
+
+export const deleteMerchantPaymentRoute = (id: number) =>
+  request.delete(`/admin/merchant-payment-routes/${id}`)
+
+// -------------------------------------------------------------------
+// 操作日志（审计）
+// -------------------------------------------------------------------
+export const getAuditLogs = (params: {
+  page: number
+  pageSize: number
+  username?: string
+  action?: string
+  startDate?: string
+  endDate?: string
+}): Promise<PageResult<AuditLogItem>> =>
+  request.get('/admin/audit-logs', { params })
 
 // -------------------------------------------------------------------
 // 角色管理
@@ -303,3 +426,88 @@ export const resetUserPassword = (id: number, newPassword: string) =>
 
 export const disableUser = (id: number) =>
   request.put(`/admin/users/${id}/disable`)
+
+// -------------------------------------------------------------------
+// 资金对账（代理至 payflow-recon-server）
+// -------------------------------------------------------------------
+export interface ReconTaskItem {
+  taskId: string
+  channel: string
+  accountCode: string
+  billDate: string
+  billType?: string
+  status: string
+  fileObjectKey?: string
+  fileSize?: number
+  billTotalCount?: number
+  billTotalAmount?: number
+  localTotalCount?: number
+  localTotalAmount?: number
+  diffCount?: number
+  elapsedMs?: number
+  errorMsg?: string
+  triggeredBy?: string
+  xxlLogId?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ReconDiffItem {
+  id: number
+  taskId: string
+  diffType: string
+  channelTradeNo?: string
+  localOrderId?: string
+  channelAmount?: number
+  localAmount?: number
+  channelStatus?: string
+  localStatus?: string
+  handleStatus: string
+  handleRemark?: string
+  handledBy?: string
+  handledAt?: string
+}
+
+export const getReconTasks = (params: {
+  page?: number
+  size?: number
+  billDate?: string
+  channel?: string
+  status?: string
+}): Promise<{ list: ReconTaskItem[]; total: number; page: number; size: number }> =>
+  request.get('/admin/reconcile/tasks', { params }).then((data: any) => ({
+    list: data?.list ?? [],
+    total: Number(data?.total ?? 0),
+    page: Number(data?.page ?? params.page ?? 1),
+    size: Number(data?.size ?? params.size ?? 20),
+  }))
+
+export const getReconTaskDetail = (taskId: string): Promise<ReconTaskItem> =>
+  request.get(`/admin/reconcile/tasks/${encodeURIComponent(taskId)}`)
+
+export const getReconDiffs = (
+  taskId: string,
+  params: {
+    page?: number
+    size?: number
+    diffType?: string
+    handleStatus?: string
+  }
+): Promise<{ list: ReconDiffItem[]; total: number; page: number; size: number }> =>
+  request
+    .get(`/admin/reconcile/tasks/${encodeURIComponent(taskId)}/diffs`, { params })
+    .then((data: any) => ({
+      list: data?.list ?? [],
+      total: Number(data?.total ?? 0),
+      page: Number(data?.page ?? params.page ?? 1),
+      size: Number(data?.size ?? params.size ?? 20),
+    }))
+
+export const triggerReconManual = (body: {
+  reconChannel: string
+  accountCode: string
+  billDate: string
+}): Promise<{ taskId: string }> => request.post('/admin/reconcile/tasks/manual-run', body)
+
+export const handleReconDiff = (id: number, body: { action: string; remark?: string }) =>
+  request.post(`/admin/reconcile/diffs/${id}/handle`, body)

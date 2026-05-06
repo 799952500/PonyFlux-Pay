@@ -1,8 +1,23 @@
 <template>
   <div>
+    <div v-if="orderStats" class="content-card mb-4 flex flex-wrap items-center gap-3">
+      <span class="text-sm text-slate-600 font-medium">订单统计</span>
+      <el-tag type="info" effect="plain">全部 {{ orderStats.total }}</el-tag>
+      <el-tag
+        v-for="row in orderStats.statusCount"
+        :key="row.status"
+        size="small"
+        :type="statusTypeMap[row.status] ?? 'info'"
+      >
+        {{ statusLabelMap[row.status] ?? row.status }} {{ row.cnt }}
+      </el-tag>
+    </div>
     <!-- 筛选工具栏 -->
     <div class="content-card mb-4">
       <el-form :inline="true" :model="queryForm" size="default">
+        <el-form-item label="商户号">
+          <el-input v-model="queryForm.merchantId" placeholder="筛选商户" clearable style="width: 160px" @keyup.enter="handleSearch" />
+        </el-form-item>
         <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" placeholder="订单号 / 商户订单号" clearable style="width: 180px" @keyup.enter="handleSearch" />
         </el-form-item>
@@ -30,6 +45,7 @@
         <el-form-item>
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button class="btn-outline" :loading="exporting" @click="handleExportCsv">导出 CSV</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -112,20 +128,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getOrders } from '@/api/admin'
-import type { Order, OrderListQuery } from '@/types'
+import { getOrders, getOrderStats, exportOrdersCsv } from '@/api/admin'
+import type { Order, OrderListQuery, OrderStats } from '@/types'
+
+const route = useRoute()
+const router = useRouter()
 
 const loading = ref(false)
+const exporting = ref(false)
 const orderList = ref<Order[]>([])
 const total = ref(0)
+const orderStats = ref<OrderStats | null>(null)
 const showDetail = ref(false)
 const currentOrder = ref<Order | null>(null)
 const detailLoading = ref(false)
 const dateRange = ref<[string, string] | null>(null)
 
-const queryForm = reactive<OrderListQuery>({ page: 1, pageSize: 20, status: undefined, channel: undefined, keyword: undefined })
+const queryForm = reactive<OrderListQuery>({
+  page: 1,
+  pageSize: 20,
+  status: undefined,
+  channel: undefined,
+  keyword: undefined,
+  merchantId: undefined,
+})
 
 const statusTypeMap: Record<string, string> = { PAID: 'success', PAYING: 'warning', CREATED: 'info', EXPIRED: 'info', FAILED: 'danger' }
 const statusLabelMap: Record<string, string> = { PAID: '已支付', PAYING: '支付中', CREATED: '待支付', EXPIRED: '已过期', FAILED: '失败' }
@@ -144,15 +173,83 @@ async function loadOrders() {
   finally { loading.value = false }
 }
 
-function handleSearch() { queryForm.page = 1; loadOrders() }
-function handleReset() { Object.assign(queryForm, { page: 1, pageSize: 20, status: undefined, channel: undefined, keyword: undefined }); dateRange.value = null; loadOrders() }
+async function loadStats() {
+  try {
+    orderStats.value = await getOrderStats()
+  } catch {
+    orderStats.value = null
+  }
+}
+
+async function handleExportCsv() {
+  exporting.value = true
+  try {
+    const f: { merchantId?: string; status?: string; startTime?: string; endTime?: string } = {}
+    if (queryForm.merchantId) f.merchantId = queryForm.merchantId
+    if (queryForm.status) f.status = queryForm.status
+    if (dateRange.value?.length === 2) {
+      f.startTime = `${dateRange.value[0]} 00:00:00`
+      f.endTime = `${dateRange.value[1]} 23:59:59`
+    }
+    await exportOrdersCsv(f)
+    ElMessage.success('已开始下载')
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '导出失败'
+    ElMessage.error(msg)
+  } finally {
+    exporting.value = false
+  }
+}
+
+function handleSearch() {
+  syncMerchantIdToUrl()
+  queryForm.page = 1
+  loadOrders()
+}
+
+function handleReset() {
+  Object.assign(queryForm, {
+    page: 1,
+    pageSize: 20,
+    status: undefined,
+    channel: undefined,
+    keyword: undefined,
+    merchantId: undefined,
+  })
+  dateRange.value = null
+  const hadMerchantInUrl = !!route.query.merchantId
+  if (hadMerchantInUrl) router.replace({ path: '/admin/orders' })
+  else loadOrders()
+}
+
+function syncMerchantIdToUrl() {
+  const mid = queryForm.merchantId?.trim()
+  if (mid) {
+    router.replace({ path: '/admin/orders', query: { merchantId: mid } })
+  } else if (route.query.merchantId) {
+    router.replace({ path: '/admin/orders' })
+  }
+}
 
 async function openDetail(row: Order) {
   currentOrder.value = row
   showDetail.value = true
 }
 
-onMounted(() => { loadOrders() })
+watch(
+  () => route.query.merchantId,
+  (mid) => {
+    const s = typeof mid === 'string' ? mid : Array.isArray(mid) ? mid[0] : ''
+    queryForm.merchantId = s || undefined
+    queryForm.page = 1
+    loadOrders()
+  },
+  { immediate: true }
+)
+
+onMounted(() => {
+  loadStats()
+})
 </script>
 
 <style scoped>

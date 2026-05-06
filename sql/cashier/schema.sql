@@ -37,8 +37,8 @@ CREATE TABLE `cashier_orders` (
   `order_id` VARCHAR(64) NOT NULL COMMENT '平台订单号',
   `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '商户号',
   `merchant_order_no` VARCHAR(64) DEFAULT NULL COMMENT '商户侧订单号',
-  `amount` BIGINT DEFAULT NULL COMMENT '订单金额(分)',
-  `currency` VARCHAR(8) DEFAULT NULL COMMENT '币种',
+  `amount` BIGINT NOT NULL COMMENT '订单金额(分)',
+  `currency` VARCHAR(8) NOT NULL DEFAULT 'CNY' COMMENT '币种',
   `pay_amount` BIGINT DEFAULT NULL COMMENT '实付金额(分)',
   `subject` VARCHAR(256) DEFAULT NULL COMMENT '订单标题',
   `body` VARCHAR(512) DEFAULT NULL COMMENT '订单详情',
@@ -59,7 +59,8 @@ CREATE TABLE `cashier_orders` (
   UNIQUE KEY `uk_order_id` (`order_id`),
   KEY `idx_merchant_id` (`merchant_id`),
   KEY `idx_status` (`status`),
-  KEY `idx_created_at` (`created_at`)
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_merchant_merchant_order` (`merchant_id`, `merchant_order_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
 
 -- ----------------------------
@@ -120,16 +121,17 @@ DROP TABLE IF EXISTS `cashier_payments`;
 CREATE TABLE `cashier_payments` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
   `payment_id` VARCHAR(64) NOT NULL COMMENT '支付记录ID',
-  `order_id` VARCHAR(64) DEFAULT NULL COMMENT '关联订单号',
-  `pay_channel` VARCHAR(32) DEFAULT NULL COMMENT '支付渠道',
+  `order_id` VARCHAR(64) NOT NULL COMMENT '关联订单号',
+  `pay_channel` VARCHAR(32) NOT NULL COMMENT '支付渠道',
   `pay_method` VARCHAR(32) DEFAULT NULL COMMENT '支付方式',
   `channel_transaction_id` VARCHAR(128) DEFAULT NULL COMMENT '第三方交易流水号',
-  `amount` BIGINT DEFAULT NULL COMMENT '支付金额(分)',
+  `amount` BIGINT NOT NULL COMMENT '支付金额(分)',
   `status` VARCHAR(16) DEFAULT NULL COMMENT '支付状态',
   `created_at` DATETIME DEFAULT NULL COMMENT '创建时间',
   `updated_at` DATETIME DEFAULT NULL COMMENT '更新时间',
   UNIQUE KEY `uk_payment_id` (`payment_id`),
-  KEY `idx_order_id` (`order_id`)
+  KEY `idx_order_id` (`order_id`),
+  KEY `idx_pay_channel_status` (`pay_channel`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付记录表';
 
 -- ----------------------------
@@ -152,7 +154,8 @@ CREATE TABLE `cashier_refunds` (
   UNIQUE KEY `uk_refund_id` (`refund_id`),
   KEY `idx_payment_id` (`payment_id`),
   KEY `idx_order_id` (`order_id`),
-  KEY `idx_status` (`status`)
+  KEY `idx_status` (`status`),
+  KEY `idx_order_status` (`order_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款记录表';
 
 SET FOREIGN_KEY_CHECKS = 1;

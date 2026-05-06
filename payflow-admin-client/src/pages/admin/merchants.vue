@@ -41,10 +41,11 @@
           <template #default="{ row }"><el-tag size="small" :type="statusTypeMap[row.status]">{{ statusLabelMap[row.status] }}</el-tag></template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="170" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
             <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
+            <el-button link type="primary" size="small" @click.stop="goMerchantOrders(row)">订单</el-button>
             <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付方式</el-button>
           </template>
         </el-table-column>
@@ -137,7 +138,7 @@
       <div v-if="paymentConfigLoading" class="p-4"><el-skeleton animated :rows="4" /></div>
       <div v-else>
         <div class="flex items-center justify-between mb-3">
-          <div class="text-sm text-gray-500">为该商户配置“支付方式 + 收款账号”的路由列表：</div>
+          <div class="text-sm text-gray-500">为该商户配置「支付方式 + 收款账号 + 终端（PC/H5/APP）」：</div>
           <el-button type="primary" class="btn-primary" size="small" @click="addRoute">新增路由</el-button>
         </div>
         <el-table :data="merchantRoutes" stripe size="small" max-height="420">
@@ -170,6 +171,15 @@
               <el-input-number v-model="row.priority" :min="0" :max="9999" controls-position="right" style="width: 100%" />
             </template>
           </el-table-column>
+          <el-table-column label="终端可见" min-width="168">
+            <template #default="{ row }">
+              <el-checkbox-group v-model="row.clientScopes" size="small" class="flex flex-wrap gap-1">
+                <el-checkbox label="PC">PC</el-checkbox>
+                <el-checkbox label="H5">H5</el-checkbox>
+                <el-checkbox label="APP">APP</el-checkbox>
+              </el-checkbox-group>
+            </template>
+          </el-table-column>
           <el-table-column label="启用" width="90" align="center">
             <template #default="{ row }">
               <el-switch v-model="row.enabled" />
@@ -192,9 +202,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { getMerchants, getPaymentMethods, getPaymentAccounts, getMerchantPaymentRoutes, replaceMerchantPaymentRoutes, updateMerchant } from '@/api/admin'
 import type { Merchant, PaymentMethod, PaymentAccount, MerchantPaymentRoute } from '@/types'
+
+const router = useRouter()
 
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -261,6 +274,10 @@ async function openDetail(merchant: Merchant) {
   detailVisible.value = true
 }
 
+function goMerchantOrders(merchant: Merchant) {
+  router.push({ path: '/admin/orders', query: { merchantId: merchant.merchantId } })
+}
+
 function openEdit(merchant: Merchant) {
   isEdit.value = true
   currentMerchant.value = merchant
@@ -323,6 +340,8 @@ async function openPaymentConfig(merchant: Merchant) {
       _tmpId: cryptoRandomId(),
       enabled: r.enabled ?? true,
       priority: r.priority ?? 0,
+      clientScopes:
+        Array.isArray(r.clientScopes) && r.clientScopes.length > 0 ? [...r.clientScopes] : ['PC', 'H5', 'APP'],
     }))
     if (merchantRoutes.value.length === 0) {
       addRoute()
@@ -348,6 +367,7 @@ function addRoute() {
     paymentAccountId: 0,
     enabled: true,
     priority: 0,
+    clientScopes: ['PC', 'H5', 'APP'],
   })
 }
 
@@ -384,6 +404,8 @@ async function savePaymentRoutes() {
       paymentAccountId: Number(r.paymentAccountId),
       enabled: Boolean(r.enabled),
       priority: Number(r.priority ?? 0),
+      clientScopes:
+        Array.isArray(r.clientScopes) && r.clientScopes.length > 0 ? r.clientScopes : ['PC', 'H5', 'APP'],
     }))
 
     const invalidIndex = routes.findIndex(r => !r.paymentMethodId || !r.paymentAccountId)

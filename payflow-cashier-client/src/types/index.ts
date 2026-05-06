@@ -63,6 +63,8 @@ export interface CashierInfo {
   amount: number          // 单位：分
   currency: string
   expireTime: string
+  /** 订单创建时间（ISO），用于倒计时进度条总时长 */
+  createdAt?: string
   status: string
   paymentMethods: PaymentMethod[]
   successUrl?: string
@@ -121,6 +123,24 @@ export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
+}
+
+// ============================================================
+// 电子收据
+// ============================================================
+export interface ReceiptInfo {
+  orderId: string          // 平台订单号
+  merchantName: string     // 商户名称
+  subject: string          // 商品名称
+  amount: number           // 金额（分）
+  currency: string         // 币种
+  amountCn: string         // 金额大写中文
+  payChannel: string       // 支付渠道
+  payTime: string          // 支付时间
+  transactionNo: string    // 交易流水号
+  status: string           // 状态
+  receiptNo?: string       // 收据编号
+  generatedAt?: string      // 收据生成时间
 }
 
 // ============================================================

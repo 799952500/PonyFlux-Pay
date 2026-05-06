@@ -9,10 +9,11 @@ export const useAdminStore = defineStore('admin', () => {
   const token = ref(localStorage.getItem('adminToken') ?? '')
 
   function setAuth(loginData: AdminLoginResponse) {
-    token.value = loginData.token
-    user.value = loginData
-    localStorage.setItem('adminToken', loginData.token)
-    localStorage.setItem('adminUser', JSON.stringify(loginData))
+    const tok = loginData.token != null && String(loginData.token) ? String(loginData.token) : ''
+    token.value = tok
+    user.value = { ...loginData, token: tok }
+    localStorage.setItem('adminToken', tok)
+    localStorage.setItem('adminUser', JSON.stringify(user.value))
   }
 
   function clearAuth() {
@@ -22,9 +23,27 @@ export const useAdminStore = defineStore('admin', () => {
     localStorage.removeItem('adminUser')
   }
 
+  /** 用 profile 接口结果刷新用户信息，不覆盖当前有效 Token */
+  function applyProfile(profile: AdminLoginResponse) {
+    const prev = user.value
+    const nextToken =
+      profile.token != null && String(profile.token) ? String(profile.token) : token.value
+    const merged: AdminLoginResponse = {
+      adminId: profile.adminId ?? prev?.adminId,
+      username: profile.username ?? prev?.username ?? '',
+      role: profile.role ?? prev?.role ?? '',
+      menus: profile.menus ?? prev?.menus,
+      token: nextToken,
+    }
+    token.value = nextToken
+    user.value = merged
+    localStorage.setItem('adminToken', nextToken)
+    localStorage.setItem('adminUser', JSON.stringify(merged))
+  }
+
   function isLoggedIn() {
     return !!token.value
   }
 
-  return { user, token, setAuth, clearAuth, isLoggedIn }
+  return { user, token, setAuth, clearAuth, applyProfile, isLoggedIn }
 })

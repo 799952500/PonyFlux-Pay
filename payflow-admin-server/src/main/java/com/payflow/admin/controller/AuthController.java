@@ -7,6 +7,7 @@ import com.payflow.admin.service.CaptchaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,11 +26,13 @@ public class AuthController {
     private final CaptchaService captchaService;
 
     /**
-     * 签发算术验证码（未启用验证码时前端可忽略）。
+     * 签发算术验证码（登录前必须先调用，提交登录时携带 captchaId 与 captchaAnswer）。
      */
     @GetMapping("/captcha")
     public ResponseEntity<Map<String, Object>> captcha() {
-        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", captchaService.issue()));
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(Map.of("code", 0, "message", "success", "data", captchaService.issue()));
     }
 
     /**
@@ -43,6 +46,15 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest) {
         LoginResponse data = adminAuthService.login(request, httpRequest);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
+    }
+
+    /**
+     * 当前登录用户信息（需携带 JWT；不含密码）。
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<Map<String, Object>> profile(HttpServletRequest httpRequest) {
+        LoginResponse data = adminAuthService.profile(httpRequest);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 }

@@ -17,6 +17,13 @@ const router = createRouter({
       meta: { title: '收银台' },
     },
 
+    {
+      path: '/receipt/:orderId',
+      name: 'receipt',
+      component: () => import('@/pages/receipt/index.vue'),
+      meta: { title: '电子收据' },
+    },
+
     // ============================================================
     // 首页重定向到 demo 收银台
     // ============================================================

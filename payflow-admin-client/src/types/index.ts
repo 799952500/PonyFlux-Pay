@@ -73,6 +73,8 @@ export interface OrderListQuery {
   channel?: PayChannel
   keyword?: string
   dateRange?: [string, string]
+  /** 筛选指定商户订单（与后端 merchantId 一致） */
+  merchantId?: string
 }
 
 export interface OrderListResponse {
@@ -200,7 +202,7 @@ export interface ChannelAccount {
 }
 
 // ============================================================
-// 管理后台 - 渠道路由（ChannelRoute）
+// 管理后台 - 支付路由（ChannelRoute）
 // ============================================================
 export interface ChannelRoute {
   id: number
@@ -225,6 +227,8 @@ export interface MerchantPaymentRoute {
   paymentAccountId: number
   enabled: boolean
   priority: number
+  /** 终端可见：PC / H5 / APP */
+  clientScopes?: string[]
   paymentMethod?: PaymentMethod
   paymentAccount?: PaymentAccount
 }
@@ -264,6 +268,36 @@ export interface PageResult<T> {
 }
 
 // ============================================================
+// 管理后台 - 操作审计日志
+// ============================================================
+export interface AuditLogItem {
+  id: number
+  username: string
+  action: string
+  resourcePath: string
+  detail: string
+  clientIp: string
+  createdAt: string
+}
+
+/** 订单状态统计（/admin/orders/stats） */
+export interface OrderStats {
+  total: number
+  statusCount: Array<{ status: string; cnt: number }>
+}
+
+/** 全局搜索订单命中 */
+export interface AdminSearchOrderHit {
+  type: string
+  orderId: string
+  merchantId: string
+  merchantOrderNo: string
+  status: string
+  amount: number
+  createdAt: string
+}
+
+// ============================================================
 // 管理员登录
 // ============================================================
 export interface AdminLoginDTO {
@@ -274,8 +308,9 @@ export interface AdminLoginDTO {
 }
 
 export interface AdminLoginResponse {
-  token: string
-  adminId: string
+  /** 登录接口返回；profile 接口可为 null，此时沿用本地已存 Token */
+  token?: string | null
+  adminId?: string
   username: string
   role: string
   menus?: SysMenu[]

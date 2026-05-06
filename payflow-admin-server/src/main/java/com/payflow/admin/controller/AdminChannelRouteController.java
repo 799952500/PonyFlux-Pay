@@ -16,15 +16,15 @@ import java.util.Map;
 @RequestMapping("/api/v1/admin/channels/routes")
 @RequiredArgsConstructor
 /**
- * 支付渠道路由管理 Controller
- * <p>提供渠道路由的 CRUD 操作，包括：
+ * 支付路由管理 Controller（商户侧：商户 → 渠道账户的支付路由配置）
+ * <p>提供支付路由的 CRUD 操作，包括：
  * <ul>
- *   <li>GET    /channels/routes        - 查询所有渠道路由（支持按 channelId/priority 筛选）</li>
- *   <li>GET    /channels/routes/{id}   - 根据 ID 查询路由详情</li>
- *   <li>POST   /channels/routes        - 新增渠道路由</li>
- *   <li>PUT    /channels/routes/{id}   - 更新渠道路由</li>
- *   <li>DELETE /channels/routes/{id}  - 删除渠道路由</li>
- *   <li>PUT    /channels/routes/{id}/toggle - 启用/禁用渠道路由</li>
+ *   <li>GET    /channels/routes        - 查询所有支付路由（支持按 channelId/priority 筛选）</li>
+ *   <li>GET    /channels/routes/{id}   - 根据 ID 查询支付路由详情</li>
+ *   <li>POST   /channels/routes        - 新增支付路由</li>
+ *   <li>PUT    /channels/routes/{id}   - 更新支付路由</li>
+ *   <li>DELETE /channels/routes/{id}  - 删除支付路由</li>
+ *   <li>PUT    /channels/routes/{id}/toggle - 启用/禁用支付路由</li>
  * </ul>
  *
  * @author Lucas
@@ -39,7 +39,7 @@ public class AdminChannelRouteController {
     private CashierConfigRefreshPublisher refreshPublisher;
 
     /**
-     * 分页查询渠道路由列表
+     * 分页查询支付路由列表
      *
      * @param merchantId 商户ID（可选）
      * @param page       页码，默认1
@@ -82,7 +82,7 @@ public class AdminChannelRouteController {
     }
 
     /**
-     * 创建渠道路由
+     * 创建支付路由
      *
      * @param route 路由信息
      * @return 创建的路由（视图形式）
@@ -101,7 +101,7 @@ public class AdminChannelRouteController {
     }
 
     /**
-     * 启用/禁用渠道路由
+     * 启用/禁用支付路由
      *
      * @param id 路由ID
      * @return 操作结果
@@ -128,7 +128,7 @@ public class AdminChannelRouteController {
     }
 
     /**
-     * 删除渠道路由
+     * 删除支付路由
      *
      * @param id 路由ID
      * @return 操作结果
@@ -162,6 +162,7 @@ public class AdminChannelRouteController {
         view.put("channelName", m.get("channel_name"));
         view.put("paymentAccountId", m.get("payment_account_id"));
         view.put("accountCode", m.get("account_code"));
+        view.put("accountNo", m.get("account_code"));
         view.put("accountName", m.get("account_name"));
         view.put("enabled", m.get("enabled"));
         view.put("priority", m.get("priority"));
@@ -174,7 +175,7 @@ public class AdminChannelRouteController {
     /**
      * 将ChannelRoute实体转换为视图Map
      *
-     * @param r 渠道路由实体
+     * @param r 支付路由实体（ChannelRoute）
      * @return 视图Map
      */
     private Map<String, Object> toViewMapFromEntity(ChannelRoute r) {

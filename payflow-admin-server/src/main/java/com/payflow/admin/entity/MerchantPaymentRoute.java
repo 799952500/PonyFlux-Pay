@@ -38,6 +38,9 @@ public class MerchantPaymentRoute {
 
     private Integer priority;
 
+    /** 终端可见范围，逗号分隔：PC,H5,APP */
+    private String clientScopes;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 

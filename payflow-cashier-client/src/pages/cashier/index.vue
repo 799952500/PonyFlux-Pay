@@ -24,7 +24,11 @@
         <div v-if="cashierStore.isLoading" class="skeleton-wrap">
           <el-skeleton animated :rows="4" />
         </div>
-        <OrderCard v-else-if="cashierStore.orderInfo" :info="cashierStore.orderInfo" />
+        <OrderCard
+          v-else-if="cashierStore.orderInfo"
+          :info="cashierStore.orderInfo"
+          @expired="handleOrderExpired"
+        />
 
         <div class="section-divider" v-if="!cashierStore.isLoading" />
 
@@ -42,7 +46,7 @@
         <!-- ── 确认支付按钮 ── -->
         <button
           class="pay-btn"
-          :disabled="!selectedMethod || cashierStore.isPaying"
+          :disabled="!selectedMethod || cashierStore.isPaying || checkoutDeadlinePassed"
           @click="handlePay"
         >
           <span v-if="cashierStore.isPaying" class="flex items-center justify-center gap-2">
@@ -82,8 +86,9 @@
     <PaymentResult
       v-if="payResult"
       :status="payResult"
-    :success-url="cashierStore.orderInfo?.successUrl"
-    :fail-url="cashierStore.orderInfo?.failUrl"
+      :order-id="cashierStore.orderInfo?.orderId"
+      :success-url="cashierStore.orderInfo?.successUrl"
+      :fail-url="cashierStore.orderInfo?.failUrl"
       @retry="handleRetry"
     />
   </div>
@@ -95,6 +100,19 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useCashierStore } from '@/stores/cashier'
 import { getCashierInfo, createPayment, pollPaymentStatus } from '@/api/cashier'
+
+/** URL ?client=PC|H5|APP 优先；否则简单根据 UA 区分移动端与 PC */
+function detectCashierClient(): string {
+  const q = new URLSearchParams(window.location.search).get('client')
+  if (q === 'PC' || q === 'H5' || q === 'APP') {
+    return q
+  }
+  const ua = navigator.userAgent || ''
+  if (/iphone|android|ipad|mobile/i.test(ua)) {
+    return 'H5'
+  }
+  return 'PC'
+}
 import CashierNav from './components/CashierNav.vue'
 import OrderCard from './components/OrderCard.vue'
 import PaymentMethodList from './components/PaymentMethodList.vue'
@@ -113,6 +131,17 @@ const merchantInitial = computed(() =>
   cashierStore.orderInfo?.merchantName?.charAt(0).toUpperCase() ?? '?'
 )
 
+/** 已过支付截止时间（与订单卡片「已过期」一致） */
+const checkoutDeadlinePassed = computed(() => {
+  const t = cashierStore.orderInfo?.expireTime
+  if (!t) return false
+  return Date.now() >= new Date(t).getTime()
+})
+
+function handleOrderExpired() {
+  ElMessage.warning('支付超时，请返回商户重新下单')
+}
+
 // -------------------------------------------------------------------
 // 页面初始化（无需登录，直接从 URL 获取 orderId）
 // -------------------------------------------------------------------
@@ -129,6 +158,7 @@ onMounted(async () => {
       body: '这是一笔测试订单，用于演示收银台功能',
       amount: 10000, // 100.00 元
       currency: 'CNY',
+      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
       expireTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       status: 'CREATED',
       paymentMethods: [
@@ -158,7 +188,7 @@ onMounted(async () => {
 
   cashierStore.setLoading(true)
   try {
-    const info = await getCashierInfo(orderId, sig ?? '')
+    const info = await getCashierInfo(orderId, sig ?? '', detectCashierClient())
     cashierStore.setOrderInfo(info)
     if (info.status === 'PAID') {
       payResult.value = 'success'
@@ -176,7 +206,7 @@ onMounted(async () => {
 // 发起支付
 // -------------------------------------------------------------------
 async function handlePay() {
-  if (!cashierStore.orderInfo || !selectedMethod.value) return
+  if (!cashierStore.orderInfo || !selectedMethod.value || checkoutDeadlinePassed.value) return
 
   cashierStore.setPaying(true)
   try {

@@ -33,6 +33,9 @@ public class PayflowProperties {
     /** 商户签名密钥配置列表（兜底配置，优先于数据库） */
     private List<MerchantConfig> merchants = new ArrayList<>();
 
+    /** 管理端地址（用于拉取商户支付方式路由） */
+    private Admin admin = new Admin();
+
     /**
      * 根据商户号查找签名密钥配置
      *
@@ -64,6 +67,15 @@ public class PayflowProperties {
     @Data
     public static class Cashier {
         private String baseUrl = "http://localhost:5173";
+    }
+
+    /**
+     * 调用 payflow-admin-server 的配置（须与管理端 {@code payflow.cashier.internal-token} 一致）。
+     */
+    @Data
+    public static class Admin {
+        private String baseUrl = "";
+        private String internalToken = "";
     }
 
     /**

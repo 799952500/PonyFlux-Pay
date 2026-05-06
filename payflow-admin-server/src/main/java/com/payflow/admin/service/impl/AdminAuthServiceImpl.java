@@ -1,7 +1,6 @@
 package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.payflow.admin.config.AdminSecurityProperties;
 import com.payflow.admin.config.JwtProperties;
 import com.payflow.admin.dto.LoginRequest;
 import com.payflow.admin.dto.LoginResponse;
@@ -36,7 +35,6 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private final JwtUtils jwtUtils;
     private final JwtProperties jwtProperties;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final AdminSecurityProperties adminSecurityProperties;
     private final CaptchaService captchaService;
     private final LoginProtectionService loginProtectionService;
     private final AuditLogService auditLogService;
@@ -46,9 +44,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         String ip = clientIp(httpRequest);
         loginProtectionService.assertNotLocked(request.getUsername());
 
-        if (adminSecurityProperties.isLoginCaptchaEnabled()) {
-            captchaService.validateAndConsume(request.getCaptchaId(), request.getCaptchaAnswer());
-        }
+        captchaService.validateAndConsume(request.getCaptchaId(), request.getCaptchaAnswer());
 
         AdminUser user = adminUserMapper.selectOne(
                 new LambdaQueryWrapper<AdminUser>()
@@ -83,6 +79,33 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         return LoginResponse.builder()
                 .token(token)
+                .username(user.getUsername())
+                .role(user.getRole())
+                .expireTime(expireTime)
+                .menus(menus)
+                .build();
+    }
+
+    @Override
+    public LoginResponse profile(HttpServletRequest httpRequest) {
+        Object u = httpRequest.getAttribute("username");
+        if (u == null || !StringUtils.hasText(u.toString())) {
+            throw new IllegalStateException("未登录或令牌无效");
+        }
+        String username = u.toString();
+        AdminUser user = adminUserMapper.selectOne(
+                new LambdaQueryWrapper<AdminUser>()
+                        .eq(AdminUser::getUsername, username)
+                        .eq(AdminUser::getStatus, "ACTIVE"));
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在或已禁用");
+        }
+        List<SysMenu> menus = sysMenuService.getMenusByUsername(username);
+        LocalDateTime expireTime = LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(System.currentTimeMillis() + jwtProperties.getExpiration()),
+                ZoneId.of("+08:00"));
+        return LoginResponse.builder()
+                .token(null)
                 .username(user.getUsername())
                 .role(user.getRole())
                 .expireTime(expireTime)

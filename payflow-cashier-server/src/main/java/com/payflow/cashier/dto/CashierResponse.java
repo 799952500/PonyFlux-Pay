@@ -32,6 +32,14 @@ public class CashierResponse {
     @Schema(description = "订单标题")
     private String subject;
 
+    /** 订单详情说明 */
+    @Schema(description = "订单详情说明")
+    private String body;
+
+    /** 订单创建时间（ISO-8601 本地时间，用于收银台倒计时进度） */
+    @Schema(description = "订单创建时间")
+    private String createdAt;
+
     /** 订单金额（分） */
     @Schema(description = "订单金额（分）")
     private Long amount;

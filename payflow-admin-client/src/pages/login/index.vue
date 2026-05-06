@@ -69,7 +69,7 @@
             </div>
           </div>
 
-          <div v-if="captchaEnabled" class="form-item">
+          <div class="form-item">
             <label>验证码 <button type="button" class="link-inline" @click.prevent="refreshCaptcha">换一题</button></label>
             <p class="captcha-question">{{ captchaQuestion }}</p>
             <div class="input-wrap" :class="{ focused: captchaFocused }">
@@ -132,10 +132,13 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { adminLogin } from '@/api/auth'
-import { getLoginFeatures } from '@/api/admin'
+import { useAdminStore } from '@/stores/admin'
+import type { AdminLoginResponse } from '@/types'
 
 const router = useRouter()
+const adminStore = useAdminStore()
 const form = reactive({ username: '', password: '', captchaAnswer: '' })
 const loading = ref(false)
 const errorMsg = ref('')
@@ -143,29 +146,31 @@ const showPassword = ref(false)
 const usernameFocused = ref(false)
 const passwordFocused = ref(false)
 const captchaFocused = ref(false)
-const captchaEnabled = ref(false)
 const captchaQuestion = ref('')
 const captchaId = ref('')
 
 async function refreshCaptcha() {
-  const res = await fetch('/api/v1/admin/auth/captcha')
-  const json = await res.json()
-  if (json.code === 0 && json.data) {
-    captchaId.value = json.data.captchaId
-    captchaQuestion.value = json.data.question
+  try {
+    const res = await fetch('/api/v1/admin/auth/captcha')
+    const json = await res.json()
+    if (json.code === 0 && json.data) {
+      captchaId.value = json.data.captchaId
+      captchaQuestion.value = json.data.question
+      errorMsg.value = ''
+    } else {
+      captchaId.value = ''
+      captchaQuestion.value = ''
+      errorMsg.value = json.message || '验证码加载失败'
+    }
+  } catch {
+    captchaId.value = ''
+    captchaQuestion.value = ''
+    errorMsg.value = '验证码加载失败，请检查网络'
   }
 }
 
-onMounted(async () => {
-  try {
-    const f = await getLoginFeatures()
-    captchaEnabled.value = !!f.loginCaptchaEnabled
-    if (captchaEnabled.value) {
-      await refreshCaptcha()
-    }
-  } catch {
-    captchaEnabled.value = false
-  }
+onMounted(() => {
+  void refreshCaptcha()
 })
 
 const handleLogin = async () => {
@@ -177,34 +182,49 @@ const handleLogin = async () => {
     errorMsg.value = '请输入密码'
     return
   }
-  if (captchaEnabled.value) {
-    if (!form.captchaAnswer.trim()) {
-      errorMsg.value = '请输入验证码'
-      return
-    }
+  if (!form.captchaAnswer.trim()) {
+    errorMsg.value = '请输入验证码'
+    return
+  }
+  if (!captchaId.value) {
+    errorMsg.value = '验证码未就绪，请点击换一题重试'
+    await refreshCaptcha()
+    return
   }
   loading.value = true
   errorMsg.value = ''
   try {
-    const payload: { username: string; password: string; captchaId?: string; captchaAnswer?: string } = {
+    const res = await adminLogin({
       username: form.username,
       password: form.password,
+      captchaId: captchaId.value,
+      captchaAnswer: form.captchaAnswer.trim(),
+    })
+    if (!res.token) {
+      errorMsg.value = '登录响应缺少令牌'
+      return
     }
-    if (captchaEnabled.value) {
-      payload.captchaId = captchaId.value
-      payload.captchaAnswer = form.captchaAnswer.trim()
-    }
-    const res = await adminLogin(payload)
-    localStorage.setItem('adminToken', res.token)
-    const user = (res as unknown as { user?: unknown }).user ?? res
-    localStorage.setItem('adminUser', JSON.stringify(user))
+    adminStore.setAuth(res as AdminLoginResponse)
     router.push('/admin/dashboard')
-  } catch (e: any) {
-    errorMsg.value = e.message || '用户名或密码错误'
-    if (captchaEnabled.value) {
-      await refreshCaptcha()
-      form.captchaAnswer = ''
+  } catch (e: unknown) {
+    let msg = '用户名或密码错误'
+    if (axios.isAxiosError(e)) {
+      const body = e.response?.data as { message?: string } | undefined
+      msg = body?.message ?? e.message ?? msg
+      // 业务失败（含验证码/密码错误）：清除旧 Token，避免仍能进入后台
+      if (e.response) {
+        adminStore.clearAuth()
+      }
+    } else if (e !== null && typeof e === 'object' && 'message' in e) {
+      const o = e as { message?: string; code?: number }
+      msg = typeof o.message === 'string' ? o.message : msg
+      if (o.code !== undefined && o.code !== 0) {
+        adminStore.clearAuth()
+      }
     }
+    errorMsg.value = msg
+    await refreshCaptcha()
+    form.captchaAnswer = ''
   } finally {
     loading.value = false
   }

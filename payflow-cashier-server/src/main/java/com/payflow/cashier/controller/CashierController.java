@@ -37,10 +37,11 @@ public class CashierController {
     @Operation(summary = "获取收银台信息", description = "获取收银台订单信息和可用支付方式")
     public R<CashierResponse> getCashierInfo(
             @Parameter(description = "平台订单号") @PathVariable String orderId,
-            @Parameter(description = "签名（前端已校验）") @RequestParam(required = false) String sig) {
+            @Parameter(description = "签名（前端已校验）") @RequestParam(required = false) String sig,
+            @Parameter(description = "终端：PC / H5 / APP") @RequestParam(required = false) String client) {
 
-        log.info("收银台访问: orderId={}, sig={}", orderId, sig != null ? "***" : "null");
-        CashierResponse response = orderService.getCashierInfo(orderId);
+        log.info("收银台访问: orderId={}, sig={}, client={}", orderId, sig != null ? "***" : "null", client);
+        CashierResponse response = orderService.getCashierInfo(orderId, client);
         return R.ok(response);
     }
 

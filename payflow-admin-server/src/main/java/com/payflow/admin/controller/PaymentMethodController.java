@@ -51,8 +51,9 @@ public class PaymentMethodController {
      * @return 该渠道支持的支付方式列表
      */
     @GetMapping("/channel/{channelId}")
-    public List<PaymentMethod> listByChannelId(@PathVariable Long channelId) {
-        return paymentMethodService.listByChannelId(channelId);
+    public ResponseEntity<Map<String, Object>> listByChannelId(@PathVariable Long channelId) {
+        List<PaymentMethod> list = paymentMethodService.listByChannelId(channelId);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", list));
     }
 
     /**
@@ -62,8 +63,9 @@ public class PaymentMethodController {
      * @return 支付方式详情
      */
     @GetMapping("/{id}")
-    public PaymentMethod getById(@PathVariable Long id) {
-        return paymentMethodService.getById(id);
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable Long id) {
+        PaymentMethod m = paymentMethodService.getById(id);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", m));
     }
 
     /**

@@ -49,6 +49,10 @@ mybatis-plus:
 
 # PayFlow 收银台自定义配置
 payflow:
+  # 拉取商户支付方式（与管理端 payflow.cashier.internal-token 保持一致）
+  admin:
+    base-url: http://127.0.0.1:3003
+    internal-token: dev-payflow-internal-token
   # 管理端调用 /api/v1/internal/** 时必须在请求头携带相同令牌
   internal-api:
     token: dev-payflow-internal-token

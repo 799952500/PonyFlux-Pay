@@ -13,7 +13,10 @@ public interface OrderService {
 
     OrderDetailResponse getOrderDetail(String orderId);
 
-    CashierResponse getCashierInfo(String orderId);
+    /**
+     * @param clientType 终端类型：PC / H5 / APP（可空；为空时不按终端过滤）
+     */
+    CashierResponse getCashierInfo(String orderId, String clientType);
 
     void updateOrderStatus(String orderId, String newStatus, Long payAmount);
 

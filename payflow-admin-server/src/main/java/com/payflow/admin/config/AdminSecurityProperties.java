@@ -12,8 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "payflow.security")
 public class AdminSecurityProperties {
 
-    /** 是否要求图形验证码（算术题） */
-    private boolean loginCaptchaEnabled = false;
+    /** 是否展示「登录需验证码」元信息（登录接口始终校验验证码） */
+    private boolean loginCaptchaEnabled = true;
 
     /** 连续失败次数阈值后锁定账号 */
     private int loginMaxFailures = 5;

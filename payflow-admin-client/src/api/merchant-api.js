@@ -24,21 +24,21 @@ export const deleteMerchant = (id) =>
   request.delete(`/admin/merchants/${id}`)
 
 // ============================================================
-// 商户支付方式管理
+// 商户支付配置（方式 + 账号 + 终端）
 // ============================================================
 
-/** 获取商户支持的支付方式列表（后端为 GET + merchantId 查询参数） */
+/** 商户支付路由列表 */
 export const listMerchantPayments = (merchantId) =>
-  request.get('/admin/merchant-payment-methods', { params: merchantId ? { merchantId } : {} })
+  request.get('/admin/merchant-payment-routes', { params: merchantId ? { merchantId } : {} })
 
-/** 创建商户支付方式关联 */
+/** 新增一条商户支付路由 */
 export const createMerchantPayment = (data) =>
-  request.post('/admin/merchant-payment-methods', data)
+  request.post('/admin/merchant-payment-routes/item', data)
 
-/** 删除商户支付方式关联 */
+/** 删除商户支付路由 */
 export const deleteMerchantPayment = (id) =>
-  request.delete(`/admin/merchant-payment-methods/${id}`)
+  request.delete(`/admin/merchant-payment-routes/${id}`)
 
-/** 切换商户支付方式状态 */
+/** 切换商户支付路由启用状态 */
 export const toggleMerchantPayment = (id) =>
-  request.put(`/admin/merchant-payment-methods/${id}/toggle`)
+  request.put(`/admin/merchant-payment-routes/${id}/toggle`)

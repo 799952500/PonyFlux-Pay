@@ -1,0 +1,67 @@
+server:
+  port: 3004
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: payflow-recon-server
+  datasource:
+    admin:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3306/payflow_admin?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: root
+      password: root
+    cashier:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://127.0.0.1:3306/payflow_cashier?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: root
+      password: root
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+# xxl-job：无调度中心时保持 enabled=false，避免启动连不上 admin
+xxl:
+  job:
+    enabled: false
+    admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+    executor:
+      appname: payflow-recon
+      port: 9999
+      logpath: ./logs/xxl-job
+      logretentiondays: 7
+
+payflow:
+  recon:
+    internal-token: dev-payflow-internal-token
+    storage:
+      type: local
+      local-path: ./data/recon-files
+      s3:
+        endpoint: ""
+        region: us-east-1
+        bucket: payflow-recon
+        access-key: ""
+        secret-key: ""
+        path-style-access: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: INFO
+    com.payflow.recon: DEBUG

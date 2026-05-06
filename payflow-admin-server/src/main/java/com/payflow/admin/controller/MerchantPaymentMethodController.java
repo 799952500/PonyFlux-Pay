@@ -36,10 +36,31 @@ public class MerchantPaymentMethodController {
             list = service.listAll();
         }
         return ResponseEntity.ok(Map.of(
-            "code", 0,
-            "message", "success",
-            "data", list
+                "code", 0,
+                "message", "success",
+                "data", list
         ));
+    }
+
+    /**
+     * 新增单条商户支付方式绑定（不删除该商户已有绑定；与批量 saveBatch 区分）。
+     */
+    @PostMapping("/item")
+    public ResponseEntity<Map<String, Object>> createOne(@RequestBody MerchantPaymentMethod mpm) {
+        if (mpm.getMerchantId() == null || mpm.getMerchantId().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("code", 400, "message", "商户号不能为空"));
+        }
+        if (mpm.getPaymentMethodId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("code", 400, "message", "支付方式不能为空"));
+        }
+        if (mpm.getEnabled() == null) {
+            mpm.setEnabled(true);
+        }
+        if (mpm.getPriority() == null) {
+            mpm.setPriority(0);
+        }
+        service.create(mpm);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
     }
 
     /**

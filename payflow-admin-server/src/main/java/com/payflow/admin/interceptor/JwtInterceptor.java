@@ -1,6 +1,7 @@
 package com.payflow.admin.interceptor;
 
 import com.payflow.admin.config.JwtProperties;
+import com.payflow.admin.service.CaptchaService;
 import com.payflow.admin.util.JwtUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +43,12 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // Store username & role in request for later use
         Claims claims = jwtUtils.parseToken(token);
+        if (CaptchaService.CAPTCHA_JWT_SUBJECT.equals(claims.getSubject())) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":401,\"message\":\"无效的访问令牌\",\"data\":null}");
+            return false;
+        }
         request.setAttribute("username", claims.getSubject());
         request.setAttribute("role", claims.get("role", String.class));
         Object dm = claims.get("dataMerchantIds");

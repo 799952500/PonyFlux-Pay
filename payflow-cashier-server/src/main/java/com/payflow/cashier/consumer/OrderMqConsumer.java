@@ -30,7 +30,7 @@ import java.time.LocalDateTime;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "payflow.mq.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "payflow.mq.enabled", havingValue = "true")
 public class OrderMqConsumer {
 
     public OrderMqConsumer() {
@@ -40,6 +40,7 @@ public class OrderMqConsumer {
      * 订单超时处理
      */
     @Component
+    @ConditionalOnProperty(name = "payflow.mq.enabled", havingValue = "true")
     @RocketMQMessageListener(
             topic = MqConfig.TOPIC_ORDER_TIMEOUT,
             consumerGroup = MqConfig.CG_ORDER_TIMEOUT,
@@ -148,6 +149,7 @@ public class OrderMqConsumer {
      * 商户回调（首次投递）
      */
     @Component
+    @ConditionalOnProperty(name = "payflow.mq.enabled", havingValue = "true")
     @RocketMQMessageListener(
             topic = MqConfig.TOPIC_MERCHANT_NOTIFY,
             consumerGroup = MqConfig.CG_MERCHANT_NOTIFY,
@@ -178,6 +180,7 @@ public class OrderMqConsumer {
      * 商户回调延迟重试
      */
     @Component
+    @ConditionalOnProperty(name = "payflow.mq.enabled", havingValue = "true")
     @RocketMQMessageListener(
             topic = MqConfig.TOPIC_MERCHANT_NOTIFY,
             consumerGroup = MqConfig.CG_MERCHANT_NOTIFY_RETRY,

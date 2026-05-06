@@ -2,6 +2,7 @@ package com.payflow.cashier.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.payflow.cashier.client.AdminPaymentConfigClient;
 import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.dto.*;
 import com.payflow.cashier.entity.Order;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -38,19 +40,22 @@ public class OrderServiceImpl implements OrderService {
     private final OrderCacheService orderCacheService;
     private final OrderMqProducer orderMqProducer;
     private final RiskCheckService riskCheckService;
+    private final AdminPaymentConfigClient adminPaymentConfigClient;
 
     public OrderServiceImpl(OrderMapper orderMapper,
                             PaymentMapper paymentMapper,
                             PayflowProperties properties,
                             OrderCacheService orderCacheService,
                             OrderMqProducer orderMqProducer,
-                            RiskCheckService riskCheckService) {
+                            RiskCheckService riskCheckService,
+                            AdminPaymentConfigClient adminPaymentConfigClient) {
         this.orderMapper = orderMapper;
         this.paymentMapper = paymentMapper;
         this.properties = properties;
         this.orderCacheService = orderCacheService;
         this.orderMqProducer = orderMqProducer;
         this.riskCheckService = riskCheckService;
+        this.adminPaymentConfigClient = adminPaymentConfigClient;
     }
 
     @Override
@@ -146,7 +151,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public CashierResponse getCashierInfo(String orderId) {
+    public CashierResponse getCashierInfo(String orderId, String clientType) {
         // 1. 先查 Redis 缓存
         Order order = orderCacheService.getOrderWithFallback(orderId);
         if (order == null) {
@@ -158,6 +163,9 @@ public class OrderServiceImpl implements OrderService {
                     .orderId(order.getOrderId())
                     .merchantName("商户-" + order.getMerchantId())
                     .subject(order.getSubject())
+                    .body(order.getBody())
+                    .createdAt(order.getCreatedAt() != null
+                            ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                     .amount(order.getAmount())
                     .currency(order.getCurrency())
                     .expireTime(order.getExpireTime() != null
@@ -182,12 +190,15 @@ public class OrderServiceImpl implements OrderService {
                 .orderId(order.getOrderId())
                 .merchantName("商户-" + order.getMerchantId())
                 .subject(order.getSubject())
+                .body(order.getBody())
+                .createdAt(order.getCreatedAt() != null
+                        ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .amount(order.getAmount())
                 .currency(order.getCurrency())
                 .expireTime(order.getExpireTime() != null
                         ? order.getExpireTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .status(order.getStatus())
-                .paymentMethods(buildPaymentMethods(order.getChannel()))
+                .paymentMethods(resolvePaymentMethods(order, clientType))
                 .successUrl(order.getSuccessUrl())
                 .failUrl(order.getFailUrl())
                 .build();
@@ -298,28 +309,126 @@ public class OrderServiceImpl implements OrderService {
         return baseUrl + "/cashier/" + orderId + "?sig=" + sig;
     }
 
-    private List<PaymentMethodDTO> buildPaymentMethods(String channel) {
+    private List<PaymentMethodDTO> resolvePaymentMethods(Order order, String clientType) {
+        String normalized = normalizeClientType(clientType);
+        List<AdminPaymentConfigClient.AdminPaymentMethodItem> items =
+                adminPaymentConfigClient.fetchPaymentMethods(order.getMerchantId(), order.getChannel());
+        if (!items.isEmpty()) {
+            List<PaymentMethodDTO> fromAdmin = items.stream()
+                    .filter(i -> i.visibleForClient(normalized))
+                    .sorted(Comparator.comparingInt(AdminPaymentConfigClient.AdminPaymentMethodItem::priority).reversed())
+                    .map(this::toPaymentMethodDtoFromAdmin)
+                    .toList();
+            if (!fromAdmin.isEmpty()) {
+                return fromAdmin;
+            }
+        }
+        List<PaymentMethodDTO> fallback = buildFallbackPaymentMethods(order.getChannel());
+        return filterFallbackPaymentMethodsByClient(fallback, normalized);
+    }
+
+    private static String normalizeClientType(String clientType) {
+        if (clientType == null || clientType.isBlank()) {
+            return "";
+        }
+        return clientType.trim().toUpperCase();
+    }
+
+    private PaymentMethodDTO toPaymentMethodDtoFromAdmin(AdminPaymentConfigClient.AdminPaymentMethodItem item) {
+        String code = item.methodCode();
+        return PaymentMethodDTO.builder()
+                .code(code)
+                .name(item.methodName())
+                .description(item.description() != null ? item.description() : "")
+                .icon(iconForPaymentMethodCode(code))
+                .recommended(isRecommendedPaymentMethod(code))
+                .build();
+    }
+
+    private List<PaymentMethodDTO> filterFallbackPaymentMethodsByClient(List<PaymentMethodDTO> list,
+                                                                        String normalizedClient) {
+        if (normalizedClient == null || normalizedClient.isEmpty()) {
+            return list;
+        }
+        return list.stream()
+                .filter(d -> fallbackAllowsClient(d.getCode(), normalizedClient))
+                .toList();
+    }
+
+    /**
+     * 管理端不可用时，内置列表按典型终端归属过滤。
+     */
+    private boolean fallbackAllowsClient(String code, String client) {
+        if (code == null) {
+            return true;
+        }
+        if (Payment.METHOD_WECHAT_NATIVE.equals(code)) {
+            return "PC".equals(client);
+        }
+        if (Payment.METHOD_WECHAT_H5.equals(code)) {
+            return "H5".equals(client) || "APP".equals(client);
+        }
+        if (Payment.METHOD_WECHAT_APP.equals(code)) {
+            return "APP".equals(client);
+        }
+        if (Payment.METHOD_ALIPAY_WAP.equals(code)) {
+            return "H5".equals(client) || "APP".equals(client);
+        }
+        if (Payment.METHOD_ALIPAY_APP.equals(code)) {
+            return "APP".equals(client);
+        }
+        if (Payment.METHOD_BANK_CARD.equals(code)) {
+            return "PC".equals(client) || "H5".equals(client);
+        }
+        return true;
+    }
+
+    private boolean isRecommendedPaymentMethod(String code) {
+        if (code == null) {
+            return false;
+        }
+        return Payment.METHOD_WECHAT_APP.equals(code)
+                || Payment.METHOD_ALIPAY_APP.equals(code)
+                || Payment.METHOD_BANK_CARD.equals(code);
+    }
+
+    private String iconForPaymentMethodCode(String code) {
+        if (code == null) {
+            return "/icons/default-pay.png";
+        }
+        return switch (code) {
+            case Payment.METHOD_WECHAT_APP -> "/icons/wechat.png";
+            case Payment.METHOD_WECHAT_NATIVE -> "/icons/wechat-qr.png";
+            case Payment.METHOD_WECHAT_H5 -> "/icons/wechat-h5.png";
+            case Payment.METHOD_ALIPAY_APP -> "/icons/alipay.png";
+            case Payment.METHOD_ALIPAY_WAP -> "/icons/alipay-wap.png";
+            case Payment.METHOD_BANK_CARD -> "/icons/bank.png";
+            default -> "/icons/default-pay.png";
+        };
+    }
+
+    private List<PaymentMethodDTO> buildFallbackPaymentMethods(String channel) {
         List<PaymentMethodDTO> methods = new ArrayList<>();
         if (Order.CHANNEL_WECHAT_PAY.equals(channel)) {
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_WECHAT_APP).name("微信支付").icon("/icons/wechat.png")
+                    .code(Payment.METHOD_WECHAT_APP).name("微信支付").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_APP))
                     .description("微信支付安全便捷").recommended(true).build());
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_WECHAT_NATIVE).name("微信扫码").icon("/icons/wechat-qr.png")
+                    .code(Payment.METHOD_WECHAT_NATIVE).name("微信扫码").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_NATIVE))
                     .description("扫码支付").recommended(false).build());
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_WECHAT_H5).name("微信H5支付").icon("/icons/wechat-h5.png")
+                    .code(Payment.METHOD_WECHAT_H5).name("微信H5支付").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_H5))
                     .description("网页支付").recommended(false).build());
         } else if (Order.CHANNEL_ALIPAY.equals(channel)) {
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_ALIPAY_APP).name("支付宝").icon("/icons/alipay.png")
+                    .code(Payment.METHOD_ALIPAY_APP).name("支付宝").icon(iconForPaymentMethodCode(Payment.METHOD_ALIPAY_APP))
                     .description("支付宝安全支付").recommended(true).build());
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_ALIPAY_WAP).name("支付宝WAP").icon("/icons/alipay-wap.png")
+                    .code(Payment.METHOD_ALIPAY_WAP).name("支付宝WAP").icon(iconForPaymentMethodCode(Payment.METHOD_ALIPAY_WAP))
                     .description("网页支付").recommended(false).build());
         } else if (Order.CHANNEL_UNION_PAY.equals(channel)) {
             methods.add(PaymentMethodDTO.builder()
-                    .code(Payment.METHOD_BANK_CARD).name("银行卡支付").icon("/icons/bank.png")
+                    .code(Payment.METHOD_BANK_CARD).name("银行卡支付").icon(iconForPaymentMethodCode(Payment.METHOD_BANK_CARD))
                     .description("支持各大银行").recommended(true).build());
         }
         return methods;

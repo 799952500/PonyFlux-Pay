@@ -68,7 +68,7 @@ public class DashboardAggregationService {
             Map<String, Object> item = new LinkedHashMap<>();
             String key = row.get("channelKey") != null ? row.get("channelKey").toString() : "UNKNOWN";
             item.put("channel", key);
-            item.put("name", key);
+            item.put("name", channelDisplayName(key));
             long cnt = toLong(row.get("cnt"));
             item.put("value", cnt);
             item.put("amount", fenToYuanNumber(toLong(row.get("amt"))));
@@ -94,6 +94,22 @@ public class DashboardAggregationService {
                 BigDecimal.valueOf(conversionRate).setScale(1, RoundingMode.HALF_UP) + "%");
 
         return data;
+    }
+
+    /**
+     * 渠道编码 → 饼图/图例展示名（与前端字典一致，避免图例挤英文代码）。
+     */
+    private static String channelDisplayName(String channelKey) {
+        if (channelKey == null || channelKey.isBlank()) {
+            return "未知";
+        }
+        return switch (channelKey.trim()) {
+            case "WECHAT_PAY" -> "微信支付";
+            case "ALIPAY" -> "支付宝";
+            case "UNION_PAY" -> "银联";
+            case "UNKNOWN" -> "其他";
+            default -> channelKey;
+        };
     }
 
     private List<Map<String, Object>> buildRecentOrders() {

@@ -25,24 +25,35 @@
 
     <!-- 渠道卡片区 -->
     <div v-loading="loading">
-      <el-row :gutter="16" class="mb-1" v-if="channelList.length">
-        <el-col v-for="channel in channelList" :key="channel.channelCode || channel.id" :xs="24" :sm="12" :md="6">
-          <div class="content-card mb-4">
-            <div class="channel-card-head">
-              <div class="channel-card-head-main">
-                <div class="flex items-center gap-3 min-w-0">
-                  <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0"
-                    :style="{ background: channelIconBg[channel.channelCode] ?? '#f3f4f6' }">
-                    <img v-if="channel.icon" :src="channel.icon" class="w-6 h-6 object-contain" />
-                    <span v-else>{{ channelIcon[channel.channelCode] ?? '🏦' }}</span>
-                  </div>
-                  <div class="channel-card-text min-w-0">
-                    <p class="channel-card-title">{{ channel.channelName || '未命名渠道' }}</p>
-                    <p class="channel-card-code">{{ channel.channelCode || '—' }}</p>
-                  </div>
-                </div>
+      <el-row :gutter="16" class="channel-card-row mb-1" v-if="channelList.length">
+        <!-- 适中密度：平板两列、中屏三列、大屏四列，兼顾可读性与屏占比 -->
+        <el-col
+          v-for="channel in channelList"
+          :key="channel.channelCode || channel.id"
+          :xs="24"
+          :sm="12"
+          :md="8"
+          :lg="8"
+          :xl="6"
+        >
+          <div class="content-card channel-card-shell mb-4">
+            <!-- 上：图标 + 名称/编码（独占整行，不与按钮抢横向空间） -->
+            <div class="channel-card-identity">
+              <div
+                class="channel-card-icon"
+                :style="{ background: channelIconBg[channel.channelCode] ?? '#f3f4f6' }"
+              >
+                <img v-if="channel.icon" :src="channel.icon" class="channel-card-icon-img" alt="" />
+                <span v-else class="channel-card-icon-emoji">{{ channelIcon[channel.channelCode] ?? '🏦' }}</span>
               </div>
-              <div class="channel-card-actions">
+              <div class="channel-card-meta">
+                <p class="channel-card-title">{{ channel.channelName || '未命名渠道' }}</p>
+                <p class="channel-card-code">{{ channel.channelCode || '—' }}</p>
+              </div>
+            </div>
+            <!-- 下：操作栏单独一行 -->
+            <div class="channel-card-toolbar">
+              <div class="channel-card-toolbar-btns">
                 <el-button
                   class="card-action-btn"
                   type="primary"
@@ -61,6 +72,9 @@
                 >
                   删除
                 </el-button>
+              </div>
+              <div class="channel-card-toolbar-switch">
+                <span class="channel-card-switch-label">启用</span>
                 <el-switch
                   v-model="channel.enabled"
                   :active-value="true"
@@ -71,11 +85,21 @@
                 />
               </div>
             </div>
-          <div class="text-xs text-[#64748B] mb-2 line-clamp-2">{{ channel.description ?? '暂无描述' }}</div>
-          <div class="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
-            <span class="text-xs text-[#64748B]">优先级</span>
-            <span class="text-sm font-medium text-[#047857]">{{ channel.priority ?? 0 }}</span>
-          </div>
+            <div class="channel-card-desc">{{ channel.description ?? '暂无描述' }}</div>
+            <button
+              type="button"
+              class="channel-card-methods"
+              @click.stop="openMethodsDrawer(channel)"
+            >
+              <span class="channel-card-methods-label">支付方式</span>
+              <el-tag size="small" type="success" effect="plain" round>
+                {{ methodCounts[channel.id] ?? '—' }} 种
+              </el-tag>
+            </button>
+            <div class="channel-card-footer">
+              <span class="channel-card-footer-label">优先级</span>
+              <span class="channel-card-footer-value">{{ channel.priority ?? 0 }}</span>
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -125,14 +149,45 @@
         <el-button type="primary" class="btn-primary" :loading="submitting" @click="handleSubmit">确认</el-button>
       </template>
     </el-dialog>
+
+    <el-drawer
+      v-model="methodsDrawerVisible"
+      :title="drawerTitle"
+      direction="rtl"
+      size="min(480px, 92vw)"
+      destroy-on-close
+    >
+      <div v-loading="drawerLoading" class="min-h-[120px]">
+        <el-table v-if="drawerMethods.length" :data="drawerMethods" stripe size="small" class="w-full">
+          <el-table-column label="编号" prop="methodCode" min-width="120" show-overflow-tooltip />
+          <el-table-column label="名称" prop="methodName" min-width="140" show-overflow-tooltip />
+          <el-table-column label="状态" width="88" align="center">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.status === 'ACTIVE' ? 'success' : 'info'">
+                {{ row.status === 'ACTIVE' ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-empty v-else-if="!drawerLoading" description="该渠道下暂无支付方式" :image-size="72" />
+        <div class="mt-5 flex flex-wrap gap-2">
+          <el-button type="primary" class="btn-primary" size="small" @click="goPaymentMethodsManage">
+            前往支付方式管理
+          </el-button>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getChannels, createChannel, updateChannel, toggleChannel, deleteChannel } from '@/api/admin'
+import { getChannels, createChannel, updateChannel, toggleChannel, deleteChannel, getPaymentMethodsByChannelId } from '@/api/admin'
 import type { Channel } from '@/types'
+
+const router = useRouter()
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -142,15 +197,47 @@ const isEdit = ref(false)
 const currentChannel = ref<Channel | null>(null)
 const formRef = ref<FormInstance>()
 
+const methodCounts = ref<Record<number, number>>({})
+const methodsDrawerVisible = ref(false)
+const drawerChannel = ref<Channel | null>(null)
+const drawerMethods = ref<Array<Record<string, unknown>>>([])
+const drawerLoading = ref(false)
+
+const drawerTitle = computed(() => {
+  const c = drawerChannel.value
+  if (!c) return '支付方式'
+  return `支付方式 · ${c.channelName || c.channelCode || '渠道'}`
+})
+
 const queryForm = reactive({ keyword: '', enabled: null as boolean | null })
 
 const channelIcon: Record<string, string> = {
-  WECHAT_PAY: '💚', ALIPAY: '💳', UNION_PAY: '🏦', CASH: '💰', CARD: '💳',
-  WECHAT: '💚', ZFB: '💳', YL: '🏦',
+  WECHAT_PAY: '💚',
+  ALIPAY: '💳',
+  UNION_PAY: '🏦',
+  CASH: '💰',
+  CARD: '💳',
+  WECHAT: '💚',
+  ZFB: '💳',
+  YL: '🏦',
+  wechat_pay: '💚',
+  alipay: '💳',
+  union_pay: '🏦',
+  bank_card: '💳',
 }
 const channelIconBg: Record<string, string> = {
-  WECHAT_PAY: '#e6f7ed', ALIPAY: '#e8f4fd', UNION_PAY: '#fef3e2', CASH: '#f0f0f0', CARD: '#f3f4f6',
-  WECHAT: '#e6f7ed', ZFB: '#e8f4fd', YL: '#fef3e2',
+  WECHAT_PAY: '#e6f7ed',
+  ALIPAY: '#e8f4fd',
+  UNION_PAY: '#fef3e2',
+  CASH: '#f0f0f0',
+  CARD: '#f3f4f6',
+  WECHAT: '#e6f7ed',
+  ZFB: '#e8f4fd',
+  YL: '#fef3e2',
+  wechat_pay: '#e6f7ed',
+  alipay: '#e8f4fd',
+  union_pay: '#fef3e2',
+  bank_card: '#f1f5f9',
 }
 
 const dialogTitle = computed(() => isEdit.value ? '编辑渠道' : '新建渠道')
@@ -189,10 +276,53 @@ async function loadChannels() {
       list = list.filter((c) => c.enabled === queryForm.enabled)
     }
     channelList.value = list
+    await loadMethodCounts()
   } catch {
     ElMessage.error('加载渠道列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadMethodCounts() {
+  const map: Record<number, number> = {}
+  await Promise.all(
+    channelList.value.map(async (c) => {
+      if (c.id == null) return
+      try {
+        const list = await getPaymentMethodsByChannelId(c.id)
+        map[c.id] = Array.isArray(list) ? list.length : 0
+      } catch {
+        map[c.id] = 0
+      }
+    })
+  )
+  methodCounts.value = map
+}
+
+async function openMethodsDrawer(channel: Channel) {
+  if (channel.id == null) return
+  drawerChannel.value = channel
+  methodsDrawerVisible.value = true
+  drawerLoading.value = true
+  drawerMethods.value = []
+  try {
+    const list = await getPaymentMethodsByChannelId(channel.id)
+    drawerMethods.value = Array.isArray(list) ? (list as Array<Record<string, unknown>>) : []
+  } catch {
+    ElMessage.error('加载支付方式失败')
+  } finally {
+    drawerLoading.value = false
+  }
+}
+
+function goPaymentMethodsManage() {
+  const id = drawerChannel.value?.id
+  methodsDrawerVisible.value = false
+  if (id != null) {
+    router.push({ path: '/admin/payment-methods', query: { channelId: String(id) } })
+  } else {
+    router.push({ path: '/admin/payment-methods' })
   }
 }
 
@@ -320,12 +450,18 @@ onMounted(() => { loadChannels() })
 }
 
 .content-card {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 16px;
   border: 1px solid rgba(99, 102, 241, 0.08);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   padding: 20px;
   transition: box-shadow 0.2s;
+}
+
+.channel-card-shell.content-card {
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .content-card:hover {
@@ -334,65 +470,148 @@ onMounted(() => { loadChannels() })
 
 .card-action-btn {
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 6px 12px;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* 主信息区：仅横向排列图标与文案，宽度占满 */
+.channel-card-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 2px;
 }
 
-/* 卡片头部：网格分区，避免标题与操作区在窄卡片内重叠 */
-.channel-card-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px 12px;
+.channel-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
 }
 
-.channel-card-text {
-  overflow: hidden;
+.channel-card-icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.channel-card-icon-emoji {
+  line-height: 1;
+}
+
+.channel-card-meta {
+  flex: 1;
+  min-width: 0;
 }
 
 .channel-card-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #0f172a;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .channel-card-code {
-  margin: 2px 0 0;
+  margin: 4px 0 0;
   font-size: 12px;
   color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  word-break: break-all;
+  line-height: 1.35;
 }
 
-.channel-card-actions {
+/* 操作栏：独立一行，与标题彻底分离 */
+.channel-card-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.channel-card-toolbar-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.channel-card-toolbar-switch {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
 
-@media (max-width: 480px) {
-  .channel-card-head {
-    grid-template-columns: 1fr;
-  }
+.channel-card-switch-label {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
 
-  .channel-card-actions {
-    justify-content: flex-start;
-  }
+.channel-card-desc {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.channel-card-methods {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.channel-card-methods:hover {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.channel-card-methods-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.channel-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  margin-top: auto;
+  border-top: 1px solid #e2e8f0;
+}
+
+.channel-card-footer-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.channel-card-footer-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #047857;
 }
 </style>

@@ -39,16 +39,30 @@ public class AuditLogService {
      * 登录结果审计（不含密码）。
      */
     public void recordLogin(String username, boolean success, String clientIp) {
-        record(username, "LOGIN", "/admin/auth/login", success ? "登录成功" : "登录失败", clientIp);
+        record(username, "LOGIN", "/api/v1/admin/auth/login", success ? "登录成功" : "登录失败", clientIp);
     }
 
     /**
-     * 分页查询。
+     * 分页查询（支持操作者、HTTP 方法、时间范围）。
      */
-    public IPage<AdminAuditLog> page(int pageNum, int pageSize) {
+    public IPage<AdminAuditLog> page(int pageNum, int pageSize, String usernameKeyword, String actionKeyword,
+                                     LocalDateTime start, LocalDateTime end) {
+        LambdaQueryWrapper<AdminAuditLog> w = new LambdaQueryWrapper<>();
+        if (usernameKeyword != null && !usernameKeyword.isBlank()) {
+            w.like(AdminAuditLog::getUsername, usernameKeyword.trim());
+        }
+        if (actionKeyword != null && !actionKeyword.isBlank()) {
+            w.eq(AdminAuditLog::getAction, actionKeyword.trim().toUpperCase());
+        }
+        if (start != null) {
+            w.ge(AdminAuditLog::getCreatedAt, start);
+        }
+        if (end != null) {
+            w.le(AdminAuditLog::getCreatedAt, end);
+        }
+        w.orderByDesc(AdminAuditLog::getCreatedAt);
         Page<AdminAuditLog> p = new Page<>(pageNum, pageSize);
-        return adminAuditLogMapper.selectPage(p,
-                new LambdaQueryWrapper<AdminAuditLog>().orderByDesc(AdminAuditLog::getCreatedAt));
+        return adminAuditLogMapper.selectPage(p, w);
     }
 
     private static String truncate(String s, int max) {

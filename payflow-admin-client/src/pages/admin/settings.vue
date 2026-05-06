@@ -1,5 +1,9 @@
 <template>
   <div class="p-6">
+    <div v-if="metaVersion" class="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-x-6 gap-y-1">
+      <span><span class="text-slate-400">应用名</span> {{ metaVersion.application }}</span>
+      <span><span class="text-slate-400">运行环境</span> {{ metaVersion.profiles }}</span>
+    </div>
     <!-- 页面标题 + 刷新缓存区 -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold text-gray-700">系统配置</h2>
@@ -127,6 +131,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/request'
+import { getMetaVersion } from '@/api/admin'
 import type { FormInstance, FormRules } from 'element-plus'
 
 interface SystemConfig {
@@ -142,6 +147,7 @@ interface SystemConfig {
   updatedAt?: string
 }
 
+const metaVersion = ref<{ application: string; profiles: string } | null>(null)
 const activeCategory = ref('')
 const tableData = ref<SystemConfig[]>([])
 const refreshCategory = ref('')
@@ -286,5 +292,12 @@ async function handleDelete(row: SystemConfig) {
 
 onMounted(() => {
   loadData()
+  getMetaVersion()
+    .then((v) => {
+      metaVersion.value = v
+    })
+    .catch(() => {
+      metaVersion.value = null
+    })
 })
 </script>

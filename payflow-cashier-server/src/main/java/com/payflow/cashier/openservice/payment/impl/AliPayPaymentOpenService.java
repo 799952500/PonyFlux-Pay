@@ -7,6 +7,7 @@ import com.payflow.common.exception.BizException;
 import com.payflow.payment.core.PayMethod;
 import com.payflow.payment.core.PayResult;
 import com.payflow.payment.core.PayStrategy;
+import com.payflow.payment.core.RefundResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -67,6 +68,27 @@ public class AliPayPaymentOpenService implements PayChannelPaymentOpenService {
         PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(payMethod);
         PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, Map.of());
         log.info("支付宝下单完成: orderId={}, payMethod={}, action={}", orderId, payMethod, result.getAction());
+        return result;
+    }
+
+    /**
+     * 支付宝渠道退款：委托默认策略（ALIPAY_QR）执行退款。
+     *
+     * @param orderId      平台订单号
+     * @param refundId     商户侧退款单号
+     * @param refundAmount 退款金额（分）
+     * @param totalAmount  原支付总金额（分）
+     * @param reason       退款原因
+     * @param account      渠道账号配置
+     * @return 退款结果
+     */
+    @Override
+    public RefundResult refund(String orderId, String refundId,
+                               Long refundAmount, Long totalAmount,
+                               String reason, PayChannelAccount account) {
+        PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(PayMethod.ALIPAY_QR.getCode());
+        RefundResult result = strategy.refund(orderId, refundAmount, reason, account);
+        log.info("支付宝退款完成: orderId={}, refundId={}, success={}", orderId, refundId, result.isSuccess());
         return result;
     }
 }

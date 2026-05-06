@@ -35,13 +35,28 @@ request.interceptors.request.use(
 // -------------------------------------------------------------------
 request.interceptors.response.use(
   (response) => {
-    const res = response.data
-    // code=0 为成功，否则 reject 并提示
-    if (res.code !== undefined && res.code !== 0) {
-      ElMessage.error(res.message || '请求失败')
-      return Promise.reject(res)
+    const ct = String(response.headers['content-type'] ?? '')
+    if (ct.includes('text/csv') || ct.includes('text/plain')) {
+      return response.data
     }
-    return res.data
+    const res = response.data
+    // 仅当为统一 Api 信封 { code, message, data? } 时解包，避免把业务实体误判为信封
+    if (
+      res !== null
+      && typeof res === 'object'
+      && !Array.isArray(res)
+      && Object.prototype.hasOwnProperty.call(res, 'code')
+    ) {
+      if (res.code !== undefined && res.code !== 0) {
+        ElMessage.error(res.message || '请求失败')
+        return Promise.reject(res)
+      }
+      if (Object.prototype.hasOwnProperty.call(res, 'data')) {
+        return res.data
+      }
+      return res
+    }
+    return res
   },
   (error) => {
     // 401：Token 过期或无效，清除并跳转登录

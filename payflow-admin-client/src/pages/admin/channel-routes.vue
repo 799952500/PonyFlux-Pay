@@ -14,12 +14,12 @@
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
         <el-form-item class="ml-auto">
-          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建路由</el-button>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建支付路由</el-button>
         </el-form-item>
       </el-form>
     </div>
 
-    <!-- 路由表格 -->
+    <!-- 支付路由列表 -->
     <div class="bg-white rounded-xl card-shadow">
       <el-table v-loading="loading" :data="routeList" stripe size="small" class="data-table">
         <el-table-column label="路由ID" prop="routeId" min-width="100">
@@ -40,7 +40,7 @@
         <el-table-column label="渠道" min-width="130">
           <template #default="{ row }">
             <div class="flex items-center gap-2">
-              <span>{{ channelEmoji[row.channelId] ?? '🏦' }}</span>
+              <span>{{ channelEmoji[String(row.channelName ?? '')] ?? '🏦' }}</span>
               <span class="font-medium">{{ row.channelName ?? row.channelId }}</span>
             </div>
           </template>
@@ -79,7 +79,7 @@
       </el-table>
 
       <!-- 空状态 -->
-      <el-empty v-if="!loading && !routeList.length" description="暂无路由数据，请先创建路由规则" class="py-12" />
+      <el-empty v-if="!loading && !routeList.length" description="暂无支付路由，请先创建支付路由" class="py-12" />
 
       <!-- 分页 -->
       <div class="flex justify-end p-4">
@@ -95,8 +95,8 @@
       </div>
     </div>
 
-    <!-- 新建路由弹窗 -->
-    <el-dialog v-model="dialogVisible" title="新建路由" width="520px" destroy-on-close>
+    <!-- 新建支付路由弹窗 -->
+    <el-dialog v-model="dialogVisible" title="新建支付路由" width="520px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="商户" prop="merchantId">
           <el-select v-model="form.merchantId" placeholder="请选择商户" style="width: 100%">
@@ -104,15 +104,18 @@
           </el-select>
         </el-form-item>
         <el-form-item label="渠道" prop="channelId">
-          <el-select v-model="form.channelId" placeholder="请先选择渠道" style="width: 100%" @change="onChannelChange">
-            <el-option label="💚 微信支付" value="WECHAT_PAY" />
-            <el-option label="💳 支付宝" value="ALIPAY" />
-            <el-option label="🏦 银联" value="UNION_PAY" />
+          <el-select v-model="form.channelId" placeholder="请选择渠道" style="width: 100%" filterable @change="onChannelChange">
+            <el-option
+              v-for="ch in channelSelectList"
+              :key="ch.id"
+              :label="`${ch.channelName}（${ch.channelCode}）`"
+              :value="ch.id"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="账户" prop="accountId">
+        <el-form-item label="支付账号" prop="accountId">
           <el-select v-model="form.accountId" placeholder="请先选择渠道" style="width: 100%" :disabled="!form.channelId">
-            <el-option v-for="acc in filteredAccounts" :key="acc.id" :label="acc.accountName + ' (' + acc.accountNo + ')'" :value="acc.id!" />
+            <el-option v-for="acc in filteredAccounts" :key="acc.id" :label="`${acc.accountName}（${acc.accountNo}）`" :value="acc.id!" />
             <template #empty>
               <div class="text-center py-3 text-xs text-[#94A3B8]">该渠道下暂无账户</div>
             </template>
@@ -135,12 +138,19 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  getChannelRoutes, createChannelRoute, deleteChannelRoute, toggleChannelRoute, getChannels, getChannelAccounts, getMerchantsSimple,
+  getChannelRoutes,
+  createChannelRoute,
+  deleteChannelRoute,
+  toggleChannelRoute,
+  getChannels,
+  getPaymentAccounts,
+  getMerchantsSimple,
 } from '@/api/admin'
+import type { Channel } from '@/types'
 
 interface ChannelAccount {
   id?: number
-  channelId: string
+  channelId: number
   accountNo: string
   accountName: string
   status: 'ENABLED' | 'DISABLED' | string
@@ -166,6 +176,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const routeList = ref<LocalChannelRoute[]>([])
 const merchantList = ref<Array<{ merchantId: string; merchantName: string }>>([])
+const channelSelectList = ref<Channel[]>([])
 const allAccounts = ref<ChannelAccount[]>([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
@@ -176,12 +187,17 @@ const total = ref(0)
 const queryForm = reactive({ merchantId: '' })
 
 const channelEmoji: Record<string, string> = {
-  WECHAT_PAY: '💚', ALIPAY: '💳', UNION_PAY: '🏦',
+  WECHAT_PAY: '💚',
+  ALIPAY: '💳',
+  UNION_PAY: '🏦',
+  微信支付: '💚',
+  支付宝: '💳',
+  银联: '🏦',
 }
 
 const form = reactive({
   merchantId: '',
-  channelId: '',
+  channelId: '' as number | '',
   accountId: '' as number | string,
   priority: 100,
 })
@@ -193,8 +209,11 @@ const rules: FormRules = {
 }
 
 const filteredAccounts = computed(() => {
-  if (!form.channelId) return []
-  return allAccounts.value.filter((a: ChannelAccount) => a.channelId === form.channelId && a.status === 'ENABLED')
+  if (form.channelId === '' || form.channelId == null) return []
+  const cid = Number(form.channelId)
+  return allAccounts.value.filter(
+    (a: ChannelAccount) => Number(a.channelId) === cid && a.status === 'ENABLED'
+  )
 })
 
 function onChannelChange() {
@@ -209,7 +228,7 @@ async function loadRoutes() {
     routeList.value = rawList.map((item: any) => ({ ...item, routeId: item.id }))
     total.value = resp?.data?.total ?? resp?.total ?? rawList.length
   } catch {
-    ElMessage.error('加载路由列表失败')
+    ElMessage.error('加载支付路由列表失败')
   } finally {
     loading.value = false
   }
@@ -223,16 +242,36 @@ async function loadMerchants() {
 
 async function loadAccounts() {
   try {
-    const res: any = await getChannelAccounts()
-    allAccounts.value = Array.isArray(res) ? res : (res?.list ?? [])
-  } catch { /* ignore */ }
+    const res = await getPaymentAccounts({ page: 1, pageSize: 500 })
+    const raw = res?.list ?? []
+    allAccounts.value = raw.map(
+      (a: { id?: number; channelId?: number; accountCode?: string; accountName?: string; enabled?: boolean }) => ({
+        id: a.id,
+        channelId: Number(a.channelId),
+        accountNo: a.accountCode ?? '',
+        accountName: a.accountName ?? '',
+        status: a.enabled ? 'ENABLED' : 'DISABLED',
+      })
+    )
+  } catch {
+    /* ignore */
+  }
+}
+
+async function loadChannelOptions() {
+  try {
+    const data = await getChannels()
+    channelSelectList.value = Array.isArray(data) ? data : []
+  } catch {
+    channelSelectList.value = []
+  }
 }
 
 function handleSearch() { page.value = 1; loadRoutes() }
 function handleReset() { Object.assign(queryForm, { merchantId: '' }); handleSearch() }
 
 function openCreateDialog() {
-  Object.assign(form, { merchantId: '', channelId: '', accountId: '', priority: 100 })
+  Object.assign(form, { merchantId: '', channelId: '', accountId: '' as number | string, priority: 100 })
   dialogVisible.value = true
 }
 
@@ -246,13 +285,13 @@ async function handleSubmit() {
   try {
     const payload = {
       merchantId: form.merchantId,
-      channelId: form.channelId,
+      channelId: Number(form.channelId),
       paymentAccountId: Number(form.accountId),
       priority: form.priority,
       enabled: true,
     }
     await createChannelRoute(payload as unknown as Partial<import('@/types').ChannelRoute>)
-    ElMessage.success('路由创建成功')
+    ElMessage.success('支付路由创建成功')
     dialogVisible.value = false
     loadRoutes()
   } catch (e: unknown) {
@@ -267,7 +306,7 @@ async function handleToggle(row: LocalChannelRoute) {
   try {
     await toggleChannelRoute(row.id)
     row.enabled = !row.enabled
-    ElMessage.success(`路由已${action}`)
+    ElMessage.success(`支付路由已${action}`)
   } catch {
     ElMessage.error('操作失败，请重试')
   }
@@ -275,7 +314,7 @@ async function handleToggle(row: LocalChannelRoute) {
 
 async function handleDelete(row: LocalChannelRoute) {
   try {
-    await ElMessageBox.confirm('确认删除该路由规则？删除后不可恢复。', '删除确认', {
+    await ElMessageBox.confirm('确认删除该支付路由？删除后不可恢复。', '删除确认', {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning',
@@ -289,6 +328,7 @@ async function handleDelete(row: LocalChannelRoute) {
 }
 
 onMounted(() => {
+  loadChannelOptions()
   loadRoutes()
   loadMerchants()
   loadAccounts()

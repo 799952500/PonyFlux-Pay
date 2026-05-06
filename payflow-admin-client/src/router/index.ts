@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAdminStore } from '@/stores/admin'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +36,12 @@ const router = createRouter({
           meta: { title: '通知中心', requiresAuth: true },
         },
         {
+          path: 'search',
+          name: 'AdminSearch',
+          component: () => import('@/pages/admin/search.vue'),
+          meta: { title: '全局搜索', requiresAuth: true },
+        },
+        {
           path: 'orders',
           name: 'Orders',
           component: () => import('@/pages/admin/orders/index.vue'),
@@ -53,10 +60,28 @@ const router = createRouter({
           meta: { title: '退款管理', requiresAuth: true },
         },
         {
+          path: 'reconcile',
+          name: 'Reconcile',
+          component: () => import('@/pages/admin/reconcile/index.vue'),
+          meta: { title: '资金对账', requiresAuth: true },
+        },
+        {
           path: 'channels',
           name: 'Channels',
           component: () => import('@/pages/admin/channels.vue'),
           meta: { title: '渠道管理', requiresAuth: true },
+        },
+        {
+          path: 'channel-routes',
+          name: 'ChannelRoutes',
+          component: () => import('@/pages/admin/channel-routes.vue'),
+          meta: { title: '支付路由', requiresAuth: true },
+        },
+        {
+          path: 'merchant-payments',
+          name: 'MerchantPayments',
+          component: () => import('@/pages/admin/merchant-payments.vue'),
+          meta: { title: '商户支付配置', requiresAuth: true },
         },
         {
           path: 'payment-methods',
@@ -106,6 +131,18 @@ const router = createRouter({
           component: () => import('@/pages/admin/users.vue'),
           meta: { title: '用户管理', requiresAuth: true },
         },
+        {
+          path: 'audit-logs',
+          name: 'AuditLogs',
+          component: () => import('@/pages/admin/audit-logs.vue'),
+          meta: { title: '操作日志', requiresAuth: true },
+        },
+        {
+          path: 'dicts',
+          name: 'Dicts',
+          component: () => import('@/pages/admin/dicts.vue'),
+          meta: { title: '数据字典', requiresAuth: true },
+        },
       ],
     },
     {
@@ -118,7 +155,7 @@ const router = createRouter({
 // -------------------------------------------------------------------
 // 路由守卫
 // -------------------------------------------------------------------
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // 设置页面标题
   if (to.meta?.title) {
     document.title = `${to.meta.title} - PayFlow 管理平台`
@@ -132,9 +169,22 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  // 已有 token 却访问登录页 → 跳转后台首页
+  // 访问登录页且本地有 Token：先校验是否仍有效，避免「以为在登录其实仍在旧会话」
   if (to.path === '/login' && token) {
-    next('/admin/dashboard')
+    try {
+      const res = await fetch('/api/v1/admin/auth/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        next('/admin/dashboard')
+        return
+      }
+    } catch {
+      /* 网络异常：视为无效，留在登录页 */
+    }
+    const store = useAdminStore()
+    store.clearAuth()
+    next()
     return
   }
 

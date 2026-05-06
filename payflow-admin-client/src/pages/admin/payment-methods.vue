@@ -40,10 +40,16 @@
     <!-- 表格 -->
     <div class="bg-white rounded-xl card-shadow">
       <div class="p-4 flex justify-between items-center border-b">
-        <span class="text-sm font-semibold text-gray-600">支付方式列表</span>
+        <div class="flex flex-col gap-1">
+          <span class="text-sm font-semibold text-gray-600">支付方式列表</span>
+          <span v-if="activeChannelIdFromQuery != null" class="text-xs text-gray-500">
+            已按渠道筛选（渠道 ID：{{ activeChannelIdFromQuery }}）
+            <el-button type="primary" link class="!p-0 !h-auto align-baseline ml-1" @click="clearChannelQuery">清除筛选</el-button>
+          </span>
+        </div>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
       </div>
-      <el-table v-loading="loading" :data="tableData" stripe size="small">
+      <el-table v-loading="loading" :data="displayTableData" stripe size="small">
         <el-table-column label="支付方式编号" prop="methodCode" min-width="140">
           <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-primary cursor-pointer" @click="openDetail(row)">{{ row.methodCode }}</span></template>
         </el-table-column>
@@ -69,7 +75,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="flex justify-end p-4">
+      <div v-if="activeChannelIdFromQuery == null" class="flex justify-end p-4">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -128,7 +134,8 @@
 
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" title="支付方式详情" width="580px" destroy-on-close>
-      <div v-if="currentRow" class="space-y-5">
+      <div v-if="detailLoading" class="p-4"><el-skeleton animated :rows="8" /></div>
+      <div v-else-if="currentRow" class="space-y-5">
         <section>
           <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">基本信息</h3>
           <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
@@ -164,9 +171,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels } from '@/api/admin'
+import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'
+
+const route = useRoute()
+const router = useRouter()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -219,6 +230,25 @@ const channelLabel: Record<string, string> = {
   WECHAT: '微信支付',
   ALIPAY: '支付宝',
   UNIONPAY: '银联',
+}
+
+/** 从渠道管理抽屉跳转时的 ?channelId= */
+const activeChannelIdFromQuery = computed(() => {
+  const raw = route.query.channelId
+  const s = Array.isArray(raw) ? raw[0] : raw
+  if (s == null || s === '') return null
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+})
+
+const displayTableData = computed(() => {
+  const fid = activeChannelIdFromQuery.value
+  if (fid == null) return tableData.value
+  return tableData.value.filter((r: { channelId?: number }) => Number(r.channelId) === fid)
+})
+
+function clearChannelQuery() {
+  router.replace({ path: '/admin/payment-methods' })
 }
 
 function maskValue(val: string | undefined) {
@@ -293,9 +323,18 @@ function openEdit(row: any) {
   dialogVisible.value = true
 }
 
-function openDetail(row: any) {
-  currentRow.value = row
+async function openDetail(row: any) {
   detailVisible.value = true
+  detailLoading.value = true
+  currentRow.value = null
+  try {
+    currentRow.value = await getPaymentMethodById(Number(row.id))
+  } catch {
+    currentRow.value = row
+    ElMessage.warning('已展示列表行数据，完整详情加载失败')
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 async function handleSubmit() {
@@ -342,6 +381,13 @@ async function handleDelete(row: any) {
     ElMessage.error('删除失败')
   }
 }
+
+watch(
+  () => route.query.channelId,
+  () => {
+    queryForm.page = 1
+  }
+)
 
 onMounted(() => {
   loadData()

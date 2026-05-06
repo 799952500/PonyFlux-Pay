@@ -2,6 +2,7 @@ package com.payflow.cashier.openservice.payment;
 
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.payment.core.PayResult;
+import com.payflow.payment.core.RefundResult;
 
 /**
  * 支付下单开放服务：按渠道维度封装支付下单能力。
@@ -43,5 +44,20 @@ public interface PayChannelPaymentOpenService {
                   String returnUrl,
                   String notifyUrl,
                   PayChannelAccount account);
+
+    /**
+     * 发起渠道退款。
+     *
+     * @param orderId      平台订单号（微信退款需要 outTradeNo）
+     * @param refundId     商户侧退款单号
+     * @param refundAmount 退款金额（分）
+     * @param totalAmount  原支付总金额（分）
+     * @param reason       退款原因
+     * @param account      渠道账号配置
+     * @return 退款结果
+     */
+    RefundResult refund(String orderId, String refundId,
+                        Long refundAmount, Long totalAmount,
+                        String reason, PayChannelAccount account);
 }
 

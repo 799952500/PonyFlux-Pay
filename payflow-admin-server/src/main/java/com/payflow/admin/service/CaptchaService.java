@@ -1,17 +1,26 @@
 package com.payflow.admin.service;
 
+import com.payflow.admin.config.JwtProperties;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * 登录算术验证码（Redis 存储正确答案）。
+ * 登录算术验证码：题目 operands 放在服务端签名的 JWT 中，校验时严格比较数值；
+ * Redis 仅用于同一 captchaId（jti）一次性消费，防止重放。
  *
  * @author Lucas
  */
@@ -19,41 +28,90 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CaptchaService {
 
-    private static final String KEY_PREFIX = "admin:captcha:";
-    private static final Duration TTL = Duration.ofMinutes(5);
+    /** 与登录 JWT 区分 subject，避免验证码令牌被误当作会话令牌 */
+    public static final String CAPTCHA_JWT_SUBJECT = "admin-captcha";
 
+    private static final String KEY_ONCE_PREFIX = "admin:captcha:once:";
+    private static final Duration CAPTCHA_TTL = Duration.ofMinutes(5);
+
+    private final JwtProperties jwtProperties;
     private final StringRedisTemplate stringRedisTemplate;
     private final SecureRandom random = new SecureRandom();
 
+    private SecretKey signingKey() {
+        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+    }
+
     /**
-     * 签发验证码，返回题目展示文案与 captchaId。
+     * 签发验证码：captchaId 为短期 JWT（内含 a、b），前端展示 a+b。
      */
     public Map<String, String> issue() {
         int a = 1 + random.nextInt(9);
         int b = 1 + random.nextInt(9);
-        String answer = String.valueOf(a + b);
-        String id = UUID.randomUUID().toString().replace("-", "");
-        stringRedisTemplate.opsForValue().set(KEY_PREFIX + id, answer, TTL);
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + CAPTCHA_TTL.toMillis());
+        String jti = UUID.randomUUID().toString().replace("-", "");
+        String token = Jwts.builder()
+                .id(jti)
+                .subject(CAPTCHA_JWT_SUBJECT)
+                .claim("a", a)
+                .claim("b", b)
+                .issuedAt(now)
+                .expiration(exp)
+                .signWith(signingKey())
+                .compact();
         return Map.of(
-                "captchaId", id,
+                "captchaId", token,
                 "question", a + " + " + b + " = ?"
         );
     }
 
     /**
-     * 校验答案（校验成功后删除 Redis 键，防止重放）。
+     * 校验答案：签名有效、未重复使用且数值等于 a+b。
      */
-    public void validateAndConsume(String captchaId, String userAnswer) {
-        if (!StringUtils.hasText(captchaId) || !StringUtils.hasText(userAnswer)) {
+    public void validateAndConsume(String captchaToken, String userAnswer) {
+        if (!StringUtils.hasText(captchaToken) || !StringUtils.hasText(userAnswer)) {
             throw new IllegalArgumentException("请输入验证码");
         }
-        String key = KEY_PREFIX + captchaId;
-        String expected = stringRedisTemplate.opsForValue().get(key);
-        if (!StringUtils.hasText(expected)) {
+        Claims claims;
+        try {
+            claims = Jwts.parser()
+                    .verifyWith(signingKey())
+                    .build()
+                    .parseSignedClaims(captchaToken)
+                    .getPayload();
+        } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("验证码已失效，请刷新");
         }
-        stringRedisTemplate.delete(key);
-        if (!expected.trim().equals(userAnswer.trim())) {
+        if (!CAPTCHA_JWT_SUBJECT.equals(claims.getSubject())) {
+            throw new IllegalArgumentException("验证码已失效，请刷新");
+        }
+        Integer a = claims.get("a", Integer.class);
+        Integer b = claims.get("b", Integer.class);
+        if (a == null || b == null) {
+            throw new IllegalArgumentException("验证码已失效，请刷新");
+        }
+        String jti = claims.getId();
+        if (!StringUtils.hasText(jti)) {
+            throw new IllegalArgumentException("验证码已失效，请刷新");
+        }
+        Date exp = claims.getExpiration();
+        long ttlSec = exp != null
+                ? Math.max(1L, (exp.getTime() - System.currentTimeMillis()) / 1000L)
+                : CAPTCHA_TTL.toSeconds();
+        String lockKey = KEY_ONCE_PREFIX + jti;
+        Boolean first = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(ttlSec));
+        if (!Boolean.TRUE.equals(first)) {
+            throw new IllegalArgumentException("验证码已失效，请刷新");
+        }
+        int expected = a + b;
+        int parsed;
+        try {
+            parsed = Integer.parseInt(userAnswer.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("验证码错误");
+        }
+        if (parsed != expected) {
             throw new IllegalArgumentException("验证码错误");
         }
     }

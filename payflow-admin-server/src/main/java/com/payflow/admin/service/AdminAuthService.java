@@ -10,4 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface AdminAuthService {
 
     LoginResponse login(LoginRequest request, HttpServletRequest httpRequest);
+
+    /**
+     * 当前登录用户资料（不含密码；需已通过 JWT 拦截器写入 username）。
+     */
+    LoginResponse profile(HttpServletRequest httpRequest);
 }

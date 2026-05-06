@@ -38,8 +38,9 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="170" />
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="openUserDetail(row)">详情</el-button>
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-button link type="warning" size="small" @click="openResetPwd(row)">重置密码</el-button>
             <el-button link type="danger" size="small" @click="handleDisable(row)">
@@ -95,13 +96,35 @@
         <el-button type="primary" class="btn-primary" :loading="resetPwdLoading" @click="handleResetPwdSubmit">确认</el-button>
       </template>
     </el-dialog>
+
+    <el-drawer v-model="detailVisible" title="用户详情" direction="rtl" size="420px">
+      <div v-if="detailLoading" class="p-4"><el-skeleton animated :rows="6" /></div>
+      <div v-else-if="detailUser" class="px-2 space-y-4 text-sm">
+        <dl class="grid grid-cols-[100px_1fr] gap-y-2 gap-x-2">
+          <dt class="text-gray-400">用户 ID</dt><dd class="text-gray-800 tabular-nums">{{ detailUser.id }}</dd>
+          <dt class="text-gray-400">用户名</dt><dd class="font-mono">{{ detailUser.username }}</dd>
+          <dt class="text-gray-400">昵称</dt><dd>{{ detailUser.nickname ?? '—' }}</dd>
+          <dt class="text-gray-400">手机</dt><dd>{{ detailUser.phone ?? detailUser.mobile ?? '—' }}</dd>
+          <dt class="text-gray-400">邮箱</dt><dd class="break-all">{{ detailUser.email ?? '—' }}</dd>
+          <dt class="text-gray-400">角色</dt><dd>{{ getRoleName(detailUser.roleId) }}</dd>
+          <dt class="text-gray-400">状态</dt>
+          <dd>
+            <el-tag size="small" :type="detailUser.status === 'ACTIVE' ? 'success' : 'danger'">
+              {{ detailUser.status === 'ACTIVE' ? '启用' : '禁用' }}
+            </el-tag>
+          </dd>
+          <dt class="text-gray-400">创建时间</dt><dd>{{ detailUser.createdAt }}</dd>
+          <dt class="text-gray-400">更新时间</dt><dd>{{ detailUser.updatedAt ?? '—' }}</dd>
+        </dl>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getUsers, createUser, updateUser, resetUserPassword, disableUser, getRoles } from '@/api/admin'
+import { getUsers, createUser, updateUser, resetUserPassword, disableUser, getRoles, getUserById } from '@/api/admin'
 import type { SysRole } from '@/types'
 
 // ============================================================
@@ -112,6 +135,7 @@ interface SysUser {
   username: string
   nickname?: string
   mobile?: string
+  phone?: string
   email?: string
   roleId: number
   status: 'ACTIVE' | 'DISABLED'
@@ -125,6 +149,10 @@ interface SysUser {
 const loading = ref(false)
 const userList = ref<SysUser[]>([])
 const roleList = ref<SysRole[]>([])
+
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailUser = ref<SysUser | null>(null)
 
 // 表单弹窗
 const formVisible = ref(false)
@@ -195,6 +223,22 @@ async function loadRoles() {
 function getRoleName(roleId: number): string {
   const role = roleList.value.find((r) => r.id === roleId)
   return role?.roleName ?? '—'
+}
+
+async function openUserDetail(row: SysUser) {
+  detailVisible.value = true
+  detailLoading.value = true
+  detailUser.value = null
+  try {
+    const full = await getUserById(row.id)
+    // 列表含 roleId（关联表），详情接口实体可能不含，合并保留
+    detailUser.value = { ...row, ...full, roleId: full.roleId ?? row.roleId }
+  } catch {
+    ElMessage.error('加载用户详情失败')
+    detailVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 function resetForm() {
