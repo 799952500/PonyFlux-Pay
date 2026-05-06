@@ -44,6 +44,9 @@ xxl:
 payflow:
   recon:
     internal-token: dev-payflow-internal-token
+    poller:
+      enabled: true
+      fixed-delay-ms: 5000
     storage:
       type: local
       local-path: ./data/recon-files

@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.sql.SQLSyntaxErrorException;
 import java.util.HashMap;
@@ -60,6 +61,12 @@ public class GlobalExceptionHandler {
                 .code(7598)
                 .message("对账表未初始化或结构不匹配，请执行 admin-schema.sql / admin-alter-202605-recon.sql 或 sql/full-reseed-payflow-demo.sql")
                 .build();
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public R<Void> handleNoResource(NoResourceFoundException e) {
+        return R.<Void>builder().code(404).message("not found").build();
     }
 
     @ExceptionHandler(RuntimeException.class)

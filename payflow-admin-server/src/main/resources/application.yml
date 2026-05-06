@@ -56,9 +56,6 @@ payflow:
   cashier:
     base-url: http://127.0.0.1:3002
     internal-token: dev-payflow-internal-token
-  recon:
-    base-url: http://127.0.0.1:3004
-    internal-token: dev-payflow-internal-token
   security:
     login-captcha-enabled: true
     login-max-failures: 5

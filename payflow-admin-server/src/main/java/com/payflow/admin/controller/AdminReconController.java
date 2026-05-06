@@ -1,14 +1,20 @@
 package com.payflow.admin.controller;
 
-import com.payflow.admin.client.AdminReconClient;
 import com.payflow.admin.dto.HandleReconDiffRequest;
 import com.payflow.admin.dto.ManualReconRequest;
+import com.payflow.admin.entity.recon.ReconDiffEntity;
+import com.payflow.admin.entity.recon.ReconHandlerAuditEntity;
+import com.payflow.admin.entity.recon.ReconTaskEntity;
+import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
+import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
+import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
+import com.payflow.common.exception.BizException;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +25,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * 对账管理：反向代理至 payflow-recon-server。
+ * 对账管理：统一由 admin-server 提供 HTTP 接口（同库直连）。
  *
  * @author PayFlow Team
  */
@@ -34,28 +43,46 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminReconController {
 
-    private final AdminReconClient adminReconClient;
+    private final ReconTaskEntityMapper reconTaskEntityMapper;
+    private final ReconDiffEntityMapper reconDiffEntityMapper;
+    private final ReconHandlerAuditEntityMapper reconHandlerAuditEntityMapper;
 
     @GetMapping("/tasks")
     public ResponseEntity<Map<String, Object>> listTasks(
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "20") long size,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate billDate,
+            @RequestParam(required = false) LocalDate billDate,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String status) {
-        Map<String, Object> p = adminReconClient.pageTasks(page, size, billDate, channel, status);
+        Page<ReconTaskEntity> p = new Page<>(page, size);
+        var w = Wrappers.<ReconTaskEntity>lambdaQuery();
+        if (billDate != null) {
+            w.eq(ReconTaskEntity::getBillDate, billDate);
+        }
+        if (channel != null && !channel.isBlank()) {
+            w.eq(ReconTaskEntity::getChannel, channel);
+        }
+        if (status != null && !status.isBlank()) {
+            w.eq(ReconTaskEntity::getStatus, status);
+        }
+        w.orderByDesc(ReconTaskEntity::getCreatedAt);
+        reconTaskEntityMapper.selectPage(p, w);
         Map<String, Object> result = new HashMap<>();
-        result.put("list", p.get("records"));
-        result.put("total", p.get("total"));
-        result.put("page", p.get("current"));
-        result.put("size", p.get("size"));
+        result.put("list", p.getRecords());
+        result.put("total", p.getTotal());
+        result.put("page", p.getCurrent());
+        result.put("size", p.getSize());
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
     }
 
     @GetMapping("/tasks/{taskId}")
     public ResponseEntity<Map<String, Object>> taskDetail(@PathVariable String taskId) {
-        Map<String, Object> row = adminReconClient.getTask(taskId);
-        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", row));
+        ReconTaskEntity t = reconTaskEntityMapper.selectOne(
+                Wrappers.<ReconTaskEntity>lambdaQuery().eq(ReconTaskEntity::getTaskId, taskId));
+        if (t == null) {
+            throw new BizException(7540, "对账任务不存在: " + taskId);
+        }
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", t));
     }
 
     @GetMapping("/tasks/{taskId}/diffs")
@@ -65,28 +92,39 @@ public class AdminReconController {
             @RequestParam(defaultValue = "20") long size,
             @RequestParam(required = false) String diffType,
             @RequestParam(required = false) String handleStatus) {
-        Map<String, Object> p = adminReconClient.pageDiffs(taskId, page, size, diffType, handleStatus);
+        Page<ReconDiffEntity> p = new Page<>(page, size);
+        var w = Wrappers.<ReconDiffEntity>lambdaQuery().eq(ReconDiffEntity::getTaskId, taskId);
+        if (diffType != null && !diffType.isBlank()) {
+            w.eq(ReconDiffEntity::getDiffType, diffType);
+        }
+        if (handleStatus != null && !handleStatus.isBlank()) {
+            w.eq(ReconDiffEntity::getHandleStatus, handleStatus);
+        }
+        w.orderByDesc(ReconDiffEntity::getId);
+        reconDiffEntityMapper.selectPage(p, w);
         Map<String, Object> result = new HashMap<>();
-        result.put("list", p.get("records"));
-        result.put("total", p.get("total"));
-        result.put("page", p.get("current"));
-        result.put("size", p.get("size"));
+        result.put("list", p.getRecords());
+        result.put("total", p.getTotal());
+        result.put("page", p.getCurrent());
+        result.put("size", p.getSize());
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
     }
 
     /**
-     * 预签名 URL 存在时 302；否则由管理端拉取对账服务文件字节并回传（本地存储场景）。
+     * 文件下载：当前默认支持本地存储（file_object_key 为绝对路径）。
      */
     @GetMapping("/tasks/{taskId}/file")
-    public ResponseEntity<?> downloadTaskFile(@PathVariable String taskId) {
-        Map<String, Object> meta = adminReconClient.getFileUrl(taskId);
-        Object presigned = meta.get("presignedUrl");
-        if (presigned != null && !presigned.toString().isBlank()) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(presigned.toString()))
-                    .build();
+    public ResponseEntity<byte[]> downloadTaskFile(@PathVariable String taskId) throws Exception {
+        ReconTaskEntity t = reconTaskEntityMapper.selectOne(
+                Wrappers.<ReconTaskEntity>lambdaQuery().eq(ReconTaskEntity::getTaskId, taskId));
+        if (t == null) {
+            throw new BizException(7540, "对账任务不存在: " + taskId);
         }
-        byte[] bytes = adminReconClient.downloadTaskFile(taskId);
+        if (t.getFileObjectKey() == null || t.getFileObjectKey().isBlank()) {
+            throw new BizException(7541, "任务无对账文件: " + taskId);
+        }
+        Path p = Path.of(t.getFileObjectKey());
+        byte[] bytes = Files.readAllBytes(p);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"recon_" + taskId + ".csv\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -95,10 +133,36 @@ public class AdminReconController {
 
     @PostMapping("/tasks/manual-run")
     public ResponseEntity<Map<String, Object>> manualRun(@Valid @RequestBody ManualReconRequest request) {
-        String taskId = adminReconClient.manualRun(
-                request.getReconChannel().trim().toLowerCase(),
-                request.getAccountCode(),
-                request.getBillDate());
+        String channel = request.getReconChannel().trim().toLowerCase();
+        String taskId = "RECON-" + UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime now = LocalDateTime.now();
+        ReconTaskEntity existing = reconTaskEntityMapper.selectOne(
+                Wrappers.<ReconTaskEntity>lambdaQuery()
+                        .eq(ReconTaskEntity::getChannel, channel)
+                        .eq(ReconTaskEntity::getAccountCode, request.getAccountCode())
+                        .eq(ReconTaskEntity::getBillDate, request.getBillDate())
+                        .eq(ReconTaskEntity::getBillType, "trade"));
+        if (existing != null) {
+            taskId = existing.getTaskId();
+            existing.setStatus("INIT");
+            existing.setTriggeredBy("MANUAL");
+            existing.setErrorMsg(null);
+            existing.setUpdatedAt(now);
+            reconTaskEntityMapper.updateById(existing);
+        } else {
+            ReconTaskEntity t = new ReconTaskEntity();
+            t.setTaskId(taskId);
+            t.setChannel(channel);
+            t.setAccountCode(request.getAccountCode());
+            t.setBillDate(request.getBillDate());
+            t.setBillType("trade");
+            t.setStatus("INIT");
+            t.setDiffCount(0);
+            t.setTriggeredBy("MANUAL");
+            t.setCreatedAt(now);
+            t.setUpdatedAt(now);
+            reconTaskEntityMapper.insert(t);
+        }
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of("taskId", taskId)));
     }
 
@@ -109,7 +173,29 @@ public class AdminReconController {
             @Valid @RequestBody HandleReconDiffRequest request) {
         Object username = http.getAttribute("username");
         String operator = username != null ? username.toString() : "admin";
-        adminReconClient.handleDiff(id, request.getAction().trim(), request.getRemark(), operator);
+        ReconDiffEntity diff = reconDiffEntityMapper.selectById(id);
+        if (diff == null) {
+            throw new BizException(7543, "差异记录不存在: " + id);
+        }
+        String action = request.getAction().trim().toUpperCase();
+        if (!"PROCESSED".equals(action) && !"IGNORED".equals(action)) {
+            throw new BizException(7544, "action 必须为 PROCESSED 或 IGNORED");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        diff.setHandleStatus(action);
+        diff.setHandleRemark(request.getRemark());
+        diff.setHandledBy(operator);
+        diff.setHandledAt(now);
+        reconDiffEntityMapper.updateById(diff);
+
+        ReconHandlerAuditEntity audit = new ReconHandlerAuditEntity();
+        audit.setDiffId(id);
+        audit.setAction(action);
+        audit.setOperator(operator);
+        audit.setDetail(request.getRemark());
+        audit.setClientIp(http.getRemoteAddr());
+        audit.setCreatedAt(now);
+        reconHandlerAuditEntityMapper.insert(audit);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
     }
 }

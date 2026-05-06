@@ -20,6 +20,9 @@ import com.payflow.admin.mapper.SysRoleMenuMapper;
 import com.payflow.admin.mapper.SysUserMapper;
 import com.payflow.admin.mapper.SysUserRoleMapper;
 import com.payflow.admin.mapper.SystemConfigMapper;
+import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
+import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
+import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.mapper.MapperFactoryBean;
@@ -233,6 +236,35 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<SysUserMapper> sysUserMapper(
             @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         MapperFactoryBean<SysUserMapper> factory = new MapperFactoryBean<>(SysUserMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    // ==================== 对账 recon_* mapper（同库直连）====================
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconTaskEntityMapper> reconTaskEntityMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ReconTaskEntityMapper> factory = new MapperFactoryBean<>(ReconTaskEntityMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconDiffEntityMapper> reconDiffEntityMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ReconDiffEntityMapper> factory = new MapperFactoryBean<>(ReconDiffEntityMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconHandlerAuditEntityMapper> reconHandlerAuditEntityMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ReconHandlerAuditEntityMapper> factory = new MapperFactoryBean<>(ReconHandlerAuditEntityMapper.class);
         factory.setSqlSessionFactory(sqlSessionFactory);
         return factory;
     }

@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Configuration;
  * @author Lucas
  */
 @Configuration
-@EnableConfigurationProperties({CashierClientProperties.class, AdminSecurityProperties.class, ReconClientProperties.class})
+@EnableConfigurationProperties({CashierClientProperties.class, AdminSecurityProperties.class})
 public class AdminBeansConfiguration {
 }
