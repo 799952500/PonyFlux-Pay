@@ -38,4 +38,7 @@ public class InvokeParams {
 
     @Schema(description = "签名")
     private String sign;
+
+    @Schema(description = "签名类型（如微信 JSAPI 的 RSA）")
+    private String signType;
 }

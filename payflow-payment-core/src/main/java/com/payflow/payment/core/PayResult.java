@@ -25,4 +25,12 @@ public class PayResult {
     private Map<String, String> invokeParams;
     private String errorMsg;
     private String channelTradeNo;
+
+    /**
+     * 渠道同步返回已成功（如付款码/条码即时成功），网关应直接落单并触发与异步回调一致的后处理。
+     */
+    private Boolean paidImmediately;
+
+    /** 渠道侧交易号（同步成功时填充） */
+    private String channelTransactionId;
 }

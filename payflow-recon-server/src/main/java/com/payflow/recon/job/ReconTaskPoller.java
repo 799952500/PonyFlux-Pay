@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * INIT 任务轮询执行器：由 admin 写入 recon_task(INIT)，recon-server 后台捞取执行。
+ * 账户子对账任务轮询：主调度写入 recon_task(INIT)，本组件后台捞取并执行渠道账单对账。
  *
  * @author PayFlow Team
  */
@@ -37,7 +37,7 @@ public class ReconTaskPoller {
                         .last("LIMIT 10"));
         for (ReconTask t : list) {
             try {
-                reconExecuteService.execute(t.getChannel(), t.getAccountCode(), t.getBillDate(), "API", null);
+                reconExecuteService.execute(t.getChannel(), t.getAccountCode(), t.getBillDate(), "ACCOUNT_POLLER", null);
             } catch (Exception e) {
                 log.warn("INIT 对账任务执行失败: taskId={}, message={}", t.getTaskId(), e.getMessage());
             }

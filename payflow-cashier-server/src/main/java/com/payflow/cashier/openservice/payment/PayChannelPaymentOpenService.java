@@ -4,6 +4,8 @@ import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.payment.core.PayResult;
 import com.payflow.payment.core.RefundResult;
 
+import java.util.Map;
+
 /**
  * 支付下单开放服务：按渠道维度封装支付下单能力。
  * <p>
@@ -37,13 +39,30 @@ public interface PayChannelPaymentOpenService {
      * @param account 渠道账号配置
      * @return 下单结果
      */
+    /**
+     * 发起支付（无渠道扩展参数时等价于 {@link #pay(String, Long, String, String, String, String, PayChannelAccount, Map)} 且 extras 为空）。
+     */
+    default PayResult pay(String orderId,
+                          Long amount,
+                          String subject,
+                          String payMethod,
+                          String returnUrl,
+                          String notifyUrl,
+                          PayChannelAccount account) {
+        return pay(orderId, amount, subject, payMethod, returnUrl, notifyUrl, account, Map.of());
+    }
+
+    /**
+     * @param channelExtras 渠道扩展参数（如微信 openid、付款码 auth_code），键名由具体策略约定
+     */
     PayResult pay(String orderId,
                   Long amount,
                   String subject,
                   String payMethod,
                   String returnUrl,
                   String notifyUrl,
-                  PayChannelAccount account);
+                  PayChannelAccount account,
+                  Map<String, String> channelExtras);
 
     /**
      * 发起渠道退款。

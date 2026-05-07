@@ -11,6 +11,10 @@ INSERT IGNORE INTO sys_menus (id, parent_id, menu_code, menu_name, menu_type, pa
 (2, NULL, 'order-group', '订单管理', 'MENU', NULL, '📋', 2),
 (3, 2, 'orders', '订单列表', 'MENU', '/admin/orders', NULL, 1),
 (4, 2, 'refunds', '退款管理', 'MENU', '/admin/refunds', NULL, 2),
+(60, NULL, 'grp_reconcile', '对账管理', 'MENU', NULL, '📒', 15),
+(61, 60, 'reconcile_tasks', '对账任务', 'MENU', '/admin/reconcile/tasks', NULL, 1),
+(62, 60, 'reconcile_results', '对账结果', 'MENU', '/admin/reconcile/results', NULL, 2),
+(63, 60, 'reconcile_summary', '对账汇总', 'MENU', '/admin/reconcile/summary', NULL, 3),
 (5, NULL, 'channels', '渠道管理', 'MENU', '/admin/channels', '💳', 3),
 (6, NULL, 'payment-group', '支付管理', 'MENU', NULL, '💰', 4),
 (7, 6, 'payment-methods', '支付方式', 'MENU', '/admin/payment-methods', NULL, 1),
@@ -29,7 +33,7 @@ INSERT IGNORE INTO sys_role_menus (role_id, menu_id) SELECT 1, id FROM sys_menus
 INSERT IGNORE INTO sys_role_menus (role_id, menu_id) SELECT 2, id FROM sys_menus WHERE id NOT IN (12,13,14);
 
 -- 财务只有订单相关和首页
-INSERT IGNORE INTO sys_role_menus (role_id, menu_id) SELECT 3, id FROM sys_menus WHERE id IN (1,2,3,4);
+INSERT IGNORE INTO sys_role_menus (role_id, menu_id) SELECT 3, id FROM sys_menus WHERE id IN (1,2,3,4,60,61,62,63);
 
 -- 风控只有风控和订单首页
 INSERT IGNORE INTO sys_role_menus (role_id, menu_id) SELECT 4, id FROM sys_menus WHERE id IN (1,2,3,10);

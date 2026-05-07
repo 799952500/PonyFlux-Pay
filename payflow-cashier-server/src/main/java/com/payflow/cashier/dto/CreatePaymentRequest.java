@@ -41,6 +41,12 @@ public class CreatePaymentRequest {
     @Schema(description = "微信 OpenId")
     private String openId;
 
+    /**
+     * 微信/支付宝付款码（条码支付、被扫场景）。
+     */
+    @Schema(description = "付款码（微信付款码或支付宝条码）")
+    private String authCode;
+
     @Schema(description = "支付宝 UserId")
     private String alipayUserId;
 

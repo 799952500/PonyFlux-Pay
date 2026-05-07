@@ -371,6 +371,15 @@ public class OrderServiceImpl implements OrderService {
         if (Payment.METHOD_WECHAT_APP.equals(code)) {
             return "APP".equals(client);
         }
+        if (Payment.METHOD_WECHAT_JSAPI.equals(code) || Payment.METHOD_WECHAT_MINI.equals(code)) {
+            return "H5".equals(client) || "APP".equals(client);
+        }
+        if (Payment.METHOD_WECHAT_MICROPAY.equals(code) || Payment.METHOD_ALIPAY_FACE.equals(code)) {
+            return "PC".equals(client) || "H5".equals(client) || "APP".equals(client);
+        }
+        if (Payment.METHOD_UNION_H5.equals(code)) {
+            return "H5".equals(client) || "APP".equals(client);
+        }
         if (Payment.METHOD_ALIPAY_WAP.equals(code)) {
             return "H5".equals(client) || "APP".equals(client);
         }
@@ -400,9 +409,12 @@ public class OrderServiceImpl implements OrderService {
             case Payment.METHOD_WECHAT_APP -> "/icons/wechat.png";
             case Payment.METHOD_WECHAT_NATIVE -> "/icons/wechat-qr.png";
             case Payment.METHOD_WECHAT_H5 -> "/icons/wechat-h5.png";
+            case Payment.METHOD_WECHAT_JSAPI, Payment.METHOD_WECHAT_MINI -> "/icons/wechat.png";
+            case Payment.METHOD_WECHAT_MICROPAY -> "/icons/wechat-qr.png";
             case Payment.METHOD_ALIPAY_APP -> "/icons/alipay.png";
             case Payment.METHOD_ALIPAY_WAP -> "/icons/alipay-wap.png";
-            case Payment.METHOD_BANK_CARD -> "/icons/bank.png";
+            case Payment.METHOD_BANK_CARD, Payment.METHOD_UNION_H5 -> "/icons/bank.png";
+            case Payment.METHOD_ALIPAY_FACE -> "/icons/alipay.png";
             default -> "/icons/default-pay.png";
         };
     }
@@ -419,6 +431,15 @@ public class OrderServiceImpl implements OrderService {
             methods.add(PaymentMethodDTO.builder()
                     .code(Payment.METHOD_WECHAT_H5).name("微信H5支付").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_H5))
                     .description("网页支付").recommended(false).build());
+            methods.add(PaymentMethodDTO.builder()
+                    .code(Payment.METHOD_WECHAT_JSAPI).name("微信JSAPI").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_JSAPI))
+                    .description("公众号内支付").recommended(false).build());
+            methods.add(PaymentMethodDTO.builder()
+                    .code(Payment.METHOD_WECHAT_MINI).name("微信小程序").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_MINI))
+                    .description("小程序支付").recommended(false).build());
+            methods.add(PaymentMethodDTO.builder()
+                    .code(Payment.METHOD_WECHAT_MICROPAY).name("微信付款码").icon(iconForPaymentMethodCode(Payment.METHOD_WECHAT_MICROPAY))
+                    .description("被扫/条码").recommended(false).build());
         } else if (Order.CHANNEL_ALIPAY.equals(channel)) {
             methods.add(PaymentMethodDTO.builder()
                     .code(Payment.METHOD_ALIPAY_APP).name("支付宝").icon(iconForPaymentMethodCode(Payment.METHOD_ALIPAY_APP))
@@ -426,10 +447,16 @@ public class OrderServiceImpl implements OrderService {
             methods.add(PaymentMethodDTO.builder()
                     .code(Payment.METHOD_ALIPAY_WAP).name("支付宝WAP").icon(iconForPaymentMethodCode(Payment.METHOD_ALIPAY_WAP))
                     .description("网页支付").recommended(false).build());
+            methods.add(PaymentMethodDTO.builder()
+                    .code(Payment.METHOD_ALIPAY_FACE).name("支付宝条码").icon(iconForPaymentMethodCode(Payment.METHOD_ALIPAY_FACE))
+                    .description("付款码/当面付").recommended(false).build());
         } else if (Order.CHANNEL_UNION_PAY.equals(channel)) {
             methods.add(PaymentMethodDTO.builder()
+                    .code(Payment.METHOD_UNION_H5).name("云闪付H5").icon(iconForPaymentMethodCode(Payment.METHOD_UNION_H5))
+                    .description("银联在线（占位跳转）").recommended(true).build());
+            methods.add(PaymentMethodDTO.builder()
                     .code(Payment.METHOD_BANK_CARD).name("银行卡支付").icon(iconForPaymentMethodCode(Payment.METHOD_BANK_CARD))
-                    .description("支持各大银行").recommended(true).build());
+                    .description("支持各大银行").recommended(false).build());
         }
         return methods;
     }

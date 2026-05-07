@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.payflow</groupId>
+        <artifactId>payflow-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>payflow-payment-union</artifactId>
+    <packaging>jar</packaging>
+    <name>payflow-payment-union</name>
+    <description>银联/云闪付支付 SPI 占位模块（H5 跳转 URL 与对接说明）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.payflow</groupId>
+            <artifactId>payflow-payment-core</artifactId>
+        </dependency>
+    </dependencies>
+</project>

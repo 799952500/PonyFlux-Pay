@@ -5,11 +5,16 @@ import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.cashier.routing.ChannelHealthRedisService;
+import com.payflow.cashier.webhook.WebhookDispatchService;
+import com.payflow.cashier.webhook.WebhookEventCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 支付回调通用业务逻辑服务。
@@ -27,6 +32,8 @@ public class PayNotifyService {
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
     private final OrderService orderService;
+    private final ChannelHealthRedisService channelHealthRedisService;
+    private final WebhookDispatchService webhookDispatchService;
 
     /**
      * 处理支付成功（更新 Payment + Order 状态）。
@@ -53,11 +60,20 @@ public class PayNotifyService {
         payment.setUpdatedAt(LocalDateTime.now());
         paymentMapper.updateById(payment);
 
+        if (payment.getAccountCode() != null) {
+            channelHealthRedisService.recordOutcome(payment.getAccountCode(), true);
+        }
+
         // 更新 Order
         Order order = orderMapper.selectOne(
                 new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
         if (order != null) {
             orderService.updateOrderStatus(orderId, Order.STATUS_PAID, null);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("orderId", orderId);
+            payload.put("paymentId", payment.getPaymentId());
+            payload.put("channelTransactionId", channelTransactionId != null ? channelTransactionId : "");
+            webhookDispatchService.publish(order.getMerchantId(), WebhookEventCode.PAYMENT_SUCCESS, payload);
         }
 
         log.info("支付完成: orderId={}, paymentId={}", orderId, payment.getPaymentId());

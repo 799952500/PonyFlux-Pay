@@ -28,6 +28,7 @@ public class ReconDiffEntity {
     private String localStatus;
     private String handleStatus;
     private String handleRemark;
+    private String suggestedAction;
     private String handledBy;
     private LocalDateTime handledAt;
     private LocalDateTime createdAt;

@@ -30,6 +30,24 @@ const router = createRouter({
           meta: { title: '数据概览', requiresAuth: true },
         },
         {
+          path: 'insights/funnel',
+          name: 'InsightsFunnel',
+          component: () => import('@/pages/admin/insights-funnel.vue'),
+          meta: { title: '支付漏斗', requiresAuth: true },
+        },
+        {
+          path: 'onboarding',
+          name: 'Onboarding',
+          component: () => import('@/pages/admin/onboarding.vue'),
+          meta: { title: '商户进件', requiresAuth: true },
+        },
+        {
+          path: 'channel-routing/health',
+          name: 'ChannelRoutingHealth',
+          component: () => import('@/pages/admin/channel-routing-health.vue'),
+          meta: { title: '路由健康度', requiresAuth: true },
+        },
+        {
           path: 'notifications',
           name: 'Notifications',
           component: () => import('@/pages/admin/notifications.vue'),
@@ -63,7 +81,25 @@ const router = createRouter({
           path: 'reconcile',
           name: 'Reconcile',
           component: () => import('@/pages/admin/reconcile/index.vue'),
-          meta: { title: '资金对账', requiresAuth: true },
+          meta: { title: '对账管理', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/tasks',
+          name: 'ReconcileTasks',
+          component: () => import('@/pages/admin/reconcile/tasks.vue'),
+          meta: { title: '对账任务', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/results',
+          name: 'ReconcileResults',
+          component: () => import('@/pages/admin/reconcile/results.vue'),
+          meta: { title: '对账结果', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/summary',
+          name: 'ReconcileSummary',
+          component: () => import('@/pages/admin/reconcile/summary.vue'),
+          meta: { title: '对账汇总', requiresAuth: true },
         },
         {
           path: 'channels',

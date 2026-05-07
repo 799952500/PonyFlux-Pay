@@ -4,6 +4,8 @@ import com.payflow.cashier.dto.CreateOrderRequest;
 import com.payflow.cashier.entity.RiskRule;
 import com.payflow.common.exception.BizException;
 import com.payflow.cashier.mapper.OrderMapper;
+import com.payflow.cashier.risk.RiskQlEvaluator;
+import com.payflow.cashier.service.RiskBlacklistService;
 import com.payflow.cashier.service.RiskCheckService;
 import com.payflow.cashier.service.RiskRuleService;
 import lombok.RequiredArgsConstructor;
@@ -29,13 +31,18 @@ public class RiskCheckServiceImpl implements RiskCheckService {
 
     private static final String RULE_TYPE_AMOUNT_SINGLE = "AMOUNT_SINGLE";
     private static final String RULE_TYPE_AMOUNT_DAILY = "AMOUNT_DAILY";
+    private static final String RULE_TYPE_CUSTOM = "CUSTOM";
     private static final String ACTION_REJECT = "REJECT";
 
     private final RiskRuleService riskRuleService;
     private final OrderMapper orderMapper;
+    private final RiskQlEvaluator riskQlEvaluator;
+    private final RiskBlacklistService riskBlacklistService;
 
     @Override
     public void checkCreateOrder(CreateOrderRequest request) {
+        riskBlacklistService.assertNotBlacklisted(request);
+
         List<RiskRule> rules = riskRuleService.listEnabledRules();
         if (rules.isEmpty()) {
             return;
@@ -44,6 +51,14 @@ public class RiskCheckServiceImpl implements RiskCheckService {
         long orderAmountCents = request.getAmount();
 
         for (RiskRule rule : rules) {
+            if (RULE_TYPE_CUSTOM.equals(rule.getRuleType())
+                    && rule.getRiskExpr() != null && !rule.getRiskExpr().isBlank()) {
+                boolean allow = riskQlEvaluator.evaluateAllow(rule, request);
+                if (!allow && ACTION_REJECT.equals(rule.getAction())) {
+                    throw new BizException(6101, "风控拦截：自定义规则不通过: " + rule.getRuleCode());
+                }
+                continue;
+            }
             if (RULE_TYPE_AMOUNT_SINGLE.equals(rule.getRuleType())) {
                 checkSingleAmount(rule, orderAmountCents);
             } else if (RULE_TYPE_AMOUNT_DAILY.equals(rule.getRuleType())) {

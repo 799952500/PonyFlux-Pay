@@ -122,6 +122,7 @@ CREATE TABLE `cashier_payments` (
   `payment_id` VARCHAR(64) NOT NULL COMMENT '支付记录ID',
   `order_id` VARCHAR(64) DEFAULT NULL COMMENT '关联订单号',
   `pay_channel` VARCHAR(32) DEFAULT NULL COMMENT '支付渠道',
+  `account_code` VARCHAR(64) DEFAULT NULL COMMENT '收款渠道账户编码',
   `pay_method` VARCHAR(32) DEFAULT NULL COMMENT '支付方式',
   `channel_transaction_id` VARCHAR(128) DEFAULT NULL COMMENT '第三方交易流水号',
   `amount` BIGINT DEFAULT NULL COMMENT '支付金额(分)',

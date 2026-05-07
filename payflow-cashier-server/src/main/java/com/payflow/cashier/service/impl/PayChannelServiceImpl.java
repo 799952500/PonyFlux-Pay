@@ -14,6 +14,7 @@ import com.payflow.cashier.mapper.PayChannelAccountMapper;
 import com.payflow.cashier.mapper.PayChannelMapper;
 import com.payflow.cashier.mapper.PayChannelMerchantRouteMapper;
 import com.payflow.cashier.registry.PayChannelAccountRegistry;
+import com.payflow.cashier.routing.SmartRoutePicker;
 import com.payflow.cashier.service.PayChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,10 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -42,6 +45,7 @@ public class PayChannelServiceImpl implements PayChannelService {
     private PayChannelMerchantRouteMapper payChannelMerchantRouteMapper;
     private final ObjectMapper objectMapper;
     private final PayChannelAccountRegistry payChannelAccountRegistry;
+    private final SmartRoutePicker smartRoutePicker;
 
     // 注入方式改为 set 注入，避免循环
     @org.springframework.beans.factory.annotation.Autowired
@@ -226,7 +230,6 @@ public class PayChannelServiceImpl implements PayChannelService {
         if (cached != null) {
             return cached;
         }
-        // 1. 根据 merchantId + channelCode 找到对应渠道的账户ID
         LambdaQueryWrapper<PayChannelMerchantRoute> routeWrapper = new LambdaQueryWrapper<>();
         routeWrapper.eq(PayChannelMerchantRoute::getMerchantId, merchantId)
                 .eq(PayChannelMerchantRoute::getEnabled, true);
@@ -234,43 +237,40 @@ public class PayChannelServiceImpl implements PayChannelService {
         if (routes.isEmpty()) {
             return null;
         }
+        routes.sort(Comparator.comparingInt((PayChannelMerchantRoute r) ->
+                r.getPriority() == null ? 0 : r.getPriority()).reversed());
 
-        // 2. 关联查询渠道，找到匹配 channelCode 的路由
         List<Long> accountIds = routes.stream()
                 .map(PayChannelMerchantRoute::getChannelAccountId)
+                .distinct()
                 .collect(Collectors.toList());
         List<PayChannelAccount> accounts = payChannelAccountMapper.selectBatchIds(accountIds)
                 .stream()
                 .filter(a -> "ENABLED".equals(a.getStatus()))
                 .collect(Collectors.toList());
 
-        // 3. 匹配 channelCode
+        String channelRowKey = channelCode == null ? "" : channelCode.toLowerCase(Locale.ROOT);
         List<PayChannel> channels = payChannelMapper.selectList(
                 new LambdaQueryWrapper<PayChannel>()
-                        .eq(PayChannel::getChannelCode, channelCode)
+                        .eq(PayChannel::getChannelCode, channelRowKey)
                         .eq(PayChannel::getStatus, "ENABLED")
         );
         if (channels.isEmpty()) {
             return null;
         }
         Long channelId = channels.get(0).getId();
-        PayChannelAccount matched = accounts.stream()
-                .filter(a -> a.getChannelId().equals(channelId))
-                .findFirst()
-                .orElse(null);
-        if (matched == null) {
+        List<PayChannelAccount> matching = accounts.stream()
+                .filter(a -> channelId.equals(a.getChannelId()))
+                .collect(Collectors.toList());
+        if (matching.isEmpty()) {
             return null;
         }
-
-        // 4. 如果同一渠道有多个路由（配置错误），返回优先级最高的
-        List<PayChannelMerchantRoute> channelRoutes = routes.stream()
-                .filter(r -> accountIds.contains(matched.getId()) == false) // 先找 id 在 routes 里的
-                .collect(Collectors.toList());
-        // 重新按优先级选
-        return accounts.stream()
-                .filter(a -> a.getChannelId().equals(channelId))
-                .findFirst()
-                .orElse(null);
+        SmartRoutePicker.RoutePick pick = smartRoutePicker.pick(routes, matching, channelId);
+        if (pick.account() != null) {
+            log.debug("智能路由选中: merchantId={}, accountCode={}, reason={}",
+                    merchantId, pick.account().getAccountCode(), pick.reason());
+        }
+        return pick.account();
     }
 
     // ==================== 私有方法 ====================

@@ -38,6 +38,11 @@ public class Payment {
     @Schema(description = "支付渠道")
     private String payChannel;
 
+    /** 收款渠道账户编码（下单路由结果，用于对账按账号汇总） */
+    @TableField("account_code")
+    @Schema(description = "收款账户编码")
+    private String accountCode;
+
     @TableField("pay_method")
     @Schema(description = "支付方式")
     private String payMethod;
@@ -74,7 +79,12 @@ public class Payment {
     public static final String METHOD_WECHAT_APP = "WECHAT_APP";
     public static final String METHOD_WECHAT_H5 = "WECHAT_H5";
     public static final String METHOD_WECHAT_NATIVE = "WECHAT_NATIVE";
+    public static final String METHOD_WECHAT_JSAPI = "WECHAT_JSAPI";
+    public static final String METHOD_WECHAT_MINI = "WECHAT_MINI";
+    public static final String METHOD_WECHAT_MICROPAY = "WECHAT_MICROPAY";
     public static final String METHOD_ALIPAY_APP = "ALIPAY_APP";
     public static final String METHOD_ALIPAY_WAP = "ALIPAY_WAP";
     public static final String METHOD_BANK_CARD = "BANK_CARD";
+    public static final String METHOD_ALIPAY_FACE = "ALIPAY_FACE";
+    public static final String METHOD_UNION_H5 = "UNION_H5";
 }

@@ -28,6 +28,11 @@ public class RiskRule {
 
     private String ruleType;
 
+    /**
+     * QLExpress 脚本；ruleType=CUSTOM 且非空时执行，返回 true 表示放行，false 表示触发 action。
+     */
+    private String riskExpr;
+
     private BigDecimal threshold;
 
     private String unit;

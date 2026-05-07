@@ -2,10 +2,8 @@ package com.payflow.recon.job;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.payflow.recon.kit.ReconChannelKit;
-import com.payflow.recon.mapper.cashier.CashierReconAccountMapper;
-import com.payflow.recon.mapper.cashier.CashierReconAccountRow;
 import com.payflow.recon.service.ReconExecuteService;
+import com.payflow.recon.service.ReconTaskSeedService;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * xxl-job：对账任务入口。
@@ -25,28 +22,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReconcileJobHandler {
 
-    private final CashierReconAccountMapper cashierReconAccountMapper;
     private final ReconExecuteService reconExecuteService;
+    private final ReconTaskSeedService reconTaskSeedService;
 
     /**
-     * 每日对账：默认账单日为昨天，遍历所有启用中的支付宝/微信渠道账户。
+     * 主对账调度（推荐）：默认账单日为昨天，生成各支付账号子对账任务与各商户子对账任务（INIT），
+     * 由 recon-server 后台轮询器异步拉取执行。
+     */
+    @XxlJob("reconcileMasterDailyJobHandler")
+    public void reconcileMasterDaily() {
+        LocalDate billDate = LocalDate.now().minusDays(1);
+        long logId = XxlJobHelper.getJobId();
+        XxlJobHelper.log("主对账调度开始: billDate={}", billDate);
+        int accountSeeds = reconTaskSeedService.seedAccountTasks(billDate, "XXL_MASTER", logId);
+        int merchantSeeds = reconTaskSeedService.seedMerchantTasks(billDate, "XXL_MASTER", logId);
+        XxlJobHelper.log("已生成账户子任务={}, 商户子任务={}", accountSeeds, merchantSeeds);
+    }
+
+    /**
+     * 每日对账（兼容旧任务名）：与 {@link #reconcileMasterDaily()} 相同，仅生成子任务。
      */
     @XxlJob("reconcileDailyJobHandler")
     public void reconcileDaily() {
-        LocalDate billDate = LocalDate.now().minusDays(1);
-        long logId = XxlJobHelper.getJobId();
-        List<CashierReconAccountRow> rows = cashierReconAccountMapper.listEnabledForRecon();
-        XxlJobHelper.log("对账日={}, 账户数={}", billDate, rows.size());
-        for (CashierReconAccountRow row : rows) {
-            try {
-                String reconCh = ReconChannelKit.cashierChannelToRecon(row.getChannelCode());
-                String taskId = reconExecuteService.execute(reconCh, row.getAccountCode(), billDate, "XXL_JOB", logId);
-                XxlJobHelper.log("完成: account={}, taskId={}", row.getAccountCode(), taskId);
-            } catch (Exception e) {
-                XxlJobHelper.log("失败: account={}, error={}", row.getAccountCode(), e.getMessage());
-                log.error("对账任务失败: account={}", row.getAccountCode(), e);
-            }
-        }
+        reconcileMasterDaily();
     }
 
     /**

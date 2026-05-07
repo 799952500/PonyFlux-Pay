@@ -50,6 +50,7 @@ public class ReconExecuteService {
     private final ReconBillRecordMapper reconBillRecordMapper;
     private final ReconDiffMapper reconDiffMapper;
     private final ReconCompareService reconCompareService;
+    private final ReconDiffHealService reconDiffHealService;
     private final CashierReconPaymentMapper cashierReconPaymentMapper;
 
     /**
@@ -122,6 +123,7 @@ public class ReconExecuteService {
 
             updateTaskStatus(taskId, STATUS_COMPARING, null);
             int diffCount = reconCompareService.compareAndPersist(taskId, reconChannel, billDate);
+            reconDiffHealService.annotateSuggestions(taskId);
 
             String payChannel = ReconChannelKit.reconToPayChannel(reconChannel);
             List<CashierReconPaymentRow> localRows = cashierReconPaymentMapper.listSuccessByBillDate(payChannel, billDate);

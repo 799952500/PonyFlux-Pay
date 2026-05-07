@@ -31,6 +31,9 @@ public class Payment {
     @TableField("pay_channel")
     private String payChannel;
 
+    @TableField("account_code")
+    private String accountCode;
+
     @TableField("pay_method")
     private String payMethod;
 

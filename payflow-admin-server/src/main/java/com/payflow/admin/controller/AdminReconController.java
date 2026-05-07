@@ -4,10 +4,13 @@ import com.payflow.admin.dto.HandleReconDiffRequest;
 import com.payflow.admin.dto.ManualReconRequest;
 import com.payflow.admin.entity.recon.ReconDiffEntity;
 import com.payflow.admin.entity.recon.ReconHandlerAuditEntity;
+import com.payflow.admin.entity.recon.ReconMerchantTaskEntity;
 import com.payflow.admin.entity.recon.ReconTaskEntity;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
 import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
+import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
+import com.payflow.admin.service.AdminReconQueryService;
 import com.payflow.common.exception.BizException;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -44,8 +47,57 @@ import java.util.UUID;
 public class AdminReconController {
 
     private final ReconTaskEntityMapper reconTaskEntityMapper;
+    private final ReconMerchantTaskEntityMapper reconMerchantTaskEntityMapper;
     private final ReconDiffEntityMapper reconDiffEntityMapper;
     private final ReconHandlerAuditEntityMapper reconHandlerAuditEntityMapper;
+    private final AdminReconQueryService adminReconQueryService;
+
+    /**
+     * 按订单/支付维度查询对账结果（全量成功支付 + 差异匹配；onlyAbnormal=true 时仅差异表）。
+     */
+    @GetMapping("/order-results")
+    public ResponseEntity<Map<String, Object>> orderResults(
+            @RequestParam LocalDate billDate,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String merchantId,
+            @RequestParam(required = false) String orderKeyword,
+            @RequestParam(defaultValue = "false") boolean onlyAbnormal,
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") long size) {
+        Map<String, Object> data = adminReconQueryService.pageOrderResults(
+                billDate, channel, merchantId, orderKeyword, onlyAbnormal, page, size);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
+    }
+
+    /**
+     * 对账日汇总：本地成功收款 vs 渠道账单金额、待处理差异笔数。
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<Map<String, Object>> reconSummary(
+            @RequestParam LocalDate billDate,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String accountCode) {
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", adminReconQueryService.buildSummary(billDate, channel, accountCode)));
+    }
+
+    /**
+     * 异常（差异）明细分页，供汇总页查看产生差额的订单。
+     */
+    @GetMapping("/anomalies")
+    public ResponseEntity<Map<String, Object>> anomalies(
+            @RequestParam LocalDate billDate,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String accountCode,
+            @RequestParam(required = false) String handleStatus,
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") long size) {
+        Map<String, Object> data = adminReconQueryService.pageAnomalies(
+                billDate, channel, accountCode, handleStatus, page, size);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
+    }
 
     @GetMapping("/tasks")
     public ResponseEntity<Map<String, Object>> listTasks(
@@ -73,6 +125,54 @@ public class AdminReconController {
         result.put("page", p.getCurrent());
         result.put("size", p.getSize());
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
+    }
+
+    @GetMapping("/merchant-tasks")
+    public ResponseEntity<Map<String, Object>> listMerchantTasks(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) LocalDate billDate,
+            @RequestParam(required = false) String merchantId,
+            @RequestParam(required = false) String status) {
+        Page<ReconMerchantTaskEntity> p = new Page<>(page, size);
+        var w = Wrappers.<ReconMerchantTaskEntity>lambdaQuery();
+        if (billDate != null) {
+            w.eq(ReconMerchantTaskEntity::getBillDate, billDate);
+        }
+        if (merchantId != null && !merchantId.isBlank()) {
+            w.eq(ReconMerchantTaskEntity::getMerchantId, merchantId);
+        }
+        if (status != null && !status.isBlank()) {
+            w.eq(ReconMerchantTaskEntity::getStatus, status);
+        }
+        w.orderByDesc(ReconMerchantTaskEntity::getCreatedAt);
+        reconMerchantTaskEntityMapper.selectPage(p, w);
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", p.getRecords());
+        result.put("total", p.getTotal());
+        result.put("page", p.getCurrent());
+        result.put("size", p.getSize());
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
+    }
+
+    @GetMapping("/merchant-tasks/{merchantTaskId}/file")
+    public ResponseEntity<byte[]> downloadMerchantTaskFile(@PathVariable String merchantTaskId) throws Exception {
+        ReconMerchantTaskEntity t = reconMerchantTaskEntityMapper.selectOne(
+                Wrappers.<ReconMerchantTaskEntity>lambdaQuery()
+                        .eq(ReconMerchantTaskEntity::getMerchantTaskId, merchantTaskId));
+        if (t == null) {
+            throw new BizException(7545, "商户对账任务不存在: " + merchantTaskId);
+        }
+        if (t.getStatementObjectKey() == null || t.getStatementObjectKey().isBlank()) {
+            throw new BizException(7546, "任务尚无对账单文件: " + merchantTaskId);
+        }
+        Path p = Path.of(t.getStatementObjectKey());
+        byte[] bytes = Files.readAllBytes(p);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"merchant_recon_" + merchantTaskId + ".csv\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(bytes);
     }
 
     @GetMapping("/tasks/{taskId}")

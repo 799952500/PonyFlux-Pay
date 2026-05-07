@@ -46,6 +46,12 @@ public class CreatePaymentResponse {
     @Schema(description = "FORM HTML 表单")
     private String formHtml;
 
+    @Schema(description = "渠道是否已同步确认支付成功（如付款码即时成功）")
+    private Boolean paidImmediately;
+
+    @Schema(description = "渠道交易号（同步成功时返回）")
+    private String channelTransactionId;
+
     public static final String ACTION_INVOKE = "INVOKE";
     public static final String ACTION_QR_CODE = "QR_CODE";
     public static final String ACTION_REDIRECT = "REDIRECT";

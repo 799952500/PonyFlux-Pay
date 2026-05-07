@@ -34,6 +34,8 @@ public class ReconDiff {
     private String localStatus;
     private String handleStatus;
     private String handleRemark;
+    /** 系统建议处置动作 */
+    private String suggestedAction;
     private String handledBy;
     private LocalDateTime handledAt;
     private LocalDateTime createdAt;

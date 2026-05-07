@@ -17,7 +17,23 @@ public class ReconProperties {
     /** 内部 API 令牌（与 admin 调用方一致） */
     private String internalToken = "";
 
+    private Poller poller = new Poller();
+
+    private MerchantPoller merchantPoller = new MerchantPoller();
+
     private Storage storage = new Storage();
+
+    @Data
+    public static class Poller {
+        private boolean enabled = true;
+        private long fixedDelayMs = 5000L;
+    }
+
+    @Data
+    public static class MerchantPoller {
+        private boolean enabled = true;
+        private long fixedDelayMs = 5000L;
+    }
 
     @Data
     public static class Storage {

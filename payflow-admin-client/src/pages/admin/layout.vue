@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <!-- 菜单：侧栏为静态模板；后端 SysMenu / 登录 menus 用于角色权限配置页，未与此处联动 -->
+      <!-- 菜单：优先使用登录/Profile 返回的 sys_menus（按角色）；无数据时回退静态 -->
       <el-menu
         :key="sidebarMenuKey"
         :default-active="activeMenu"
@@ -20,6 +20,10 @@
         class="flex-1 overflow-y-auto border-none admin-menu"
         router
       >
+        <template v-if="useDynamicMenu">
+          <AdminSidebarMenu :nodes="dynamicMenuRoots" />
+        </template>
+        <template v-else>
         <el-sub-menu index="workspace-group">
           <template #title>
             <span class="menu-icon">🏠</span>
@@ -47,8 +51,21 @@
           <el-menu-item index="/admin/refunds">
             <span class="menu-text">{{ t('menu.refunds') }}</span>
           </el-menu-item>
-          <el-menu-item index="/admin/reconcile">
-            <span class="menu-text">{{ t('menu.reconcile') }}</span>
+        </el-sub-menu>
+
+        <el-sub-menu index="reconcile-group">
+          <template #title>
+            <span class="menu-icon">📒</span>
+            <span class="menu-text">{{ t('menu.groupReconcile') }}</span>
+          </template>
+          <el-menu-item index="/admin/reconcile/tasks">
+            <span class="menu-text">{{ t('menu.reconcileTasks') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/reconcile/results">
+            <span class="menu-text">{{ t('menu.reconcileResults') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/reconcile/summary">
+            <span class="menu-text">{{ t('menu.reconcileSummary') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
@@ -111,6 +128,7 @@
             <span class="menu-text">{{ t('menu.dicts') }}</span>
           </el-menu-item>
         </el-sub-menu>
+        </template>
       </el-menu>
 
       <!-- 底部用户信息 -->
@@ -176,6 +194,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useAdminStore } from '@/stores/admin'
 import { getAdminProfile } from '@/api/auth'
+import AdminSidebarMenu from '@/components/AdminSidebarMenu.vue'
+import type { SysMenu } from '@/types'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -185,6 +205,35 @@ const adminStore = useAdminStore()
 const activeMenu = computed(() => route.path)
 const topSearchQ = ref('')
 
+function filterMenusForSidebar(menus: SysMenu[] | undefined): SysMenu[] {
+  if (!menus?.length) return []
+  const out: SysMenu[] = []
+  for (const m of menus) {
+    if (m.status === 'DISABLED') continue
+    if (m.visible === false) continue
+    const children = m.children?.length ? filterMenusForSidebar(m.children) : undefined
+    if ((children && children.length > 0) || (m.path && m.path.length > 0)) {
+      out.push({ ...m, children })
+    }
+  }
+  return out
+}
+
+const dynamicMenuRoots = computed(() => filterMenusForSidebar(adminStore.user?.menus))
+
+const useDynamicMenu = computed(() => dynamicMenuRoots.value.length > 0)
+
+function collectDynamicOpenKeys(menus: SysMenu[], path: string, parents: string[] = []): string[] | null {
+  for (const m of menus) {
+    if (m.path === path) return parents
+    if (m.children?.length) {
+      const hit = collectDynamicOpenKeys(m.children, path, [...parents, 'sub-' + String(m.id)])
+      if (hit !== null) return hit
+    }
+  }
+  return null
+}
+
 function goGlobalSearch() {
   const q = topSearchQ.value.trim()
   if (!q) return
@@ -192,6 +241,9 @@ function goGlobalSearch() {
 }
 
 const menuDefaultOpeneds = computed(() => {
+  if (useDynamicMenu.value) {
+    return collectDynamicOpenKeys(dynamicMenuRoots.value, route.path) ?? []
+  }
   const path = route.path
   if (
     path.startsWith('/admin/dashboard')
@@ -202,6 +254,9 @@ const menuDefaultOpeneds = computed(() => {
   }
   if (path.startsWith('/admin/orders') || path.startsWith('/admin/refunds')) {
     return ['trade-group']
+  }
+  if (path.startsWith('/admin/reconcile')) {
+    return ['reconcile-group']
   }
   if (
     path.startsWith('/admin/channels')
@@ -229,7 +284,12 @@ const menuDefaultOpeneds = computed(() => {
 })
 
 /** 切换顶层分组时通过 :key 重挂载侧栏，使 default-openeds 与当前模块一致 */
-const sidebarMenuKey = computed(() => menuDefaultOpeneds.value[0] ?? 'workspace-group')
+const sidebarMenuKey = computed(() => {
+  if (useDynamicMenu.value) {
+    return 'dyn-' + route.path
+  }
+  return menuDefaultOpeneds.value[0] ?? 'workspace-group'
+})
 
 const pageTitle = computed(() => {
   return (route.meta?.title as string) ?? '控制台'

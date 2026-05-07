@@ -8,6 +8,7 @@ import com.payflow.admin.mapper.AdminAuditLogMapper;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.mapper.ChannelRouteMapper;
+import com.payflow.admin.mapper.MerchantApplicationEntityMapper;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.MerchantPaymentMethodMapper;
 import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
@@ -22,6 +23,7 @@ import com.payflow.admin.mapper.SysUserRoleMapper;
 import com.payflow.admin.mapper.SystemConfigMapper;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
 import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
+import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -265,6 +267,24 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<ReconHandlerAuditEntityMapper> reconHandlerAuditEntityMapper(
             @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         MapperFactoryBean<ReconHandlerAuditEntityMapper> factory = new MapperFactoryBean<>(ReconHandlerAuditEntityMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconMerchantTaskEntityMapper> reconMerchantTaskEntityMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ReconMerchantTaskEntityMapper> factory = new MapperFactoryBean<>(ReconMerchantTaskEntityMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<MerchantApplicationEntityMapper> merchantApplicationEntityMapper(
+            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<MerchantApplicationEntityMapper> factory = new MapperFactoryBean<>(MerchantApplicationEntityMapper.class);
         factory.setSqlSessionFactory(sqlSessionFactory);
         return factory;
     }

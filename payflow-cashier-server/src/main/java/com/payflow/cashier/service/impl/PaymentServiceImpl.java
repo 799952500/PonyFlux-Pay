@@ -15,6 +15,8 @@ import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenServiceLocat
 import com.payflow.common.exception.BizException;
 import com.payflow.payment.core.PayResult;
 import com.payflow.cashier.service.OrderService;
+import com.payflow.cashier.routing.ChannelHealthRedisService;
+import com.payflow.cashier.service.PayNotifyService;
 import com.payflow.cashier.service.PaymentService;
 import com.payflow.cashier.service.PayChannelService;
 import com.payflow.cashier.util.SignUtils;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -42,6 +45,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PayChannelService payChannelService;
     private final PayChannelPaymentOpenServiceLocator paymentOpenServiceLocator;
     private final PayflowProperties payflowProperties;
+    private final PayNotifyService payNotifyService;
+    private final ChannelHealthRedisService channelHealthRedisService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +87,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentId(paymentId)
                 .orderId(orderId)
                 .payChannel(payChannel)
+                .accountCode(account.getAccountCode())
                 .payMethod(payMethod)
                 .amount(order.getAmount())
                 .status(Payment.STATUS_PROCESSING)
@@ -94,18 +100,27 @@ public class PaymentServiceImpl implements PaymentService {
 
         String notifyUrl = buildNotifyUrl(payChannel);
         String internalReturnUrl = buildInternalReturnUrl(orderId);
-        CreatePaymentResponse response = dispatchToHandler(
-                orderId, order.getAmount(), order.getSubject(), payChannel, payMethod,
-                internalReturnUrl, notifyUrl, account);
+        try {
+            CreatePaymentResponse response = dispatchToHandler(
+                    orderId, order.getAmount(), order.getSubject(), payChannel, payMethod,
+                    internalReturnUrl, notifyUrl, account, request);
 
-        response.setPaymentId(paymentId);
-        response.setOrderId(orderId);
-        response.setStatus("PROCESSING");
+            response.setPaymentId(paymentId);
+            response.setOrderId(orderId);
+            if (Boolean.TRUE.equals(response.getPaidImmediately())) {
+                response.setStatus(Payment.STATUS_SUCCESS);
+            } else {
+                response.setStatus("PROCESSING");
+            }
 
-        log.info("支付下单完成: orderId={}, paymentId={}, action={}",
-                orderId, paymentId, response.getAction());
+            log.info("支付下单完成: orderId={}, paymentId={}, action={}, paidImmediately={}",
+                    orderId, paymentId, response.getAction(), response.getPaidImmediately());
 
-        return response;
+            return response;
+        } catch (BizException e) {
+            channelHealthRedisService.recordOutcome(account.getAccountCode(), false);
+            throw e;
+        }
     }
 
     @Override
@@ -138,19 +153,47 @@ public class PaymentServiceImpl implements PaymentService {
             String payChannel,
             String payMethod,
             String returnUrl, String notifyUrl,
-            PayChannelAccount account) {
+            PayChannelAccount account,
+            CreatePaymentRequest request) {
 
         String channelCode = toNotifyChannelCode(payChannel);
         PayChannelPaymentOpenService openService = paymentOpenServiceLocator.requireByChannelCode(channelCode);
-        PayResult result = openService.pay(orderId, amount, subject, payMethod, returnUrl, notifyUrl, account);
+        Map<String, String> channelExtras = buildChannelExtras(request);
+        PayResult result = openService.pay(orderId, amount, subject, payMethod, returnUrl, notifyUrl, account, channelExtras);
 
-        return convertToResponse(result);
+        CreatePaymentResponse resp = convertToResponse(result);
+        if (Boolean.TRUE.equals(result.getPaidImmediately())) {
+            payNotifyService.handlePaymentSuccess(orderId, result.getChannelTransactionId());
+            resp.setPaidImmediately(Boolean.TRUE);
+            resp.setChannelTransactionId(result.getChannelTransactionId());
+            resp.setStatus(Payment.STATUS_SUCCESS);
+        } else if (result.getChannelTransactionId() != null) {
+            resp.setChannelTransactionId(result.getChannelTransactionId());
+        }
+        return resp;
+    }
+
+    /**
+     * 组装渠道扩展参数（openid、付款码等）。
+     */
+    private Map<String, String> buildChannelExtras(CreatePaymentRequest request) {
+        Map<String, String> m = new HashMap<>();
+        if (request.getOpenId() != null && !request.getOpenId().isBlank()) {
+            m.put("openid", request.getOpenId().trim());
+        }
+        if (request.getAuthCode() != null && !request.getAuthCode().isBlank()) {
+            m.put("auth_code", request.getAuthCode().trim());
+        }
+        if (request.getAlipayUserId() != null && !request.getAlipayUserId().isBlank()) {
+            m.put("alipay_user_id", request.getAlipayUserId().trim());
+        }
+        return m;
     }
 
     private CreatePaymentResponse convertToResponse(PayResult r) {
         String rawAction = r.getAction();
         String action = rawAction;
-        if ("INVOKE_APP".equals(rawAction)) {
+        if ("INVOKE_APP".equals(rawAction) || "INVOKE_JSAPI".equals(rawAction)) {
             action = CreatePaymentResponse.ACTION_INVOKE;
         }
 
@@ -170,17 +213,18 @@ public class PaymentServiceImpl implements PaymentService {
             builder.formHtml(r.getAppParams());
         }
 
-        if ("INVOKE_APP".equals(rawAction)) {
+        if ("INVOKE_APP".equals(rawAction) || "INVOKE_JSAPI".equals(rawAction)) {
             if (r.getInvokeParams() != null) {
                 var params = r.getInvokeParams();
                 builder.invokeParams(InvokeParams.builder()
-                        .appId(params.get("appid"))
+                        .appId(firstNonBlank(params.get("appId"), params.get("appid")))
                         .partnerId(params.get("partnerid"))
                         .prepayId(params.get("prepayid"))
                         .package_(params.get("package"))
-                        .nonceStr(params.get("noncestr"))
-                        .timestamp(params.get("timestamp"))
+                        .nonceStr(firstNonBlank(params.get("nonceStr"), params.get("noncestr")))
+                        .timestamp(firstNonBlank(params.get("timeStamp"), params.get("timestamp")))
                         .sign(params.get("sign"))
+                        .signType(params.get("signType"))
                         .build());
             } else if (r.getAppParams() != null) {
                 builder.invokeParams(InvokeParams.builder()
@@ -190,6 +234,16 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         return builder.build();
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) {
+            return a;
+        }
+        if (b != null && !b.isBlank()) {
+            return b;
+        }
+        return null;
     }
 
     /**
@@ -210,8 +264,8 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * 将订单/支付中的 payChannel 转换为回调路径使用的渠道编码。
      *
-     * @param payChannel 订单/支付渠道（例如 WECHAT_PAY / ALIPAY）
-     * @return 渠道编码（wxpay/alipay）
+     * @param payChannel 订单/支付渠道（例如 WECHAT_PAY / ALIPAY / UNION_PAY）
+     * @return 渠道编码（wxpay/alipay/unionpay）
      */
     private String toNotifyChannelCode(String payChannel) {
         if (Order.CHANNEL_WECHAT_PAY.equals(payChannel)) {
@@ -219,6 +273,9 @@ public class PaymentServiceImpl implements PaymentService {
         }
         if (Order.CHANNEL_ALIPAY.equals(payChannel)) {
             return "alipay";
+        }
+        if (Order.CHANNEL_UNION_PAY.equals(payChannel)) {
+            return "unionpay";
         }
         throw new BizException(6007, "不支持的支付渠道: " + payChannel);
     }

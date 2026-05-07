@@ -9,7 +9,14 @@ export type OrderStatus = 'CREATED' | 'PAYING' | 'PAID' | 'EXPIRED' | 'FAILED' |
 export type PayChannel = 'ALIPAY' | 'WECHAT_PAY' | 'UNION_PAY' | 'CASH' | 'CARD'
 
 // 支付动作（后端返回的操作指引）
-export type PaymentAction = 'INVOKE' | 'QR_CODE' | 'REDIRECT' | 'FORM'
+export type PaymentAction =
+  | 'INVOKE'
+  | 'QR_CODE'
+  | 'REDIRECT'
+  | 'FORM'
+  | 'COMPLETE'
+  | 'MICROPAY_POLL'
+  | 'BARCODE_POLL'
 
 // 设备类型
 export type DeviceType = 'WEB' | 'H5' | 'APP_IOS' | 'APP_ANDROID' | 'MINIAPP'
@@ -78,13 +85,16 @@ export interface CashierInfo {
 export interface PaymentResult {
   paymentId: string
   orderId: string
-  status: OrderStatus
+  status: OrderStatus | 'PROCESSING' | 'SUCCESS'
   action: PaymentAction
   qrCodeUrl?: string
   qrCodeImage?: string
   redirectUrl?: string
   formHtml?: string
   invokeParams?: Record<string, string>
+  /** 渠道已同步确认成功（如付款码即时成功） */
+  paidImmediately?: boolean
+  channelTransactionId?: string
 }
 
 // ============================================================

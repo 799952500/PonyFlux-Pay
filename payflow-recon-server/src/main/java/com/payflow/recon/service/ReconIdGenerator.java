@@ -20,4 +20,10 @@ public final class ReconIdGenerator {
         int n = ThreadLocalRandom.current().nextInt(1_000_000, 10_000_000);
         return "REC" + LocalDate.now().format(D) + n;
     }
+
+    /** 商户对账子任务号 */
+    public static String newMerchantTaskId() {
+        int n = ThreadLocalRandom.current().nextInt(1_000_000, 10_000_000);
+        return "MRC" + LocalDate.now().format(D) + n;
+    }
 }

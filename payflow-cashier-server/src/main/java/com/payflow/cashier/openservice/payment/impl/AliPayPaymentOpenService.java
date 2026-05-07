@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 
 /**
  * 支付宝支付下单开放服务。
@@ -56,7 +55,8 @@ public class AliPayPaymentOpenService implements PayChannelPaymentOpenService {
                          String payMethod,
                          String returnUrl,
                          String notifyUrl,
-                         PayChannelAccount account) {
+                         PayChannelAccount account,
+                         java.util.Map<String, String> channelExtras) {
         PayMethod methodEnum = PayMethod.fromCode(payMethod);
         if (methodEnum == null) {
             throw new BizException(6007, "不支持的支付方式: " + payMethod);
@@ -66,7 +66,7 @@ public class AliPayPaymentOpenService implements PayChannelPaymentOpenService {
         }
 
         PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(payMethod);
-        PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, Map.of());
+        PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, channelExtras);
         log.info("支付宝下单完成: orderId={}, payMethod={}, action={}", orderId, payMethod, result.getAction());
         return result;
     }

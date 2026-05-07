@@ -101,6 +101,14 @@ import { ElMessage } from 'element-plus'
 import { useCashierStore } from '@/stores/cashier'
 import { getCashierInfo, createPayment, pollPaymentStatus } from '@/api/cashier'
 
+/** 根据支付方式解析收银台订单上的 payChannel */
+function resolvePayChannel(methodCode: string): string {
+  if (methodCode.startsWith('WECHAT_')) return 'WECHAT_PAY'
+  if (methodCode.startsWith('ALIPAY_')) return 'ALIPAY'
+  if (methodCode.startsWith('UNION_')) return 'UNION_PAY'
+  return 'ALIPAY'
+}
+
 /** URL ?client=PC|H5|APP 优先；否则简单根据 UA 区分移动端与 PC */
 function detectCashierClient(): string {
   const q = new URLSearchParams(window.location.search).get('client')
@@ -140,6 +148,32 @@ const checkoutDeadlinePassed = computed(() => {
 
 function handleOrderExpired() {
   ElMessage.warning('支付超时，请返回商户重新下单')
+}
+
+/** 付款码等场景：无二维码，直接轮询支付状态 */
+async function startPaymentPoll(paymentId: string | undefined) {
+  if (!paymentId) return
+  const MAX_POLL = 60
+  let count = 0
+  const poll = async (): Promise<void> => {
+    if (count >= MAX_POLL) {
+      payResult.value = 'failed'
+      return
+    }
+    try {
+      const statusResp = (await pollPaymentStatus(paymentId)) as unknown as { status: string }
+      const st = statusResp.status
+      if (st === 'PAID' || st === 'SUCCESS') {
+        payResult.value = 'success'
+        return
+      }
+    } catch {
+      /* 继续轮询 */
+    }
+    count++
+    setTimeout(poll, 3000)
+  }
+  await poll()
 }
 
 // -------------------------------------------------------------------
@@ -212,12 +246,22 @@ async function handlePay() {
   try {
     const result = await createPayment({
       orderId: cashierStore.orderInfo.orderId,
-      payChannel: selectedMethod.value.startsWith('WECHAT') ? 'WECHAT_PAY' : 'ALIPAY',
+      payChannel: resolvePayChannel(selectedMethod.value),
       payMethod: selectedMethod.value,
       deviceType: 'WEB',
     })
 
     cashierStore.setPaymentResult(result)
+
+    if (result.paidImmediately || result.action === 'COMPLETE') {
+      payResult.value = 'success'
+      return
+    }
+
+    if (result.action === 'MICROPAY_POLL' || result.action === 'BARCODE_POLL') {
+      startPaymentPoll(result.paymentId)
+      return
+    }
 
     if (result.action === 'QR_CODE' && result.qrCodeUrl) {
       cashierStore.openQR(result.qrCodeUrl)
@@ -233,8 +277,29 @@ async function handlePay() {
         form.submit()
       }
     } else if (result.action === 'INVOKE' && result.invokeParams) {
-      const params = new URLSearchParams(result.invokeParams as Record<string, string>)
-      window.location.href = `${(result.invokeParams as Record<string, string>)['schema'] ?? 'payflow'}:${params.toString()}`
+      const ip = result.invokeParams as Record<string, string>
+      if (typeof window !== 'undefined' && /MicroMessenger/i.test(navigator.userAgent) && (window as unknown as { WeixinJSBridge?: unknown }).WeixinJSBridge) {
+        const bridge = (window as unknown as { WeixinJSBridge: { invoke: (m: string, p: Record<string, string>, cb: (r: { err_msg?: string }) => void) => void } }).WeixinJSBridge
+        bridge.invoke(
+          'getBrandWCPayRequest',
+          {
+            appId: ip.appId ?? '',
+            timeStamp: ip.timestamp ?? '',
+            nonceStr: ip.nonceStr ?? '',
+            package: ip.package_ ?? ip.package ?? '',
+            signType: ip.signType ?? 'RSA',
+            paySign: ip.sign ?? '',
+          },
+          (res) => {
+            const msg = res?.err_msg ?? ''
+            if (msg.includes('ok')) payResult.value = 'success'
+            else payResult.value = 'failed'
+          }
+        )
+      } else {
+        const params = new URLSearchParams(ip as Record<string, string>)
+        window.location.href = `${ip.schema ?? 'payflow'}:${params.toString()}`
+      }
     }
   } catch {
     payResult.value = 'failed'
@@ -264,7 +329,7 @@ async function handleConfirmPay() {
 
     try {
       const statusResp = (await pollPaymentStatus(result.paymentId)) as unknown as { status: string }
-      if (statusResp.status === 'PAID') {
+      if (statusResp.status === 'PAID' || statusResp.status === 'SUCCESS') {
         confirming.value = false
         cashierStore.closeQR()
         payResult.value = 'success'

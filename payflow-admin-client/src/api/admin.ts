@@ -511,3 +511,102 @@ export const triggerReconManual = (body: {
 
 export const handleReconDiff = (id: number, body: { action: string; remark?: string }) =>
   request.post(`/admin/reconcile/diffs/${id}/handle`, body)
+
+export interface ReconOrderResultItem {
+  orderId?: string
+  merchantId?: string
+  paymentId?: string
+  payChannel?: string
+  channelTransactionId?: string
+  localAmountFen?: number
+  reconStatus: string
+  diffType?: string
+  handleStatus?: string
+  diffId?: number
+  taskId?: string
+  reconChannel?: string
+  accountCode?: string
+  channelAmountFen?: number
+}
+
+export const getReconOrderResults = (params: {
+  billDate: string
+  channel?: string
+  merchantId?: string
+  orderKeyword?: string
+  onlyAbnormal?: boolean
+  page?: number
+  size?: number
+}): Promise<{ list: ReconOrderResultItem[]; total: number; page: number; size: number }> =>
+  request.get('/admin/reconcile/order-results', { params }).then((data: any) => ({
+    list: data?.list ?? [],
+    total: Number(data?.total ?? 0),
+    page: Number(data?.page ?? params.page ?? 1),
+    size: Number(data?.size ?? params.size ?? 20),
+  }))
+
+export interface ReconSummaryData {
+  byAccount: Array<{
+    accountCode: string
+    channel: string
+    localSuccessCount: number
+    localSuccessAmountFen: number
+    channelBillCount: number
+    channelBillAmountFen: number
+    amountDeltaFen: number
+  }>
+  totalLocalAmountFen: number
+  totalChannelBillAmountFen: number
+  totalAmountDeltaFen: number
+  pendingDiffCount: number
+}
+
+export const getReconSummary = (params: {
+  billDate: string
+  channel?: string
+  accountCode?: string
+}): Promise<ReconSummaryData> => request.get('/admin/reconcile/summary', { params })
+
+export interface ReconAnomalyItem {
+  diffId: number
+  taskId: string
+  diffType: string
+  channelTradeNo?: string
+  localOrderId?: string
+  merchantId?: string
+  channelAmount?: number
+  localAmount?: number
+  handleStatus: string
+  reconChannel?: string
+  accountCode?: string
+  billDate?: string
+  /** 对账自动建议处置 */
+  suggestedAction?: string
+}
+
+export const getReconAnomalies = (params: {
+  billDate: string
+  channel?: string
+  accountCode?: string
+  handleStatus?: string
+  page?: number
+  size?: number
+}): Promise<{ list: ReconAnomalyItem[]; total: number; page: number; size: number }> =>
+  request.get('/admin/reconcile/anomalies', { params }).then((data: any) => ({
+    list: data?.list ?? [],
+    total: Number(data?.total ?? 0),
+    page: Number(data?.page ?? params.page ?? 1),
+    size: Number(data?.size ?? params.size ?? 20),
+  }))
+
+// -------------------------------------------------------------------
+// 运营洞察 / 进件 / 路由健康
+// -------------------------------------------------------------------
+export const getInsightsFunnel = (): Promise<Record<string, unknown>> =>
+  request.get('/admin/insights/funnel')
+
+export const listOnboardingApplications = (): Promise<unknown[]> =>
+  request.get('/admin/onboarding/applications')
+
+export const getChannelRoutingHealth = (accountCode: string): Promise<Record<string, unknown>> =>
+  request.get('/admin/channel-routing/health', { params: { accountCode } })

@@ -23,9 +23,11 @@
         <module>payflow-payment-core</module>
         <module>payflow-payment-wechat</module>
         <module>payflow-payment-alipay</module>
+        <module>payflow-payment-union</module>
         <module>payflow-cashier-server</module>
         <module>payflow-admin-server</module>
         <module>payflow-recon-server</module>
+        <module>payflow-sdk-java</module>
     </modules>
 
     <properties>
@@ -62,6 +64,16 @@
             <dependency>
                 <groupId>com.payflow</groupId>
                 <artifactId>payflow-payment-alipay</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.payflow</groupId>
+                <artifactId>payflow-payment-union</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.payflow</groupId>
+                <artifactId>payflow-sdk-java</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -1,0 +1,5 @@
+# 沙箱 Profile：渠道走 Mock 或测试网关（与 application.yml 组合使用：--spring.profiles.active=sandbox）
+payflow:
+  sandbox:
+    enabled: true
+    mock-channel-success: true
