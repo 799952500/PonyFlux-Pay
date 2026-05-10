@@ -11,7 +11,8 @@
       "Bash(mvn -B -q -DskipTests compile)",
       "Bash(mvn -B -DskipTests compile)",
       "Bash(mvn -B -q test -pl payflow-common,payflow-payment-core)",
-      "Bash(mvn -B test -pl payflow-common,payflow-payment-core)"
+      "Bash(mvn -B test -pl payflow-common,payflow-payment-core)",
+      "Bash(ssh -T git@github.com)"
     ]
   }
 }

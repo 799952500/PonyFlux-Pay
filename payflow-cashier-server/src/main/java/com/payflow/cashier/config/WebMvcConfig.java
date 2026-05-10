@@ -64,16 +64,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // ── JWT 拦截器：拦截 /api/v1/orders/** ─────────────────────────────────
         // 商户通过 JWT Token 调用订单管理接口
         registry.addInterceptor(jwtAuthInterceptor)
-                // 收银台相关接口全部公开，无需认证：
-                //   - /api/v1/cashier/**   收银台信息，消费者直接访问
-                //   - /api/v1/payments/**  支付接口，消费者直接调用
-                //   - /api/v1/admin/**     管理接口（JWT 由前端管理，暂跳过签名）
+                // 以下接口无需认证
                 .addPathPatterns("/api/v1/orders/**")
                 .excludePathPatterns(
                         "/api/v1/auth/**",             // 认证接口
-                        "/api/v1/cashier/**",           // 收银台信息（无需认证）
-                        "/api/v1/payments/**",          // 支付接口（无需认证，消费者直接调用）
-                        "/api/v1/admin/**",             // 管理接口
+                        "/api/v1/cashier/**",           // 收银台信息（消费者直接访问）
+                        "/api/v1/payments/**",          // 支付接口（消费者直接调用）
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/h2-console/**",
