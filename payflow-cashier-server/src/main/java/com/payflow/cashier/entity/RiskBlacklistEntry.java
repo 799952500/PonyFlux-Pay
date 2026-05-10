@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * 风控黑名单条目。
+ * @author Lucas
  */
 @Data
 @TableName("cashier_risk_blacklist")

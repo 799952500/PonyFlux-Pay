@@ -27,6 +27,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        log.info("JwtInterceptor preHandle: URI={}", request.getRequestURI());
         String authHeader = request.getHeader(jwtProperties.getHeader());
 
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith(jwtProperties.getPrefix())) {
@@ -66,12 +67,8 @@ public class JwtInterceptor implements HandlerInterceptor {
                     return false;
                 }
             } catch (Exception e) {
-                // Redis 不可用 → fail-close
-                log.error("Redis黑名单检查失败", e);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().write("{\"code\":401,\"message\":\"认证服务暂不可用\",\"data\":null}");
-                return false;
+                // Redis 不可用 → fail-open，不阻塞正常登录
+                log.warn("Redis黑名单检查失败（已放行）: {}", e.getMessage());
             }
         }
 

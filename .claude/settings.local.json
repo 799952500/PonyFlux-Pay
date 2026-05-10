@@ -12,7 +12,15 @@
       "Bash(mvn -B -DskipTests compile)",
       "Bash(mvn -B -q test -pl payflow-common,payflow-payment-core)",
       "Bash(mvn -B test -pl payflow-common,payflow-payment-core)",
-      "Bash(ssh -T git@github.com)"
+      "Bash(ssh -T git@github.com)",
+      "Bash(python scripts/run_mysql_sql.py -q \"DELETE FROM payflow_admin.flyway_schema_history WHERE success = 0; SELECT version, description, success FROM payflow_admin.flyway_schema_history ORDER BY installed_rank;\")",
+      "Bash(mysql -u root -proot payflow_admin -e \"DELETE FROM flyway_schema_history WHERE success = 0; SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank;\")",
+      "Bash(python scripts/run_mysql_sql.py --host 127.0.0.1 --user root --password root --file sql/fix-flyway.sql)",
+      "Bash(curl -s http://localhost:3003/actuator/health)",
+      "Bash(curl -s http://localhost:3003/api/v1/admin/auth/captcha)",
+      "Bash(mvn -B -q -DskipTests spring-boot:run)",
+      "Bash(curl -s -X POST http://localhost:3003/api/v1/admin/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"super_admin\",\"password\":\"admin123\",\"captchaId\":\"test\",\"captchaAnswer\":\"0\"}')",
+      "Bash(curl -s http://localhost:3003/api/v1/admin/dashboard -H \"Authorization: Bearer invalid\")"
     ]
   }
 }

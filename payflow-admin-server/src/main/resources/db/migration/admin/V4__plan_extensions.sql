@@ -1,6 +1,10 @@
--- 风控 QLExpress 扩展
-ALTER TABLE `cashier_risk_rules`
-    ADD COLUMN `risk_expr` VARCHAR(1024) NULL COMMENT 'QLExpress 表达式，rule_type=CUSTOM 且非空时优先于阈值逻辑' AFTER `rule_type`;
+-- 风控 QLExpress 扩展（admin 库的表名）
+-- 安全写法：仅当列不存在时添加
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'risk_rules' AND COLUMN_NAME = 'risk_expr');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `risk_rules` ADD COLUMN `risk_expr` VARCHAR(1024) NULL COMMENT ''QLExpress 表达式，rule_type=CUSTOM 且非空时优先于阈值逻辑'' AFTER `rule_type`', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 风控黑名单
 CREATE TABLE IF NOT EXISTS `cashier_risk_blacklist` (
@@ -109,5 +113,9 @@ CREATE TABLE IF NOT EXISTS `payment_link` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 对账差异建议动作（运营工作台展示）
-ALTER TABLE `recon_diff`
-    ADD COLUMN `suggested_action` VARCHAR(128) NULL COMMENT 'AUTO_QUERY/REVIEW/MANUAL 等' AFTER `handle_remark`;
+-- 安全写法：仅当列不存在时添加
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recon_diff' AND COLUMN_NAME = 'suggested_action');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `recon_diff` ADD COLUMN `suggested_action` VARCHAR(128) NULL COMMENT ''AUTO_QUERY/REVIEW/MANUAL 等'' AFTER `handle_remark`', 'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

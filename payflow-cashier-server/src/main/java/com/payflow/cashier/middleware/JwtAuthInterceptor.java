@@ -78,10 +78,8 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
                     return false;
                 }
             } catch (Exception e) {
-                // Redis 不可用 → fail-close
-                log.error("Redis黑名单检查失败", e);
-                sendUnauthorized(response, "认证服务暂不可用");
-                return false;
+                // Redis 不可用 → fail-open，不阻塞正常登录
+                log.warn("Redis黑名单检查失败（已放行）: {}", e.getMessage());
             }
         }
 

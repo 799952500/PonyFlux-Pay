@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * 商户 Payment Link（分享收款链接）。
+ * @author Lucas
  */
 @Data
 @Builder

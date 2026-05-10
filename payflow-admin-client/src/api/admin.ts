@@ -68,14 +68,8 @@ export const listOrdersByMerchant = (merchantId: string): Promise<Order[]> =>
   request.get(`/admin/orders/merchant/${encodeURIComponent(merchantId)}`)
 
 /**
- * 导出订单 CSV（走 fetch，避免 JSON 拦截器处理纯文本响应）。
+ * 导出订单 CSV（使用 axios blob 响应）。
  */
-export async function exportOrdersCsv(filters: {
-  merchantId?: string
-  status?: string
-  startTime?: string
-  endTime?: string
-  maxRows?: number
 export async function exportOrdersCsv(filters: {
   merchantId?: string
   status?: string
