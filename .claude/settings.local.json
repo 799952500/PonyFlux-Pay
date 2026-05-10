@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(uv --version)",
+      "Bash(specify --version)",
+      "Bash(bash \".specify/extensions/git/scripts/bash/initialize-repo.sh\")",
+      "Bash(bash:*)"
+    ]
+  }
+}
