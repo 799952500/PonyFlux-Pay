@@ -15,10 +15,10 @@ spring:
 
   # MySQL 生产数据库配置
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: root
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
 
   # SQL 初始化
   sql:
@@ -52,10 +52,10 @@ payflow:
   # 拉取商户支付方式（与管理端 payflow.cashier.internal-token 保持一致）
   admin:
     base-url: http://127.0.0.1:3003
-    internal-token: dev-payflow-internal-token
+    internal-token: ${INTERNAL_TOKEN:dev-payflow-internal-token}
   # 管理端调用 /api/v1/internal/** 时必须在请求头携带相同令牌
   internal-api:
-    token: dev-payflow-internal-token
+    token: ${INTERNAL_TOKEN:dev-payflow-internal-token}
   cache:
     redis:
       # 启用后加载 RedisConfig、Pub/Sub 与渠道账号缓存热更新（需本地先启动 redis-server）
@@ -65,11 +65,11 @@ payflow:
     enabled: false
   jwt:
     # JWT 签名密钥（生产环境请通过环境变量注入）
-    secret: cashier_jwt_secret_key_2024_secure
+    secret: ${JWT_SECRET:cashier_jwt_secret_key_2024_secure}
     # Token 有效期（秒），默认 24 小时
     expire-seconds: 86400
   signature:
-    secret: default_cashier_signature_secret
+    secret: ${SIGNATURE_SECRET:default_cashier_signature_secret}
     # 时间戳容差（秒），默认 5 分钟，防止重放攻击
     timestamp-tolerance: 300
   cashier:
@@ -96,6 +96,23 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+# Flyway 数据库迁移
+spring.flyway:
+  enabled: true
+  locations: classpath:db/migration/cashier
+  baseline-on-migrate: true
+  baseline-version: 1
+
+# Actuator 健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
 
 # 日志
 logging:

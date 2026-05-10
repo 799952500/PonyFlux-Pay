@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAdminStore } from '@/stores/admin'
+import request from '@/api/request'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -208,15 +209,11 @@ router.beforeEach(async (to, _from, next) => {
   // 访问登录页且本地有 Token：先校验是否仍有效，避免「以为在登录其实仍在旧会话」
   if (to.path === '/login' && token) {
     try {
-      const res = await fetch('/api/v1/admin/auth/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        next('/admin/dashboard')
-        return
-      }
+      await request.get('/admin/auth/profile')
+      next('/admin/dashboard')
+      return
     } catch {
-      /* 网络异常：视为无效，留在登录页 */
+      /* 网络异常或Token过期：视为无效，留在登录页 */
     }
     const store = useAdminStore()
     store.clearAuth()

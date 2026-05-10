@@ -28,8 +28,8 @@ jobs:
             payflow-admin-client/package-lock.json
             payflow-cashier-client/package-lock.json
 
-      - name: Maven compile (all modules)
-        run: mvn -B -q -DskipTests compile
+      - name: Maven compile + test (all modules)
+        run: mvn -B -q compile test
 
       - name: npm ci + build admin client
         working-directory: payflow-admin-client

@@ -1,0 +1,59 @@
+# ============================================================
+# PayFlow Cashier Server - 生产环境配置
+# 激活方式: --spring.profiles.active=prod
+# 所有敏感值通过环境变量注入，禁止硬编码
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+payflow:
+  admin:
+    internal-token: ${INTERNAL_TOKEN}
+  internal-api:
+    token: ${INTERNAL_TOKEN}
+  jwt:
+    secret: ${JWT_SECRET}
+    expire-seconds: 86400
+  signature:
+    secret: ${SIGNATURE_SECRET}
+    timestamp-tolerance: 300
+  crypto:
+    master-key: ${MASTER_KEY}
+  mq:
+    enabled: ${MQ_ENABLED:false}
+
+# Flyway
+spring.flyway:
+  enabled: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.payflow.cashier: INFO

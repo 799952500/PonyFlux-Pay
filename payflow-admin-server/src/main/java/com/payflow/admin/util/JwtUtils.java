@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -31,10 +32,11 @@ public class JwtUtils {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
-        Map<String, Object> claims = new HashMap<>(4);
+        Map<String, Object> claims = new HashMap<>(5);
         claims.put("role", role != null ? role : "");
         claims.put("merchantId", "");
         claims.put("dataMerchantIds", dataMerchantIds != null ? dataMerchantIds : "");
+        claims.put("jti", UUID.randomUUID().toString());
 
         return Jwts.builder()
                 .subject(username)
@@ -72,5 +74,9 @@ public class JwtUtils {
 
     public Date getExpiration(String token) {
         return parseToken(token).getExpiration();
+    }
+
+    public String getJti(String token) {
+        return parseToken(token).get("jti", String.class);
     }
 }

@@ -1,0 +1,55 @@
+# ============================================================
+# PayFlow Recon Server - 生产环境配置
+# 激活方式: --spring.profiles.active=prod
+# 所有敏感值通过环境变量注入，禁止硬编码
+# ============================================================
+
+spring:
+  datasource:
+    admin:
+      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_admin?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+    cashier:
+      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+payflow:
+  recon:
+    internal-token: ${INTERNAL_TOKEN}
+    storage:
+      type: ${STORAGE_TYPE:local}
+      s3:
+        endpoint: ${S3_ENDPOINT:}
+        region: ${S3_REGION:us-east-1}
+        bucket: ${S3_BUCKET:payflow-recon}
+        access-key: ${S3_ACCESS_KEY:}
+        secret-key: ${S3_SECRET_KEY:}
+
+xxl:
+  job:
+    enabled: ${XXL_JOB_ENABLED:false}
+
+# Flyway
+spring.flyway:
+  enabled: true
+  table: flyway_recon_schema_history
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.payflow.recon: INFO

@@ -72,7 +72,7 @@ public class ReconMerchantStatementService {
         } catch (Exception e) {
             log.error("商户对账单生成失败: merchantTaskId={}", merchantTaskId, e);
             markFail(merchantTaskId, e.getMessage());
-            throw new BizException(7600, "商户对账单生成失败: " + e.getMessage());
+            throw new BizException(7600, "商户对账单生成失败", e);
         }
     }
 

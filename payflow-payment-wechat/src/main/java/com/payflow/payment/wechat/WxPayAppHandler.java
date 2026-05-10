@@ -108,7 +108,7 @@ public class WxPayAppHandler {
             throw e;
         } catch (Exception e) {
             log.error("微信App支付异常: orderId={}", orderId, e);
-            throw new BizException(6005, "微信App支付异常: " + e.getMessage());
+            throw new BizException(6005, "微信App支付异常", e);
         }
     }
 

@@ -6,6 +6,8 @@ import com.payflow.admin.service.PaymentAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
  *
  * @author Lucas
  */
+@Tag(name = "渠道账户")
 @RestController
 @RequestMapping("/api/v1/admin/channels/accounts")
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class AdminChannelAccountController {
      * @param keyword   关键词，匹配账号编号或名称（可选）
      * @return 账号列表（脱敏后）
      */
+    @Operation(summary = "分页查询支付账号列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(defaultValue = "1") Integer page,
@@ -92,6 +96,7 @@ public class AdminChannelAccountController {
      * @param account 账号信息
      * @return 创建成功的账号（脱敏后）
      */
+    @Operation(summary = "创建支付账号")
     @PostMapping
     public ResponseEntity<Map<String, Object>> createAccount(@RequestBody PaymentAccount account) {
         PaymentAccount created = service.create(account);
@@ -112,6 +117,7 @@ public class AdminChannelAccountController {
      * @param account 更新后的账号信息
      * @return 更新后的账号（脱敏后）
      */
+    @Operation(summary = "更新支付账号")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateAccount(
             @PathVariable Long id,
@@ -141,6 +147,7 @@ public class AdminChannelAccountController {
      * @param id 账号ID
      * @return 操作后的账号（脱敏后）
      */
+    @Operation(summary = "启用/禁用支付账号")
     @PutMapping("/{id}/toggle")
     public ResponseEntity<Map<String, Object>> toggleStatus(@PathVariable Long id) {
         PaymentAccount account = service.getById(id);
@@ -170,6 +177,7 @@ public class AdminChannelAccountController {
      * @param id 账号ID
      * @return 操作结果
      */
+    @Operation(summary = "删除支付账号")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteAccount(@PathVariable Long id) {
         try {

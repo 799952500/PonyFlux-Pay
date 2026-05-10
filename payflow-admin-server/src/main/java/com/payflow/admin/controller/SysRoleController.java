@@ -3,6 +3,8 @@ package com.payflow.admin.controller;
 import com.payflow.admin.entity.SysMenu;
 import com.payflow.admin.entity.SysRole;
 import com.payflow.admin.service.SysRoleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.Map;
  * 角色权限管理 Controller
   * @author Lucas
  */
+@Tag(name = "系统角色")
 @RestController
 @RequestMapping("/api/v1/admin/roles")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class SysRoleController {
      *
      * @return 角色列表
      */
+    @Operation(summary = "查询角色列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list() {
         List<SysRole> roles = sysRoleService.list();
@@ -38,6 +42,7 @@ public class SysRoleController {
      * @param id 角色ID
      * @return 角色详情
      */
+    @Operation(summary = "查询角色详情")
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
         SysRole role = sysRoleService.getById(id);
@@ -53,6 +58,7 @@ public class SysRoleController {
      * @param role 角色信息
      * @return 新增的角色
      */
+    @Operation(summary = "新增角色")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SysRole role) {
         SysRole created = sysRoleService.create(role);
@@ -66,6 +72,7 @@ public class SysRoleController {
      * @param role 角色信息
      * @return 更新后的角色
      */
+    @Operation(summary = "更新角色信息")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
                                                        @RequestBody SysRole role) {
@@ -80,6 +87,7 @@ public class SysRoleController {
      * @param id 角色ID
      * @return 操作结果
      */
+    @Operation(summary = "删除角色")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         try {
@@ -96,6 +104,7 @@ public class SysRoleController {
      * @param id 角色ID
      * @return 该角色关联的菜单列表
      */
+    @Operation(summary = "查询角色菜单权限")
     @GetMapping("/{id}/menus")
     public ResponseEntity<Map<String, Object>> getRoleMenus(@PathVariable Long id) {
         List<SysMenu> menus = sysRoleService.getMenusByRoleId(id);
@@ -109,6 +118,7 @@ public class SysRoleController {
      * @param body 包含 menuIds 列表
      * @return 操作结果
      */
+    @Operation(summary = "分配菜单权限")
     @PostMapping("/{id}/menus")
     public ResponseEntity<Map<String, Object>> assignMenus(@PathVariable Long id,
                                                             @RequestBody Map<String, List<Long>> body) {

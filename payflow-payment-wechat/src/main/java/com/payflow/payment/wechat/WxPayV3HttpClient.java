@@ -74,7 +74,7 @@ public class WxPayV3HttpClient {
             throw e;
         } catch (Exception e) {
             log.error("微信API请求异常: label={}, path={}", apiLabel, path, e);
-            throw new BizException(6005, "微信支付API异常(" + apiLabel + "): " + e.getMessage());
+            throw new BizException(6005, "微信支付API异常(" + apiLabel + ")", e);
         }
     }
 
@@ -111,7 +111,7 @@ public class WxPayV3HttpClient {
             throw e;
         } catch (Exception e) {
             log.error("微信API GET异常: label={}, path={}", apiLabel, pathWithQuery, e);
-            throw new BizException(6005, "微信支付查单异常: " + e.getMessage());
+            throw new BizException(6005, "微信支付查单异常", e);
         }
     }
 

@@ -2,6 +2,8 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SystemConfig;
 import com.payflow.admin.service.SystemConfigService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ import java.util.Map;
  * 系统配置管理 Controller
   * @author Lucas
  */
+@Tag(name = "系统配置")
 @RestController
 @RequestMapping("/api/v1/admin/system-configs")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class SystemConfigController {
      * @param category 配置分类（可选，如 risk/payment/fee）
      * @return 配置列表
      */
+    @Operation(summary = "查询配置列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) String category) {
         List<SystemConfig> list = systemConfigService.listByCategory(category);
@@ -37,6 +41,7 @@ public class SystemConfigController {
      *
      * @return 分类列表
      */
+    @Operation(summary = "查询配置分类列表")
     @GetMapping("/categories")
     public ResponseEntity<Map<String, Object>> categories() {
         List<String> cats = systemConfigService.getAllCategories();
@@ -49,6 +54,7 @@ public class SystemConfigController {
      * @param key 配置键
      * @return 配置值
      */
+    @Operation(summary = "按key查询配置值")
     @GetMapping("/{key}")
     public ResponseEntity<Map<String, Object>> getByKey(@PathVariable String key) {
         String value = systemConfigService.getValue(key);
@@ -60,6 +66,7 @@ public class SystemConfigController {
      *
      * @return 全部配置的键值对
      */
+    @Operation(summary = "获取全部配置键值对")
     @GetMapping("/map")
     public ResponseEntity<Map<String, Object>> getAllMap() {
         Map<String, String> map = systemConfigService.getAllConfigsMap();
@@ -72,6 +79,7 @@ public class SystemConfigController {
      * @param config 配置信息
      * @return 操作结果
      */
+    @Operation(summary = "新增系统配置")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SystemConfig config) {
         systemConfigService.save(config);
@@ -85,6 +93,7 @@ public class SystemConfigController {
      * @param config 配置信息
      * @return 操作结果
      */
+    @Operation(summary = "更新系统配置")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
                                                         @RequestBody SystemConfig config) {
@@ -99,6 +108,7 @@ public class SystemConfigController {
      * @param id 配置ID
      * @return 操作结果
      */
+    @Operation(summary = "删除系统配置")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         systemConfigService.delete(id);
@@ -111,6 +121,7 @@ public class SystemConfigController {
      * @param key 配置键
      * @return 操作结果
      */
+    @Operation(summary = "刷新指定key缓存")
     @PostMapping("/cache/refresh/{key}")
     public ResponseEntity<Map<String, Object>> refreshByKey(@PathVariable String key) {
         systemConfigService.refreshCacheByKey(key);
@@ -123,6 +134,7 @@ public class SystemConfigController {
      * @param category 配置分类
      * @return 操作结果
      */
+    @Operation(summary = "刷新指定分类缓存")
     @PostMapping("/cache/refresh/category/{category}")
     public ResponseEntity<Map<String, Object>> refreshByCategory(@PathVariable String category) {
         systemConfigService.refreshCacheByCategory(category);
@@ -134,6 +146,7 @@ public class SystemConfigController {
      *
      * @return 操作结果
      */
+    @Operation(summary = "全量刷新配置缓存")
     @PostMapping("/cache/refresh/all")
     public ResponseEntity<Map<String, Object>> refreshAll() {
         systemConfigService.refreshAllCache();

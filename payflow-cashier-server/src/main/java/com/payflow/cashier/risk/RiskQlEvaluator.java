@@ -40,7 +40,7 @@ public class RiskQlEvaluator {
             throw e;
         } catch (Exception e) {
             log.error("风控表达式执行失败: ruleCode={}", rule.getRuleCode(), e);
-            throw new BizException(6103, "风控表达式执行失败: " + e.getMessage());
+            throw new BizException(6103, "风控表达式执行失败", e);
         }
     }
 }

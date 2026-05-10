@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * JWT 工具类
@@ -23,6 +24,7 @@ public final class JwtUtils {
     private static final String ALGORITHM = "HS256";
     private static final String CLAIM_MERCHANT_ID = "merchantId";
     private static final String CLAIM_MERCHANT_NAME = "merchantName";
+    private static final String CLAIM_JTI = "jti";
 
     private JwtUtils() {
         // 工具类禁止实例化
@@ -47,6 +49,7 @@ public final class JwtUtils {
                 .subject(merchantId)
                 .claim(CLAIM_MERCHANT_ID, merchantId)
                 .claim(CLAIM_MERCHANT_NAME, merchantName)
+                .claim(CLAIM_JTI, UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(key, Jwts.SIG.HS256)
@@ -103,7 +106,8 @@ public final class JwtUtils {
             return new TokenClaims(
                     claims.get(CLAIM_MERCHANT_ID, String.class),
                     claims.get(CLAIM_MERCHANT_NAME, String.class),
-                    claims.getExpiration()
+                    claims.getExpiration(),
+                    claims.get(CLAIM_JTI, String.class)
             );
         } catch (ExpiredJwtException e) {
             log.warn("Token已过期: {}", e.getMessage());
@@ -129,6 +133,6 @@ public final class JwtUtils {
     /**
      * Token 声明对象
      */
-    public record TokenClaims(String merchantId, String merchantName, Date expiration) {
+    public record TokenClaims(String merchantId, String merchantName, Date expiration, String jti) {
     }
 }

@@ -3,6 +3,8 @@ package com.payflow.admin.controller;
 import com.payflow.admin.service.DashboardAggregationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -14,6 +16,7 @@ import java.util.Map;
  *
  * @author Lucas
  */
+@Tag(name = "仪表盘")
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class AdminDashboardController {
     /**
      * 数据概览首页（根端点）：一次返回 KPI、趋势、渠道占比、最新订单。
      */
+    @Operation(summary = "数据概览首页")
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> dashboard(
             @RequestParam(defaultValue = "7") int trendDays) {
@@ -38,6 +42,7 @@ public class AdminDashboardController {
     /**
      * 获取今日核心统计指标（兼容旧客户端；数据源于聚合服务）。
      */
+    @Operation(summary = "获取今日核心统计指标")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats(
             @RequestParam(defaultValue = "7") int trendDays) {
@@ -58,6 +63,7 @@ public class AdminDashboardController {
     /**
      * 收入趋势数据
      */
+    @Operation(summary = "收入趋势数据")
     @GetMapping("/trend")
     public ResponseEntity<Map<String, Object>> trend(
             @RequestParam(defaultValue = "7") int days) {
@@ -74,6 +80,7 @@ public class AdminDashboardController {
     /**
      * 各渠道交易分布
      */
+    @Operation(summary = "各渠道交易分布")
     @GetMapping("/channel-dist")
     public ResponseEntity<Map<String, Object>> channelDist(
             @RequestParam(defaultValue = "7") int trendDays) {

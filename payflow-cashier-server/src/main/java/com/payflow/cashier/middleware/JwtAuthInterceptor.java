@@ -7,6 +7,7 @@ import com.payflow.cashier.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -31,10 +32,13 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
 
     private final PayflowProperties properties;
     private final ObjectMapper objectMapper;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    public JwtAuthInterceptor(PayflowProperties properties, ObjectMapper objectMapper) {
+    public JwtAuthInterceptor(PayflowProperties properties, ObjectMapper objectMapper,
+                              StringRedisTemplate stringRedisTemplate) {
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
@@ -61,6 +65,24 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             log.warn("JWT认证失败: token无效或已过期, path={}", request.getRequestURI());
             sendUnauthorized(response, "token无效或已过期");
             return false;
+        }
+
+        // 检查 JWT 黑名单
+        JwtUtils.TokenClaims parsedClaims = JwtUtils.parseClaims(properties.getJwt().getSecret(), token);
+        if (parsedClaims != null && parsedClaims.jti() != null) {
+            try {
+                Boolean blacklisted = stringRedisTemplate.hasKey("jwt:blacklist:" + parsedClaims.jti());
+                if (Boolean.TRUE.equals(blacklisted)) {
+                    log.warn("JWT认证失败: Token已登出, merchantId={}, path={}", merchantId, request.getRequestURI());
+                    sendUnauthorized(response, "Token已失效");
+                    return false;
+                }
+            } catch (Exception e) {
+                // Redis 不可用 → fail-close
+                log.error("Redis黑名单检查失败", e);
+                sendUnauthorized(response, "认证服务暂不可用");
+                return false;
+            }
         }
 
         // 将 merchantId 注入到请求上下文

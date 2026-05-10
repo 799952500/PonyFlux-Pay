@@ -1,0 +1,88 @@
+version: "3.8"
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/full-reseed-payflow-demo.sql:/docker-entrypoint-initdb.d/01-reseed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  cashier-server:
+    build:
+      context: .
+      dockerfile: payflow-cashier-server/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET}
+      SIGNATURE_SECRET: ${SIGNATURE_SECRET}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+      MASTER_KEY: ${MASTER_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-server:
+    build:
+      context: .
+      dockerfile: payflow-admin-server/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  recon-server:
+    build:
+      context: .
+      dockerfile: payflow-recon-server/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  redis-data:

@@ -199,6 +199,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import request from '@/api/request'
 import {
   getReconTasks,
   getReconTaskDetail,
@@ -270,6 +271,8 @@ async function loadTasks() {
     })
     taskList.value = res.list
     total.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载对账任务失败')
   } finally {
     loading.value = false
   }
@@ -320,28 +323,17 @@ async function loadDiffs() {
     })
     diffList.value = res.list
     diffTotal.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载差异列表失败')
   } finally {
     diffLoading.value = false
   }
 }
 
 async function downloadFile(taskId: string) {
-  const token = localStorage.getItem('adminToken')
-  const url = `/api/v1/admin/reconcile/tasks/${encodeURIComponent(taskId)}/file`
   try {
-    const res = await fetch(url, {
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    })
-    if (res.status === 401) {
-      localStorage.removeItem('adminToken')
-      window.location.href = '/login'
-      return
-    }
-    if (!res.ok) {
-      const t = await res.text()
-      throw new Error(t || `HTTP ${res.status}`)
-    }
-    const blob = await res.blob()
+    const res = await request.get(`/admin/reconcile/tasks/${encodeURIComponent(taskId)}/file`, { responseType: 'blob' })
+    const blob = new Blob([res as unknown as BlobPart])
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `recon-${taskId}.csv`
@@ -377,6 +369,8 @@ async function submitManual() {
     ElMessage.success(`已触发，任务号 ${r.taskId}`)
     manualVisible.value = false
     loadTasks()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '手动对账触发失败')
   } finally {
     manualLoading.value = false
   }

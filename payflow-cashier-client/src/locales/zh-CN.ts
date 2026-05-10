@@ -1,0 +1,32 @@
+export default {
+  cashier: {
+    title: '收银台',
+    orderInfo: '订单信息',
+    orderAmount: '订单金额',
+    selectPayment: '选择支付方式',
+    confirmPay: '确认支付',
+    paySuccess: '支付成功',
+    payFailed: '支付失败',
+    orderExpired: '订单已过期',
+    wechatPay: '微信支付',
+    alipay: '支付宝',
+    unionPay: '银联支付',
+    scanQrCode: '请扫码支付',
+    waitForResult: '等待支付结果...',
+  },
+  login: {
+    title: '商户登录',
+    merchantId: '商户号',
+    password: '密码',
+    login: '登录',
+    loginFailed: '登录失败',
+    emptyFields: '请输入商户号和密码',
+  },
+  receipt: {
+    title: '电子收据',
+    orderNo: '订单号',
+    paymentMethod: '支付方式',
+    amount: '金额',
+    date: '日期',
+  },
+}

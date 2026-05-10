@@ -1,0 +1,58 @@
+# ============================================================
+# PayFlow Admin Server - 生产环境配置
+# 激活方式: --spring.profiles.active=prod
+# 所有敏感值通过环境变量注入，禁止硬编码
+# ============================================================
+
+spring:
+  datasource:
+    admin:
+      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_admin?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+    cashier:
+      jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_cashier?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+payflow:
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN:http://localhost:3001}
+  cashier:
+    internal-token: ${INTERNAL_TOKEN}
+
+# Flyway
+spring.flyway:
+  enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.payflow.admin: INFO

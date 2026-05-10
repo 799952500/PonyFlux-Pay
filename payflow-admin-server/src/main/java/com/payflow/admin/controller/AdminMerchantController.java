@@ -3,6 +3,8 @@ package com.payflow.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.service.MerchantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
  * 商户管理 Controller
   * @author Lucas
  */
+@Tag(name = "商户管理")
 @RestController
 @RequestMapping("/api/v1/admin/merchants")
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class AdminMerchantController {
      * @param size      每页条数备选参数（可选）
      * @return 分页后的商户列表
      */
+    @Operation(summary = "分页查询商户列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> listMerchants(
             @RequestParam(required = false) String status,
@@ -72,6 +76,7 @@ public class AdminMerchantController {
      * @param merchantId 商户号
      * @return 商户信息
      */
+    @Operation(summary = "查询商户详情")
     @GetMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> getMerchant(@PathVariable String merchantId) {
         Merchant merchant = merchantService.getByMerchantId(merchantId);
@@ -87,6 +92,7 @@ public class AdminMerchantController {
      *
      * @return 商户号与名称的键值对列表
      */
+    @Operation(summary = "查询商户下拉列表")
     @GetMapping("/simple")
     public ResponseEntity<Map<String, Object>> listSimple() {
         List<Merchant> all = merchantService.listAll();
@@ -110,6 +116,7 @@ public class AdminMerchantController {
      * @param body       待更新的字段映射
      * @return 更新后的商户信息
      */
+    @Operation(summary = "更新商户信息")
     @PutMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> updateMerchant(
             @PathVariable String merchantId,
@@ -158,6 +165,7 @@ public class AdminMerchantController {
      * @param merchantId 商户号
      * @return 操作结果
      */
+    @Operation(summary = "删除商户")
     @DeleteMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> deleteMerchant(@PathVariable String merchantId) {
         Merchant existing = merchantService.getByMerchantId(merchantId);

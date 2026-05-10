@@ -10,6 +10,7 @@ import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.service.AuthService;
 import com.payflow.cashier.util.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -23,6 +24,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final MerchantMapper merchantMapper;
     private final PayflowProperties properties;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthServiceImpl(MerchantMapper merchantMapper, PayflowProperties properties) {
         this.merchantMapper = merchantMapper;
@@ -54,11 +56,39 @@ public class AuthServiceImpl implements AuthService {
             throw new BizException(4010, "商户状态异常，请联系管理员");
         }
 
-        // 4. 校验密码（MD5 比对）
-        String passwordMd5 = md5(password);
-        if (!passwordMd5.equalsIgnoreCase(merchant.getPassword())) {
+        // 4. 校验密码（bcrypt + MD5 兼容升级）
+        String storedPassword = merchant.getPassword();
+        boolean passwordMatch = false;
+        boolean needsUpgrade = false;
+
+        // 先尝试 bcrypt 验证
+        try {
+            if (storedPassword != null && storedPassword.startsWith("$2a$")) {
+                passwordMatch = passwordEncoder.matches(password, storedPassword);
+            }
+        } catch (Exception ignored) {
+        }
+
+        // bcrypt 不匹配或非 bcrypt 格式 → 尝试 MD5 兼容旧密码
+        if (!passwordMatch && storedPassword != null && storedPassword.length() == 32) {
+            String passwordMd5 = md5(password);
+            if (passwordMd5.equalsIgnoreCase(storedPassword)) {
+                passwordMatch = true;
+                needsUpgrade = true;
+                log.info("MD5密码验证通过，将自动升级为bcrypt: merchantId={}", merchantId);
+            }
+        }
+
+        if (!passwordMatch) {
             log.warn("密码错误: merchantId={}", merchantId);
             throw new BizException(4010, "密码错误");
+        }
+
+        // 自动升级为 bcrypt
+        if (needsUpgrade) {
+            merchant.setPassword(passwordEncoder.encode(password));
+            merchantMapper.updateById(merchant);
+            log.info("商户密码已升级为bcrypt: merchantId={}", merchantId);
         }
 
         // 5. 生成 JWT Token

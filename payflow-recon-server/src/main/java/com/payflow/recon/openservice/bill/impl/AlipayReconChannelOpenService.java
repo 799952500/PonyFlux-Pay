@@ -99,7 +99,7 @@ public class AlipayReconChannelOpenService implements ReconChannelOpenService {
             throw e;
         } catch (Exception e) {
             log.error("支付宝下载账单异常: billDate={}", dateStr, e);
-            throw new BizException(7512, "支付宝下载账单异常: " + e.getMessage());
+            throw new BizException(7512, "支付宝下载账单异常", e);
         }
     }
 
@@ -110,7 +110,7 @@ public class AlipayReconChannelOpenService implements ReconChannelOpenService {
                     .parse(downloaded.getCsvPath(), taskId, "alipay");
         } catch (Exception e) {
             log.error("支付宝解析账单失败: taskId={}", taskId, e);
-            throw new BizException(7513, "支付宝解析账单失败: " + e.getMessage());
+            throw new BizException(7513, "支付宝解析账单失败", e);
         }
     }
 

@@ -69,7 +69,7 @@ public class WxPayJsapiHandler {
             throw e;
         } catch (Exception e) {
             log.error("微信JSAPI下单异常: orderId={}", orderId, e);
-            throw new BizException(6005, "微信JSAPI下单异常: " + e.getMessage());
+            throw new BizException(6005, "微信JSAPI下单异常", e);
         }
     }
 
@@ -97,7 +97,7 @@ public class WxPayJsapiHandler {
             m.put("paySign", paySign);
             return m;
         } catch (Exception e) {
-            throw new BizException(6005, "构建微信JSAPI调起参数失败: " + e.getMessage());
+            throw new BizException(6005, "构建微信JSAPI调起参数失败", e);
         }
     }
 }

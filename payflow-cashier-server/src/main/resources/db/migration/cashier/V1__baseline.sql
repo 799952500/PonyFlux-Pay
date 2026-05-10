@@ -1,0 +1,2 @@
+-- Flyway baseline: marks current DB state as version 1
+-- All existing tables are from manual SQL scripts pre-Flyway

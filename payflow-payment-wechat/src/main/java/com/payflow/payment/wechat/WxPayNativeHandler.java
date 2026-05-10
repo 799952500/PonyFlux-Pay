@@ -65,7 +65,7 @@ public class WxPayNativeHandler {
             throw e;
         } catch (Exception e) {
             log.error("微信Native扫码支付异常: orderId={}", orderId, e);
-            throw new BizException(6005, "微信Native扫码支付异常: " + e.getMessage());
+            throw new BizException(6005, "微信Native扫码支付异常", e);
         }
     }
 
@@ -116,7 +116,7 @@ public class WxPayNativeHandler {
             throw e;
         } catch (Exception e) {
             log.error("微信退款异常: outTradeNo={}", outTradeNo, e);
-            throw new BizException(6005, "微信退款异常: " + e.getMessage());
+            throw new BizException(6005, "微信退款异常", e);
         }
     }
 

@@ -6,6 +6,8 @@ import com.payflow.admin.entity.cashier.Payment;
 import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.OrderService;
 import com.payflow.admin.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -25,6 +27,7 @@ import java.util.Map;
  *
  * @author Lucas
  */
+@Tag(name = "订单管理")
 @RestController
 @RequestMapping("/api/v1/admin/orders")
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class AdminOrderController {
     /**
      * 分页查询订单列表
      */
+    @Operation(summary = "查询订单列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> listOrders(
             HttpServletRequest request,
@@ -63,6 +67,7 @@ public class AdminOrderController {
     /**
      * 导出订单 CSV（UTF-8 BOM，最多 5000 行）
      */
+    @Operation(summary = "导出订单CSV")
     @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
     public ResponseEntity<String> exportOrders(
             HttpServletRequest request,
@@ -106,6 +111,7 @@ public class AdminOrderController {
     /**
      * 查询订单详情
      */
+    @Operation(summary = "获取订单详情")
     @GetMapping("/{orderId}")
     public ResponseEntity<Map<String, Object>> getOrder(HttpServletRequest request, @PathVariable String orderId) {
         Order order = orderService.getByOrderId(orderId);
@@ -135,6 +141,7 @@ public class AdminOrderController {
     /**
      * 按商户查询订单
      */
+    @Operation(summary = "按商户查询订单")
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<Map<String, Object>> listByMerchant(HttpServletRequest request,
                                                               @PathVariable String merchantId) {
@@ -155,6 +162,7 @@ public class AdminOrderController {
     /**
      * 按状态统计订单数量
      */
+    @Operation(summary = "订单状态统计")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
         List<Map<String, Object>> statusCount = orderService.countByStatus();
@@ -172,6 +180,7 @@ public class AdminOrderController {
     /**
      * 关闭订单
      */
+    @Operation(summary = "关闭订单")
     @PostMapping("/{orderId}/close")
     public ResponseEntity<Map<String, Object>> closeOrder(HttpServletRequest request,
                                                            @PathVariable String orderId) {

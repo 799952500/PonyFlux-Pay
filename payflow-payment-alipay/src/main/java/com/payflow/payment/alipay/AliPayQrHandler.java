@@ -56,7 +56,7 @@ public class AliPayQrHandler {
         } catch (Exception e) {
             log.error("支付宝Native扫码支付异常: orderId={}", orderId, e);
             throw new BizException(6006,
-                    "支付宝Native扫码支付异常: " + e.getMessage());
+                    "支付宝Native扫码支付异常", e);
         }
     }
 
@@ -99,7 +99,7 @@ public class AliPayQrHandler {
             throw e;
         } catch (Exception e) {
             log.error("支付宝退款异常: tradeNo={}", tradeNo, e);
-            throw new BizException(6009, "支付宝退款异常: " + e.getMessage());
+            throw new BizException(6009, "支付宝退款异常", e);
         }
     }
 }

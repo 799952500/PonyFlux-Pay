@@ -14,6 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * 微信支付回调通知解析辅助组件。
@@ -32,6 +33,7 @@ public class WxPayNotifyHelper {
     private static final String AES_GCM_ALGO = "AES/GCM/NoPadding";
 
     private final PayNotifyService payNotifyService;
+    private final WxPayApiV3KeyCache wxPayApiV3KeyCache;
 
     /**
      * 解析并处理微信支付回调。
@@ -113,34 +115,38 @@ public class WxPayNotifyHelper {
             throw new GeneralSecurityException("不支持的加密算法: " + algorithm);
         }
 
-        byte[] apiV3Key = getWxPayApiV3Key();
         byte[] nonce = nonceStr.getBytes(StandardCharsets.UTF_8);
         byte[] aad = associatedData.getBytes(StandardCharsets.UTF_8);
         byte[] cipherBytes = Base64.getDecoder().decode(ciphertext);
 
-        SecretKeySpec keySpec = new SecretKeySpec(apiV3Key, "AES");
-        GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
-
-        Cipher cipher = Cipher.getInstance(AES_GCM_ALGO);
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
-        if (aad.length > 0) {
-            cipher.updateAAD(aad);
+        // 尝试所有缓存的 APIv3 密钥解密
+        List<byte[]> keys = wxPayApiV3KeyCache.getCachedKeys();
+        if (keys.isEmpty()) {
+            wxPayApiV3KeyCache.refreshCache();
+            keys = wxPayApiV3KeyCache.getCachedKeys();
+        }
+        if (keys.isEmpty()) {
+            throw new GeneralSecurityException("无可用微信 APIv3 密钥，请检查渠道账户配置");
         }
 
-        byte[] plainBytes = cipher.doFinal(cipherBytes);
-        return new String(plainBytes, StandardCharsets.UTF_8);
-    }
+        GeneralSecurityException lastException = null;
+        for (byte[] apiV3Key : keys) {
+            try {
+                SecretKeySpec keySpec = new SecretKeySpec(apiV3Key, "AES");
+                GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
 
-    /**
-     * 获取微信支付 APIv3 密钥。
-     * <p>
-     * 实际生产应从数据库 cashier_channel_accounts 的 channelConfig 字段读取。
-     * </p>
-     *
-     * @return APIv3 密钥（32字节）
-     */
-    private byte[] getWxPayApiV3Key() {
-        throw new UnsupportedOperationException(
-                "请实现 getWxPayApiV3Key()，从数据库或配置中心获取 APIv3 密钥");
+                Cipher cipher = Cipher.getInstance(AES_GCM_ALGO);
+                cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+                if (aad.length > 0) {
+                    cipher.updateAAD(aad);
+                }
+
+                byte[] plainBytes = cipher.doFinal(cipherBytes);
+                return new String(plainBytes, StandardCharsets.UTF_8);
+            } catch (GeneralSecurityException e) {
+                lastException = e;
+            }
+        }
+        throw new GeneralSecurityException("使用所有可用密钥解密均失败", lastException);
     }
 }

@@ -56,7 +56,7 @@ public class WxPayMicropayHandler {
             throw e;
         } catch (Exception e) {
             log.error("微信付款码支付异常: orderId={}", orderId, e);
-            throw new BizException(6005, "微信付款码支付异常: " + e.getMessage());
+            throw new BizException(6005, "微信付款码支付异常", e);
         }
     }
 

@@ -5,7 +5,13 @@
       "Bash(uv --version)",
       "Bash(specify --version)",
       "Bash(bash \".specify/extensions/git/scripts/bash/initialize-repo.sh\")",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "Bash(mvn -B -q -DskipTests compile)",
+      "Bash(mvn -B -DskipTests compile)",
+      "Bash(mvn -B -q test -pl payflow-common,payflow-payment-core)",
+      "Bash(mvn -B test -pl payflow-common,payflow-payment-core)"
     ]
   }
 }

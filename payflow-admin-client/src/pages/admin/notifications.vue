@@ -23,8 +23,9 @@ onMounted(async () => {
   try {
     const data = await request.get('/admin/notifications/summary') as { pendingRefunds?: number }
     pendingRefunds.value = data.pendingRefunds ?? 0
-  } catch {
+  } catch (e: any) {
     pendingRefunds.value = 0
+    ElMessage.error(e?.message || '加载通知摘要失败')
   }
 })
 </script>

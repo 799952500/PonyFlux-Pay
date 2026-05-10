@@ -53,17 +53,29 @@ public final class PayStrategyRegistry {
             log.debug("识别为微信支付回调: Wechatpay-Serial={}", wechatpaySerial);
             PayStrategy s = strategyMap.get(PayMethod.WECHAT_NATIVE);
             if (s == null) {
+                log.error("微信支付回调策略未注册: WECHAT_NATIVE 策略不存在");
                 return "FAIL";
             }
-            return s.parseNotify(request).getWxReply();
+            NotifyResult result = s.parseNotify(request);
+            if (!result.isSuccess()) {
+                log.error("微信支付回调处理失败: serial={}, errorMsg={}",
+                        wechatpaySerial, result.getErrorMsg());
+            }
+            return result.getWxReply();
         }
         if (tradeStatus != null && !tradeStatus.isBlank()) {
             log.debug("识别为支付宝回调: trade_status={}", tradeStatus);
             PayStrategy s = strategyMap.get(PayMethod.ALIPAY_QR);
             if (s == null) {
+                log.error("支付宝回调策略未注册: ALIPAY_QR 策略不存在");
                 return "fail";
             }
-            return s.parseNotify(request).getAliReply();
+            NotifyResult result = s.parseNotify(request);
+            if (!result.isSuccess()) {
+                log.error("支付宝回调处理失败: trade_status={}, errorMsg={}",
+                        tradeStatus, result.getErrorMsg());
+            }
+            return result.getAliReply();
         }
         log.warn("无法识别支付渠道回调: 既无 Wechatpay-Serial 也无 trade_status");
         return "fail";

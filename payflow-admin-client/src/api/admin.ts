@@ -29,15 +29,9 @@ import type {
 export const getDashboardStats = (trendDays: number = 7): Promise<DashboardStats> =>
   request.get('/admin/dashboard', { params: { trendDays } })
 
-/** 登录页功能开关（无需 Token；依赖 Vite proxy 转发 /api） */
-export const getLoginFeatures = async (): Promise<{ loginCaptchaEnabled: boolean; loginMaxFailures: number }> => {
-  const res = await fetch('/api/v1/admin/meta/features')
-  const json = await res.json()
-  if (json.code !== 0) {
-    throw new Error(json.message || '加载功能开关失败')
-  }
-  return json.data
-}
+/** 登录页功能开关 */
+export const getLoginFeatures = (): Promise<{ loginCaptchaEnabled: boolean; loginMaxFailures: number }> =>
+  request.get('/admin/meta/features')
 
 // -------------------------------------------------------------------
 // 订单管理
@@ -82,28 +76,21 @@ export async function exportOrdersCsv(filters: {
   startTime?: string
   endTime?: string
   maxRows?: number
+export async function exportOrdersCsv(filters: {
+  merchantId?: string
+  status?: string
+  startTime?: string
+  endTime?: string
+  maxRows?: number
 }): Promise<void> {
-  const token = localStorage.getItem('adminToken')
   const p = new URLSearchParams()
   if (filters.merchantId) p.set('merchantId', filters.merchantId)
   if (filters.status) p.set('status', filters.status)
   if (filters.startTime) p.set('startTime', filters.startTime)
   if (filters.endTime) p.set('endTime', filters.endTime)
   if (filters.maxRows != null) p.set('maxRows', String(filters.maxRows))
-  const res = await fetch(`/api/v1/admin/orders/export?${p.toString()}`, {
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-  })
-  if (res.status === 401) {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminUser')
-    window.location.href = '/login'
-    return
-  }
-  if (!res.ok) {
-    const t = await res.text()
-    throw new Error(t || `导出失败 HTTP ${res.status}`)
-  }
-  const blob = await res.blob()
+  const res = await request.get(`/admin/orders/export?${p.toString()}`, { responseType: 'blob' })
+  const blob = new Blob([res as unknown as BlobPart])
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = `orders-export-${Date.now()}.csv`
@@ -122,12 +109,8 @@ export const adminSearchOrders = (q: string, limit = 20): Promise<AdminSearchOrd
 export const getDicts = (): Promise<Record<string, unknown>> =>
   request.get('/admin/dicts')
 
-export async function getMetaVersion(): Promise<{ application: string; profiles: string }> {
-  const res = await fetch('/api/v1/admin/meta/version')
-  const json = await res.json()
-  if (json.code !== 0) throw new Error(json.message || '加载版本信息失败')
-  return json.data as { application: string; profiles: string }
-}
+export const getMetaVersion = (): Promise<{ application: string; profiles: string }> =>
+  request.get('/admin/meta/version')
 
 export const getSystemConfigCategories = (): Promise<string[]> =>
   request.get('/admin/system-configs/categories')

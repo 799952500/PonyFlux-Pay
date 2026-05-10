@@ -53,7 +53,7 @@ public class WxpayReconChannelOpenService implements ReconChannelOpenService {
             throw e;
         } catch (Exception e) {
             log.error("微信下载账单异常: billDate={}", billDate, e);
-            throw new BizException(7520, "微信下载账单异常: " + e.getMessage());
+            throw new BizException(7520, "微信下载账单异常", e);
         }
     }
 
@@ -64,7 +64,7 @@ public class WxpayReconChannelOpenService implements ReconChannelOpenService {
                     .parse(downloaded.getCsvPath(), taskId, "wxpay");
         } catch (Exception e) {
             log.error("微信解析账单失败: taskId={}", taskId, e);
-            throw new BizException(7521, "微信解析账单失败: " + e.getMessage());
+            throw new BizException(7521, "微信解析账单失败", e);
         }
     }
 

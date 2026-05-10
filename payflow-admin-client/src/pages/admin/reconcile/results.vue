@@ -152,6 +152,8 @@ async function load() {
     })
     list.value = res.list
     total.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载对账结果失败')
   } finally {
     loading.value = false
   }

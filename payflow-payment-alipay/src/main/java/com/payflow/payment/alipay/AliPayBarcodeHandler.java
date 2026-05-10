@@ -43,7 +43,7 @@ public class AliPayBarcodeHandler {
             throw e;
         } catch (Exception e) {
             log.error("支付宝条码支付异常: orderId={}", orderId, e);
-            throw new BizException(6006, "支付宝条码支付异常: " + e.getMessage());
+            throw new BizException(6006, "支付宝条码支付异常", e);
         }
     }
 

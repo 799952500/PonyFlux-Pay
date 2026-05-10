@@ -197,6 +197,8 @@ async function load() {
       channel: queryForm.channel || undefined,
       accountCode: queryForm.accountCode || undefined,
     })
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载对账汇总失败')
   } finally {
     loading.value = false
   }
@@ -235,6 +237,8 @@ async function loadAnomalies() {
     })
     anomalyList.value = res.list
     anomalyTotal.value = res.total
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载异常明细失败')
   } finally {
     detailLoading.value = false
   }

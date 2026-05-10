@@ -2,6 +2,8 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SysUser;
 import com.payflow.admin.service.SysUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +14,7 @@ import java.util.Map;
  * 系统用户管理 Controller
   * @author Lucas
  */
+@Tag(name = "系统用户")
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class SysUserController {
      *
      * @return 用户列表（密码字段已清除）
      */
+    @Operation(summary = "查询用户列表")
     @GetMapping
     public Map<String, Object> list() {
         List<SysUser> users = sysUserService.listUsers();
@@ -36,6 +40,7 @@ public class SysUserController {
      * @param id 用户ID
      * @return 用户详情（密码字段已清除）
      */
+    @Operation(summary = "查询用户详情")
     @GetMapping("/{id}")
     public Map<String, Object> get(@PathVariable Long id) {
         SysUser user = sysUserService.getById(id);
@@ -53,6 +58,7 @@ public class SysUserController {
      * @param user 用户信息（包含明文密码，将被 BCrypt 加密存储）
      * @return 操作结果
      */
+    @Operation(summary = "新增系统用户")
     @PostMapping
     public Map<String, Object> create(@RequestBody SysUser user) {
         sysUserService.create(user);
@@ -66,6 +72,7 @@ public class SysUserController {
      * @param user 用户信息
      * @return 操作结果
      */
+    @Operation(summary = "更新系统用户")
     @PutMapping("/{id}")
     public Map<String, Object> update(@PathVariable Long id, @RequestBody SysUser user) {
         sysUserService.update(id, user);
@@ -79,6 +86,7 @@ public class SysUserController {
      * @param body 包含新密码
      * @return 操作结果
      */
+    @Operation(summary = "重置用户密码")
     @PutMapping("/{id}/reset-password")
     public Map<String, Object> resetPassword(@PathVariable Long id,
                                              @RequestBody Map<String, String> body) {
@@ -96,6 +104,7 @@ public class SysUserController {
      * @param id 用户ID
      * @return 操作结果
      */
+    @Operation(summary = "禁用用户")
     @PutMapping("/{id}/disable")
     public Map<String, Object> disable(@PathVariable Long id) {
         sysUserService.disable(id);

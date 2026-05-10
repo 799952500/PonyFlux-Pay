@@ -7,10 +7,13 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 /**
@@ -20,6 +23,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     private final JwtProperties jwtProperties;
     private final JwtUtils jwtUtils;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -49,6 +53,28 @@ public class JwtInterceptor implements HandlerInterceptor {
             response.getWriter().write("{\"code\":401,\"message\":\"无效的访问令牌\",\"data\":null}");
             return false;
         }
+
+        // 检查 JWT 黑名单
+        String jti = claims.get("jti", String.class);
+        if (jti != null) {
+            try {
+                Boolean blacklisted = stringRedisTemplate.hasKey("jwt:blacklist:" + jti);
+                if (Boolean.TRUE.equals(blacklisted)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"code\":401,\"message\":\"Token已失效\",\"data\":null}");
+                    return false;
+                }
+            } catch (Exception e) {
+                // Redis 不可用 → fail-close
+                log.error("Redis黑名单检查失败", e);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":401,\"message\":\"认证服务暂不可用\",\"data\":null}");
+                return false;
+            }
+        }
+
         request.setAttribute("username", claims.getSubject());
         request.setAttribute("role", claims.get("role", String.class));
         Object dm = claims.get("dataMerchantIds");

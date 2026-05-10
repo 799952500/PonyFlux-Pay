@@ -12,6 +12,8 @@ import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
 import com.payflow.admin.service.AdminReconQueryService;
 import com.payflow.common.exception.BizException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +43,7 @@ import java.util.UUID;
  *
  * @author PayFlow Team
  */
+@Tag(name = "对账管理")
 @RestController
 @RequestMapping("/api/v1/admin/reconcile")
 @RequiredArgsConstructor
@@ -55,6 +58,7 @@ public class AdminReconController {
     /**
      * 按订单/支付维度查询对账结果（全量成功支付 + 差异匹配；onlyAbnormal=true 时仅差异表）。
      */
+    @Operation(summary = "查询对账结果")
     @GetMapping("/order-results")
     public ResponseEntity<Map<String, Object>> orderResults(
             @RequestParam LocalDate billDate,
@@ -72,6 +76,7 @@ public class AdminReconController {
     /**
      * 对账日汇总：本地成功收款 vs 渠道账单金额、待处理差异笔数。
      */
+    @Operation(summary = "对账日汇总")
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> reconSummary(
             @RequestParam LocalDate billDate,
@@ -86,6 +91,7 @@ public class AdminReconController {
     /**
      * 异常（差异）明细分页，供汇总页查看产生差额的订单。
      */
+    @Operation(summary = "异常差异明细分页")
     @GetMapping("/anomalies")
     public ResponseEntity<Map<String, Object>> anomalies(
             @RequestParam LocalDate billDate,
@@ -99,6 +105,7 @@ public class AdminReconController {
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 
+    @Operation(summary = "查询对账任务列表")
     @GetMapping("/tasks")
     public ResponseEntity<Map<String, Object>> listTasks(
             @RequestParam(defaultValue = "1") long page,
@@ -127,6 +134,7 @@ public class AdminReconController {
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
     }
 
+    @Operation(summary = "查询商户对账任务列表")
     @GetMapping("/merchant-tasks")
     public ResponseEntity<Map<String, Object>> listMerchantTasks(
             @RequestParam(defaultValue = "1") long page,
@@ -155,6 +163,7 @@ public class AdminReconController {
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", result));
     }
 
+    @Operation(summary = "下载商户对账文件")
     @GetMapping("/merchant-tasks/{merchantTaskId}/file")
     public ResponseEntity<byte[]> downloadMerchantTaskFile(@PathVariable String merchantTaskId) throws Exception {
         ReconMerchantTaskEntity t = reconMerchantTaskEntityMapper.selectOne(
@@ -175,6 +184,7 @@ public class AdminReconController {
                 .body(bytes);
     }
 
+    @Operation(summary = "查询对账任务详情")
     @GetMapping("/tasks/{taskId}")
     public ResponseEntity<Map<String, Object>> taskDetail(@PathVariable String taskId) {
         ReconTaskEntity t = reconTaskEntityMapper.selectOne(
@@ -185,6 +195,7 @@ public class AdminReconController {
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", t));
     }
 
+    @Operation(summary = "查询对账差异明细")
     @GetMapping("/tasks/{taskId}/diffs")
     public ResponseEntity<Map<String, Object>> listDiffs(
             @PathVariable String taskId,
@@ -213,6 +224,7 @@ public class AdminReconController {
     /**
      * 文件下载：当前默认支持本地存储（file_object_key 为绝对路径）。
      */
+    @Operation(summary = "下载对账文件")
     @GetMapping("/tasks/{taskId}/file")
     public ResponseEntity<byte[]> downloadTaskFile(@PathVariable String taskId) throws Exception {
         ReconTaskEntity t = reconTaskEntityMapper.selectOne(
@@ -231,6 +243,7 @@ public class AdminReconController {
                 .body(bytes);
     }
 
+    @Operation(summary = "手动触发对账")
     @PostMapping("/tasks/manual-run")
     public ResponseEntity<Map<String, Object>> manualRun(@Valid @RequestBody ManualReconRequest request) {
         String channel = request.getReconChannel().trim().toLowerCase();
@@ -266,6 +279,7 @@ public class AdminReconController {
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of("taskId", taskId)));
     }
 
+    @Operation(summary = "处理对账差异")
     @PostMapping("/diffs/{id}/handle")
     public ResponseEntity<Map<String, Object>> handleDiff(
             HttpServletRequest http,

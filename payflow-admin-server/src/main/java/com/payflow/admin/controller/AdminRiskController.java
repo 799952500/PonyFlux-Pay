@@ -1,5 +1,7 @@
 package com.payflow.admin.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.RiskRule;
 import com.payflow.admin.mapper.RiskRuleMapper;
@@ -16,6 +18,7 @@ import java.util.Map;
  * 风控规则管理 Controller
   * @author Lucas
  */
+@Tag(name = "风控规则")
 @RestController
 @RequestMapping("/api/v1/admin/risk")
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class AdminRiskController {
      *
      * @return 风控规则列表，按启用状态降序排列
      */
+    @Operation(summary = "查询风控规则列表")
     @GetMapping("/rules")
     public ResponseEntity<Map<String, Object>> listRules() {
         List<RiskRule> rules = riskRuleMapper.selectList(new LambdaQueryWrapper<RiskRule>()
@@ -49,6 +53,7 @@ public class AdminRiskController {
      * @param body   待更新字段映射
      * @return 更新后的规则对象
      */
+    @Operation(summary = "更新风控规则")
     @PutMapping("/rules/{ruleId}")
     public ResponseEntity<Map<String, Object>> updateRule(@PathVariable Long ruleId,
                                                           @RequestBody Map<String, Object> body) {

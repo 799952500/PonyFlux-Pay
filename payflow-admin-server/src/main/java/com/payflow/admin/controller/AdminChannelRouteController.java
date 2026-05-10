@@ -6,12 +6,15 @@ import com.payflow.admin.service.ChannelRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "渠道路由")
 @RestController
 @RequestMapping("/api/v1/admin/channels/routes")
 @RequiredArgsConstructor
@@ -46,6 +49,7 @@ public class AdminChannelRouteController {
      * @param pageSize   每页条数，默认20
      * @return 路由列表（视图形式）
      */
+    @Operation(summary = "分页查询支付路由列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) String merchantId,
@@ -87,6 +91,7 @@ public class AdminChannelRouteController {
      * @param route 路由信息
      * @return 创建的路由（视图形式）
      */
+    @Operation(summary = "创建支付路由")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody ChannelRoute route) {
         ChannelRoute created = service.create(route);
@@ -106,6 +111,7 @@ public class AdminChannelRouteController {
      * @param id 路由ID
      * @return 操作结果
      */
+    @Operation(summary = "启用/禁用支付路由")
     @PutMapping("/{id}/toggle")
     public ResponseEntity<Map<String, Object>> toggle(@PathVariable Long id) {
         try {
@@ -133,6 +139,7 @@ public class AdminChannelRouteController {
      * @param id 路由ID
      * @return 操作结果
      */
+    @Operation(summary = "删除支付路由")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         service.delete(id);

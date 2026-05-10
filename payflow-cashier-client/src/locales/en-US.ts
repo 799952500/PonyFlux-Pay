@@ -1,0 +1,32 @@
+export default {
+  cashier: {
+    title: 'Checkout',
+    orderInfo: 'Order Info',
+    orderAmount: 'Amount',
+    selectPayment: 'Select Payment',
+    confirmPay: 'Pay Now',
+    paySuccess: 'Payment Successful',
+    payFailed: 'Payment Failed',
+    orderExpired: 'Order Expired',
+    wechatPay: 'WeChat Pay',
+    alipay: 'Alipay',
+    unionPay: 'UnionPay',
+    scanQrCode: 'Scan QR code to pay',
+    waitForResult: 'Waiting for payment result...',
+  },
+  login: {
+    title: 'Merchant Login',
+    merchantId: 'Merchant ID',
+    password: 'Password',
+    login: 'Login',
+    loginFailed: 'Login failed',
+    emptyFields: 'Please enter merchant ID and password',
+  },
+  receipt: {
+    title: 'Receipt',
+    orderNo: 'Order No',
+    paymentMethod: 'Payment Method',
+    amount: 'Amount',
+    date: 'Date',
+  },
+}

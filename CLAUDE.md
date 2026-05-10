@@ -116,3 +116,9 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 - `payflow-recon-server`: **3004**
 - `payflow-admin-client` (dev): **3001**
 - `payflow-cashier-client` (dev): **5173**
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/001-project-improvement/plan.md
+<!-- SPECKIT END -->

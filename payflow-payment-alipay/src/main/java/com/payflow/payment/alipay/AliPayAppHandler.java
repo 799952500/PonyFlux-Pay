@@ -45,7 +45,7 @@ public class AliPayAppHandler {
             throw e;
         } catch (Exception e) {
             log.error("支付宝App支付异常: orderId={}", orderId, e);
-            throw new BizException(6006, "支付宝App支付异常: " + e.getMessage());
+            throw new BizException(6006, "支付宝App支付异常", e);
         }
     }
 

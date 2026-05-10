@@ -3,6 +3,8 @@ package com.payflow.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.AdminRefundService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,6 +20,7 @@ import java.util.Map;
  *
  * @author Lucas
  */
+@Tag(name = "退款管理")
 @RestController
 @RequestMapping("/api/v1/admin/refunds")
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ public class AdminRefundController {
     /**
      * 分页查询退款列表。
      */
+    @Operation(summary = "分页查询退款列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             HttpServletRequest request,
@@ -51,6 +55,7 @@ public class AdminRefundController {
     /**
      * 审批通过。
      */
+    @Operation(summary = "审批通过退款")
     @PostMapping("/{refundId}/approve")
     public ResponseEntity<Map<String, Object>> approve(HttpServletRequest request, @PathVariable String refundId) {
         try {
@@ -66,6 +71,7 @@ public class AdminRefundController {
     /**
      * 审批拒绝。
      */
+    @Operation(summary = "审批拒绝退款")
     @PostMapping("/{refundId}/reject")
     public ResponseEntity<Map<String, Object>> reject(HttpServletRequest request, @PathVariable String refundId) {
         try {

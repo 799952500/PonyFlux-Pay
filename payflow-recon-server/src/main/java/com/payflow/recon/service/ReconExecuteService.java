@@ -152,7 +152,7 @@ public class ReconExecuteService {
         } catch (Exception e) {
             log.error("对账任务失败: taskId={}", taskId, e);
             markFail(taskId, e.getMessage());
-            throw new BizException(7599, "对账任务失败: " + e.getMessage());
+            throw new BizException(7599, "对账任务失败", e);
         }
     }
 

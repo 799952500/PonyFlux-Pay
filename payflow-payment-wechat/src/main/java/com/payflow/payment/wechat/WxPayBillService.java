@@ -72,7 +72,7 @@ public class WxPayBillService {
             throw e;
         } catch (Exception e) {
             log.error("微信查询交易账单失败: billDate={}", dateStr, e);
-            throw new BizException(6005, "微信查询交易账单失败: " + e.getMessage());
+            throw new BizException(6005, "微信查询交易账单失败", e);
         }
     }
 
@@ -99,7 +99,7 @@ public class WxPayBillService {
             throw e;
         } catch (Exception e) {
             log.error("微信账单下载失败: url={}", downloadUrl, e);
-            throw new BizException(6005, "微信账单下载失败: " + e.getMessage());
+            throw new BizException(6005, "微信账单下载失败", e);
         }
     }
 

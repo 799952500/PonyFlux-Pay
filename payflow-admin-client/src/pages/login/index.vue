@@ -133,6 +133,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import request from '@/api/request'
 import { adminLogin } from '@/api/auth'
 import { useAdminStore } from '@/stores/admin'
 import type { AdminLoginResponse } from '@/types'
@@ -151,16 +152,15 @@ const captchaId = ref('')
 
 async function refreshCaptcha() {
   try {
-    const res = await fetch('/api/v1/admin/auth/captcha')
-    const json = await res.json()
-    if (json.code === 0 && json.data) {
-      captchaId.value = json.data.captchaId
-      captchaQuestion.value = json.data.question
+    const data = await request.get('/admin/auth/captcha')
+    if (data && data.captchaId) {
+      captchaId.value = data.captchaId
+      captchaQuestion.value = data.question
       errorMsg.value = ''
     } else {
       captchaId.value = ''
       captchaQuestion.value = ''
-      errorMsg.value = json.message || '验证码加载失败'
+      errorMsg.value = '验证码加载失败'
     }
   } catch {
     captchaId.value = ''

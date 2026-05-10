@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { listOnboardingApplications } from '@/api/admin'
 
 const loading = ref(false)
@@ -22,6 +23,8 @@ onMounted(async () => {
   loading.value = true
   try {
     list.value = (await listOnboardingApplications()) as unknown[]
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载进件列表失败')
   } finally {
     loading.value = false
   }
