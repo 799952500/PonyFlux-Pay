@@ -130,5 +130,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/002-unionpay-channel/plan.md
+at specs/003-constitution-enhancement/plan.md
 <!-- SPECKIT END -->

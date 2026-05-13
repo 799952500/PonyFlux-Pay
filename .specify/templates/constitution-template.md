@@ -1,50 +1,243 @@
 # [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
-## Core Principles
+## 核心原则
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. [PRINCIPLE_1_NAME] [强制/推荐/参考]
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+[原则描述，包含规则、正例代码、反例代码和理由]
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**正例**：
+```[language]
+// ✅ 正确做法
+```
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**反例**：
+```[language]
+// ❌ 错误做法
+```
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**理由**：[为什么此规则是必要的——引用具体的事故或问题]
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+---
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### II. [PRINCIPLE_2_NAME] [强制/推荐/参考]
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+[同上结构]
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+---
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+[继续添加核心原则，建议 3-7 个]
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+---
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+## 编码规范
+
+### 命名规范 [强制]
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 类名 | UpperCamelCase | `[Example]` |
+| 方法/变量 | lowerCamelCase | `[example]` |
+| 常量 | UPPER_SNAKE_CASE | `[EXAMPLE]` |
+
+### 代码格式 [强制]
+
+- 缩进、大括号风格、单行字符上限
+- 导入声明规范
+- 文件编码
+
+### 注释规范 [强制]
+
+- Javadoc 要求
+- TODO 格式
+
+### 类成员顺序 [强制]
+
+```
+常量 → 静态变量 → 实例变量 → 构造器 → 公共方法 → 私有方法
+```
+
+### POJO 规范 [强制]
+
+- 包装类型 vs 基本类型
+- 默认值规则
+- 构造器注入要求
+
+---
+
+## 集合与并发处理
+
+### 集合操作 [强制]
+
+- 初始化容量
+- 遍历修改限制
+- 工具类限制
+
+### 并发处理 [强制]
+
+- 线程池创建规范
+- ThreadLocal 清理
+- 并发工具选择
+
+---
+
+## 数据库访问规范
+
+### 实体类规范 [强制]
+
+- MyBatis-Plus 注解要求
+
+### 查询规范 [强制]
+
+- SELECT 限制
+- 分页限制
+- 列名引用方式
+
+### SQL 安全 [强制]
+
+- 占位符规范
+- 批量操作限制
+- JOIN 限制
+
+---
+
+## 安全编码规范
+
+### 数据加密 [强制]
+
+- 加密算法
+- 密钥管理
+
+### 日志脱敏 [强制]
+
+- 脱敏字段列表
+- 脱敏方法
+
+### 防重放与幂等性 [强制]
+
+- 时间戳窗口
+- 幂等性实现
+
+### 参数校验 [强制]
+
+- Bean Validation
+- 白名单校验
+
+---
+
+## 异常与日志规范
+
+### 异常处理 [强制]
+
+- 全局异常处理器
+- 错误码范围表
+
+### 日志规范 [强制]
+
+- 日志级别使用场景
+- TraceId 全链路追踪
+- 禁止事项
+
+---
+
+## 测试规范
+
+### Definition of Done [强制]
+
+1. ✅ [条件1]
+2. ✅ [条件2]
+3. ✅ [条件3]
+4. ✅ [条件4]
+5. ✅ [条件5]
+
+### 覆盖率要求 [强制]
+
+- 最低行覆盖率：[XX]%
+- 计算粒度：按模块/项目聚合
+
+### 单元测试 [强制]
+
+- 测试框架
+- Mock 原则
+
+### 集成测试 [推荐]
+
+- Testcontainers 使用
+
+---
+
+## 自动化执行
+
+### IDE 插件 [强制]
+
+| 插件 | 用途 | 安装方式 |
+|------|------|----------|
+
+### CI 流水线质量门禁 [强制]
+
+```
+[检查顺序：Step1 → Step2 → Step3 → Step4]
+```
+
+---
+
+## 前端规范
+
+### [FRONTEND_FRAMEWORK] 编码规范 [强制]
+
+- 组件命名
+- 状态管理
+- API 调用规范
+
+---
+
+## 技术约束
+
+### 技术栈（锁定）
+
+| 层级 | 技术 | 版本 |
+|------|------|------|
+
+### 端口分配
+
+| 服务 | 端口 |
+|------|------|
+
+---
+
+## 开发工作流
+
+### 新增[FEATURE_TYPE]的标准流程
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+### 数据库迁移规范
+
+1. [Rule 1]
+2. [Rule 2]
+
+---
+
+## 治理
+
+### 修订流程
+
+1. [流程步骤]
+2. [版本号规则]
+
+### 合规审查
+
+#### Code Review Checklist
+
+- [ ] [检查项1]
+- [ ] [检查项2]
+- [ ] [检查项3]
+
+#### 自动化规则映射表
+
+| 规则 | 检查工具 | 规则标识 |
+|------|----------|----------|
+
+**版本**: [VERSION] | **批准日期**: [DATE] | **最后修订**: [DATE]

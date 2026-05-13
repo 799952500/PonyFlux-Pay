@@ -1,161 +1,143 @@
 ---
 
-description: "Task list template for feature implementation"
+description: "功能实施任务列表模板"
+
 ---
 
 # Tasks: [FEATURE NAME]
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Prerequisites**: plan.md (required), spec.md (required), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: 示例中包含了测试任务。测试是 OPTIONAL——仅在 spec.md 明确要求时包含。
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+**Organization**: 任务按用户故事分组，每个故事可独立实施和测试。任务分组采用 PonyFlux-Pay 项目的 Maven 模块边界。
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
-- Include exact file paths in descriptions
+- **[P]**: 可并行执行（不同文件，无依赖）
+- **[Story]**: 归属的用户故事（US1、US2、US3）
+- 任务描述必须包含精确的文件路径
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+### 后端模块
 
-<!-- 
-  ============================================================================
-  IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
-  The /speckit-tasks command MUST replace these with actual tasks based on:
-  - User stories from spec.md (with their priorities P1, P2, P3...)
-  - Feature requirements from plan.md
-  - Entities from data-model.md
-  - Endpoints from contracts/
-  
-  Tasks MUST be organized by user story so each story can be:
-  - Implemented independently
-  - Tested independently
-  - Delivered as an MVP increment
-  
-  DO NOT keep these sample tasks in the generated tasks.md file.
-  ============================================================================
--->
+| 模块 | 源码路径 | 用途 |
+|------|----------|------|
+| payflow-common | `payflow-common/src/main/java/com/ponyflux/payflow/common/` | 共享工具、异常、加密、常量 |
+| payflow-payment-core | `payflow-payment-core/src/main/java/com/ponyflux/payflow/payment/core/` | 支付 SPI、枚举、DTO |
+| payflow-payment-channels/* | `payflow-payment-channels/payflow-payment-{channel}/src/main/java/` | 渠道 API 处理器 |
+| payflow-cashier-server | `payflow-cashier-server/src/main/java/com/ponyflux/payflow/cashier/` | 支付服务、订单管理 |
+| payflow-admin-server | `payflow-admin-server/src/main/java/com/ponyflux/payflow/admin/` | 管理后台 |
+| payflow-recon-server | `payflow-recon-server/src/main/java/com/ponyflux/payflow/recon/` | 对账引擎 |
+| payflow-sdk-java | `payflow-sdk-java/src/main/java/` | HMAC-SHA256 签名 SDK |
 
-## Phase 1: Setup (Shared Infrastructure)
+### 前端项目
 
-**Purpose**: Project initialization and basic structure
+| 项目 | 路径 | 技术栈 |
+|------|------|--------|
+| admin-client | `payflow-admin-client/src/` | Vue 3 + TypeScript + Element Plus |
+| cashier-client | `payflow-cashier-client/src/` | Vue 3 + TypeScript + Element Plus |
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+### 数据库迁移
+
+| 类型 | 路径 | 说明 |
+|------|------|------|
+| 增量迁移 | `sql/migrations/YYYY-MM-DD_描述.sql` | Schema 变更，向后兼容 |
+| 全量安装 | `sql/full-reseed-payflow-demo.sql` | Demo 数据重装 |
 
 ---
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Phase 1: Setup（共享基础设施）
 
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+**Purpose**: 项目初始化和基础结构
 
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+- [ ] T001 按实施计划创建项目结构
+- [ ] T002 初始化依赖配置（Maven `pom.xml` 或 npm `package.json`）
+- [ ] T003 [P] 配置代码检查和格式化工具（Checkstyle / ESLint / Prettier）
 
-Examples of foundational tasks (adjust based on your project):
+---
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+## Phase 2: Foundational（阻断性前置条件）
 
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+**Purpose**: 必须在所有用户故事之前完成的核心基础设施
+
+**⚠️ CRITICAL**: 在本阶段完成之前，不得开始任何用户故事工作。
+
+- [ ] T004 数据库 Schema 变更（`sql/migrations/`）
+- [ ] T005 [P] 配置认证/授权框架（JWT 拦截器、权限中间件）
+- [ ] T006 [P] 配置 API 路由和中间件结构
+- [ ] T007 创建所有用户故事共享的基础实体/模型
+- [ ] T008 配置全局异常处理和日志基础设施
+- [ ] T009 配置环境配置管理
+
+**Checkpoint**: 基础设施就绪 — 可以开始并行实现用户故事
 
 ---
 
 ## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
 
-**Goal**: [Brief description of what this story delivers]
+**Goal**: [此故事交付的内容]
 
-**Independent Test**: [How to verify this story works on its own]
+**Independent Test**: [如何独立验证此故事]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1（OPTIONAL — 仅当 spec 要求时） ⚠️
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> **NOTE: 先写测试，确保测试 FAIL 后再实现**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] 接口契约测试 `tests/contract/test_[name].java`
+- [ ] T011 [P] [US1] 集成测试 `tests/integration/test_[name].java`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+> 按模块边界组织任务。涉及多个模块时，按依赖顺序：common → core → channels → server → 前端
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+- [ ] T012 [P] [US1] 创建实体类 `payflow-xxx/src/main/java/.../entity/XxxEntity.java`
+- [ ] T013 [P] [US1] 创建 DTO `payflow-xxx/src/main/java/.../dto/XxxDTO.java`
+- [ ] T014 [US1] 实现 Mapper `payflow-xxx/src/main/java/.../mapper/XxxMapper.java`
+- [ ] T015 [US1] 实现 Service `payflow-xxx/src/main/java/.../service/XxxService.java`（依赖 T012, T013, T014）
+- [ ] T016 [US1] 实现 Controller `payflow-xxx/src/main/java/.../controller/XxxController.java`
+- [ ] T017 [US1] 前端页面 `payflow-xxx-client/src/views/XxxView.vue`
+- [ ] T018 [US1] 前端 API 模块 `payflow-xxx-client/src/api/xxx.js`
+- [ ] T019 [US1] 添加验证和错误处理
+- [ ] T020 [US1] 更新 `docs/CONTRACT_MATRIX.md`
+
+**Checkpoint**: User Story 1 应完全可独立运行和测试
 
 ---
 
 ## Phase 4: User Story 2 - [Title] (Priority: P2)
 
-**Goal**: [Brief description of what this story delivers]
+**Goal**: [此故事交付的内容]
 
-**Independent Test**: [How to verify this story works on its own]
+**Independent Test**: [如何独立验证此故事]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2（OPTIONAL） ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T021 [P] [US2] 契约测试 `tests/contract/test_[name].java`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T022 [P] [US2] 创建模型
+- [ ] T023 [US2] 实现 Service
+- [ ] T024 [US2] 实现 Controller/端点
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
-
----
-
-## Phase 5: User Story 3 - [Title] (Priority: P3)
-
-**Goal**: [Brief description of what this story delivers]
-
-**Independent Test**: [How to verify this story works on its own]
-
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
-
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
-
-### Implementation for User Story 3
-
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
-
-**Checkpoint**: All user stories should now be independently functional
-
----
-
-[Add more user story phases as needed, following the same pattern]
+**Checkpoint**: User Stories 1 和 2 应各自独立运行
 
 ---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-**Purpose**: Improvements that affect multiple user stories
+**Purpose**: 影响多个用户故事的改进
 
-- [ ] TXXX [P] Documentation updates in docs/
-- [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
-- [ ] TXXX Run quickstart.md validation
+- [ ] TXXX [P] 更新 `docs/CONTRACT_MATRIX.md`
+- [ ] TXXX 代码清理和重构
+- [ ] TXXX 性能优化
+- [ ] TXXX [P] 补充单元测试（如 spec 要求）
+- [ ] TXXX 安全加固（脱敏、加密、防注入检查）
+- [ ] TXXX 运行 quickstart.md 验证
+- [ ] TXXX 宪法合规检查 — 验证所有强制规则通过
 
 ---
 
@@ -163,48 +145,48 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
-- **Polish (Final Phase)**: Depends on all desired user stories being complete
+- **Setup (Phase 1)**: 无依赖 — 可立即开始
+- **Foundational (Phase 2)**: 依赖 Setup 完成 — **阻断所有用户故事**
+- **User Stories (Phase 3+)**: 全部依赖 Foundational 完成
+  - 用户故事之间可并行（如果多开发者）或按优先级顺序串行
+- **Polish (Final Phase)**: 依赖所有用户故事完成
 
 ### User Story Dependencies
 
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - May integrate with US1 but should be independently testable
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - May integrate with US1/US2 but should be independently testable
+- **User Story 1 (P1)**: Foundational 完成后可开始 — 无其他故事依赖
+- **User Story 2 (P2)**: Foundational 完成后可开始 — 可独立于 US1
+- **User Story 3 (P3)**: Foundational 完成后可开始 — 可独立于 US1/US2
 
 ### Within Each User Story
 
-- Tests (if included) MUST be written and FAIL before implementation
-- Models before services
-- Services before endpoints
-- Core implementation before integration
-- Story complete before moving to next priority
+- 测试（如包含）必须先写并 FAIL，再实现
+- 模型优先于 Service
+- Service 优先于 Controller
+- 核心实现优先于集成
+- 当前故事完成后再进入下一优先级
 
-### Parallel Opportunities
+### Module Boundary Order
 
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel (within Phase 2)
-- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- All tests for a user story marked [P] can run in parallel
-- Models within a story marked [P] can run in parallel
-- Different user stories can be worked on in parallel by different team members
+涉及多个 Maven 模块时，按依赖顺序实施：
+```
+payflow-common → payflow-payment-core → payflow-payment-channels/*
+    → payflow-cashier-server / payflow-admin-server / payflow-recon-server
+    → 前端（admin-client / cashier-client）
+```
 
 ---
 
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+# 同时启动 User Story 1 的所有测试（如包含测试）：
+Task: "契约测试 tests/contract/test_[name].java"
+Task: "集成测试 tests/integration/test_[name].java"
 
-# Launch all models for User Story 1 together:
-Task: "Create [Entity1] model in src/models/[entity1].py"
-Task: "Create [Entity2] model in src/models/[entity2].py"
+# 同时创建 User Story 1 的所有模型（不同文件，无依赖）：
+Task: "创建实体类 payflow-xxx/.../entity/Xxx1.java"
+Task: "创建实体类 payflow-xxx/.../entity/Xxx2.java"
+Task: "创建 DTO payflow-xxx/.../dto/XxxDTO.java"
 ```
 
 ---
@@ -213,39 +195,29 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 
 ### MVP First (User Story 1 Only)
 
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
+1. 完成 Phase 1: Setup
+2. 完成 Phase 2: Foundational（CRITICAL — 阻断所有故事）
+3. 完成 Phase 3: User Story 1
+4. **STOP and VALIDATE**: 独立测试 User Story 1
+5. 验收通过后部署/演示
 
 ### Incremental Delivery
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
-5. Each story adds value without breaking previous stories
+1. Setup + Foundational → 基础就绪
+2. + User Story 1 → 独立测试 → 部署/演示（MVP！）
+3. + User Story 2 → 独立测试 → 部署/演示
+4. + User Story 3 → 独立测试 → 部署/演示
+5. 每个故事增加价值而不破坏已有故事
 
 ### Parallel Team Strategy
 
-With multiple developers:
+多开发者时：
 
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1
-   - Developer B: User Story 2
-   - Developer C: User Story 3
-3. Stories complete and integrate independently
+1. 团队共同完成 Setup + Foundational
+2. Foundational 完成后：
+   - 开发者 A: User Story 1
+   - 开发者 B: User Story 2
+   - 开发者 C: User Story 3
+3. 各故事独立完成和集成
 
 ---
-
-## Notes
-
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
-- Each user story should be independently completable and testable
-- Verify tests fail before implementing
-- Commit after each task or logical group
-- Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
