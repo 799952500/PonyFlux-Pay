@@ -22,6 +22,7 @@ public final class ReconChannelKit {
         return switch (cashierChannelCode.toLowerCase()) {
             case "alipay" -> "alipay";
             case "wechat_pay" -> "wxpay";
+            case "unionpay" -> "unionpay";
             default -> throw new BizException(7505, "暂不支持对账的渠道: " + cashierChannelCode);
         };
     }
@@ -36,6 +37,7 @@ public final class ReconChannelKit {
         return switch (reconChannel) {
             case "alipay" -> "ALIPAY";
             case "wxpay" -> "WECHAT_PAY";
+            case "unionpay" -> "UNION_PAY";
             default -> throw new BizException(7505, "未知对账渠道: " + reconChannel);
         };
     }

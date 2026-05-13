@@ -362,6 +362,9 @@ public class RefundServiceImpl implements RefundService {
         if ("alipay".equals(n) || "zfb".equals(n)) {
             return "alipay";
         }
+        if ("union_pay".equals(n) || "unionpay".equals(n) || "union".equals(n)) {
+            return "unionpay";
+        }
         throw new BizException(6007, "暂不支持该渠道的退款: " + payChannel);
     }
 }

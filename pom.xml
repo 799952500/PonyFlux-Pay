@@ -21,9 +21,7 @@
     <modules>
         <module>payflow-common</module>
         <module>payflow-payment-core</module>
-        <module>payflow-payment-wechat</module>
-        <module>payflow-payment-alipay</module>
-        <module>payflow-payment-union</module>
+        <module>payflow-payment-channels</module>
         <module>payflow-cashier-server</module>
         <module>payflow-admin-server</module>
         <module>payflow-recon-server</module>

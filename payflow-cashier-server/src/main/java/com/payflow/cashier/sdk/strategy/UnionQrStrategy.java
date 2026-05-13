@@ -9,7 +9,7 @@ import com.payflow.payment.core.PayStrategy;
 import com.payflow.payment.core.RefundResult;
 import com.payflow.payment.union.UnionPayAccountConfig;
 import com.payflow.payment.union.UnionPayConfigLoader;
-import com.payflow.payment.union.UnionPayH5Handler;
+import com.payflow.payment.union.UnionPayQrHandler;
 import com.payflow.payment.union.UnionPayRefundHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +18,15 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * 银联云闪付 H5 支付策略。
+ * 银联扫码支付策略。
  */
 @Slf4j
-@Component("union_h5PayStrategy")
-public class UnionH5Strategy implements PayStrategy {
+@Component("union_qrPayStrategy")
+public class UnionQrStrategy implements PayStrategy {
 
     @Override
     public PayMethod getPayMethod() {
-        return PayMethod.UNION_H5;
+        return PayMethod.UNION_QR;
     }
 
     @Override
@@ -35,13 +35,13 @@ public class UnionH5Strategy implements PayStrategy {
                          ChannelConfigHolder account,
                          Map<String, String> extraParams) {
         UnionPayAccountConfig config = UnionPayConfigLoader.load(account);
-        UnionPayH5Handler handler = new UnionPayH5Handler();
-        String h5Url = handler.pay(orderId, amount, subject, returnUrl, notifyUrl, config);
+        UnionPayQrHandler handler = new UnionPayQrHandler();
+        UnionPayQrHandler.QrPayResult result = handler.pay(orderId, amount, subject, notifyUrl, config);
         return PayResult.builder()
                 .status("PROCESSING")
-                .action("REDIRECT")
-                .h5Url(h5Url)
-                .channelTradeNo(orderId)
+                .action("QR_CODE")
+                .qrCodeUrl(result.qrCode())
+                .channelTradeNo(result.queryId())
                 .build();
     }
 
@@ -63,10 +63,10 @@ public class UnionH5Strategy implements PayStrategy {
 
     @Override
     public NotifyResult parseNotify(HttpServletRequest request) {
-        log.warn("UnionH5Strategy.parseNotify 不应被直接调用，通知处理由 UnionPayPaymentOpenService 统一分发");
+        log.warn("UnionQrStrategy.parseNotify 不应被直接调用，通知处理由 UnionPayOpenService 统一分发");
         return NotifyResult.builder()
                 .success(false)
-                .errorMsg("请使用 UnionPayPaymentOpenService 处理通知")
+                .errorMsg("请使用 UnionPayOpenService 处理通知")
                 .build();
     }
 }

@@ -65,6 +65,9 @@ public class PayChannelOpenServiceLocator {
         if (Order.CHANNEL_WECHAT_PAY.equals(orderChannel)) {
             return "wxpayOpenService";
         }
+        if (Order.CHANNEL_UNION_PAY.equals(orderChannel)) {
+            return "unionpayOpenService";
+        }
         String fallback = orderChannel == null ? "" : orderChannel.toLowerCase(Locale.ROOT);
         return fallback + "OpenService";
     }

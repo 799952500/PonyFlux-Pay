@@ -8,13 +8,13 @@
         <groupId>com.payflow</groupId>
         <artifactId>payflow-parent</artifactId>
         <version>1.0.0</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>payflow-payment-alipay</artifactId>
+    <artifactId>payflow-payment-union</artifactId>
     <packaging>jar</packaging>
-    <name>payflow-payment-alipay</name>
-    <description>支付宝 SDK 封装</description>
+    <name>payflow-payment-union</name>
+    <description>银联/云闪付支付模块：H5、扫码(QR)、退款、账单下载</description>
 
     <dependencies>
         <dependency>
@@ -22,29 +22,8 @@
             <artifactId>payflow-payment-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.payflow</groupId>
-            <artifactId>payflow-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alipay.sdk</groupId>
-            <artifactId>alipay-easysdk</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

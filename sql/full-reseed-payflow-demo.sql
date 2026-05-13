@@ -362,7 +362,11 @@ INSERT INTO payment_methods (
 (3, 'ALIPAY_APP', '支付宝 App 支付', 2, 'ali_demo_appid', 'ali_demo_secret', 'ali_pid_001', 'ali_key_demo',
  NULL, NULL, '{"payType":"APP"}', 1, 100, '演示', NOW(), NOW()),
 (4, 'ALIPAY_WAP', '支付宝 WAP', 2, 'ali_demo_appid', 'ali_demo_secret', 'ali_pid_001', 'ali_key_demo',
- NULL, NULL, '{"payWay":"WAP"}', 1, 90, '演示', NOW(), NOW());
+ NULL, NULL, '{"payWay":"WAP"}', 1, 90, '演示', NOW(), NOW()),
+(5, 'UNION_H5', '银联云闪付H5', 3, NULL, NULL, NULL, NULL,
+ NULL, NULL, '{"payType":"H5"}', 1, 80, '银联云闪付 H5 支付', NOW(), NOW()),
+(6, 'UNION_QR', '银联扫码支付', 3, NULL, NULL, NULL, NULL,
+ NULL, NULL, '{"payType":"QR"}', 1, 70, '银联扫码支付（用户云闪付 App 扫码）', NOW(), NOW());
 
 -- 商户开通支付方式
 INSERT INTO merchant_payment_methods (
@@ -372,7 +376,9 @@ INSERT INTO merchant_payment_methods (
 (2, 'M100001', 2, 1, 90, NULL, NOW(), NOW()),
 (3, 'M100001', 3, 1, 100, NULL, NOW(), NOW()),
 (4, 'M100002', 2, 1, 90, NULL, NOW(), NOW()),
-(5, 'M100002', 4, 1, 90, NULL, NOW(), NOW());
+(5, 'M100002', 4, 1, 90, NULL, NOW(), NOW()),
+(6, 'M100001', 5, 1, 70, NULL, NOW(), NOW()),
+(7, 'M100001', 6, 1, 60, NULL, NOW(), NOW());
 
 -- 商户支付路由表若仍为旧结构（无 client_scopes），先加列再 INSERT，避免 1054 Unknown column
 -- （列已存在时下方语句执行为 SELECT 1，可重复跑本脚本）

@@ -3,16 +3,14 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: 0.0.0 (模板占位符) → 1.0.0 (初始宪法)
-  Modified principles: N/A (首次正式版本)
-  Added sections:
-    - 核心原则 (5条)
-    - 技术约束 (5节)
-    - 开发工作流 (3节)
-    - 治理
+  Version change: 1.0.0 → 1.1.0 (MINOR — 模块结构重组指导，新增渠道聚合器规范)
+  Modified principles:
+    - 原则 I（模块边界纪律）：更新模块列表，反映 payflow-payment-channels 聚合器结构
+    - 新增支付渠道标准流程：更新步骤1，子模块创建路径变更
+  Added sections: 无
   Removed sections: 无
   Templates requiring updates:
-    - .specify/templates/plan-template.md ✅ 无需修改 (Constitution Check 门禁自动填充)
+    - .specify/templates/plan-template.md ✅ 无需修改（模板通用，不含模块名称）
     - .specify/templates/spec-template.md ✅ 无需修改
     - .specify/templates/tasks-template.md ✅ 无需修改
     - .specify/templates/checklist-template.md ✅ 无需修改
@@ -23,19 +21,22 @@
 
 ### I. 模块边界纪律（不可协商）
 
-所有代码必须放在正确的 Maven 模块中。9 个模块有严格边界：
+所有代码必须放在正确的 Maven 模块中。项目采用 7 个顶层模块 + 1 个渠道聚合器（含 3 个子模块）的层级结构：
 
 | 模块 | 职责范围 | 禁止行为 |
 |------|----------|----------|
 | `payflow-common` | 仅限共享工具、异常（`BizException`）、加密（`AesEncryptor`）、常量 | 禁止放 Spring Bean、业务逻辑、实体类 |
 | `payflow-payment-core` | 支付 SPI：`PayStrategy` 接口、`PayMethod` 枚举、DTO。零 Spring 依赖 | 禁止加入渠道特有逻辑 |
-| `payflow-payment-wechat/alipay/union` | 各渠道 API 处理器，实现 core 接口 | 禁止直接引用 cashier/admin 的实体类，必须通过 `ChannelConfigHolder` 传递配置 |
+| `payflow-payment-channels/` | 聚合器 POM（packaging=pom），管理所有渠道子模块：`payflow-payment-wechat`、`payflow-payment-alipay`、`payflow-payment-union` | 禁止直接包含 Java 源码；仅充当父级聚合 |
+| `payflow-payment-channels/payflow-payment-wechat` | 微信支付 API 处理器（Native/H5/App/JSAPI/Mini/MicroPay） | 禁止直接引用 cashier/admin 的实体类，必须通过 `ChannelConfigHolder` 传递配置 |
+| `payflow-payment-channels/payflow-payment-alipay` | 支付宝 API 处理器（QR/WAP/App/Face） | 同上 |
+| `payflow-payment-channels/payflow-payment-union` | 银联/云闪付 API 处理器（H5/QR/退款/账单） | 同上 |
 | `payflow-cashier-server` | 商户端支付处理、订单管理 | 禁止放管理后台逻辑 |
 | `payflow-admin-server` | 后台运营管理、商户配置、对账 UI | 禁止放支付处理逻辑 |
 | `payflow-recon-server` | 仅对账引擎（账单下载/解析/比对） | 禁止放管理后台 UI 逻辑；admin-server 通过内部 API 代理访问 |
 | `payflow-sdk-java` | 轻量 HMAC-SHA256 签名工具，零依赖 | 禁止引入 Spring 或数据库依赖 |
 
-**理由**：模块边界防止循环依赖，确保各模块可独立测试和部署。违反此原则曾导致 P0-04（RefundServiceImpl 硬编码渠道依赖）。
+**理由**：模块边界防止循环依赖，确保各模块可独立测试和部署。渠道聚合器（`payflow-payment-channels`）将支付渠道子模块统一收纳，避免根 POM 随渠道数量增长而膨胀。违反此原则曾导致 P0-04（RefundServiceImpl 硬编码渠道依赖）。
 
 ### II. 支付渠道抽象
 
@@ -46,9 +47,10 @@
 3. 各策略将调用委托给 `payflow-payment-*` 模块的 Handler。
 
 **规则**：
-- 禁止在 Service 中直接注入具体的渠道 Handler（如 `WxPayNativeHandler`、`AliPayQrHandler`），必须使用 Locator/Registry。
-- 新增支付渠道必须实现 `PayStrategy`，并注册为 Spring Bean，命名为 `{payMethodCode小写}PayStrategy`（如 `wechat_nativePayStrategy`）。
+- 禁止在 Service 中直接注入具体的渠道 Handler（如 `WxPayNativeHandler`、`AliPayQrHandler`、`UnionPayH5Handler`），必须使用 Locator/Registry。
+- 新增支付渠道必须实现 `PayStrategy`，并注册为 Spring Bean，命名为 `{payMethodCode小写}PayStrategy`（如 `wechat_nativePayStrategy`、`union_h5PayStrategy`）。
 - 渠道配置必须通过 `ChannelConfigHolder.getChannelConfig()`（JSON 字符串）传递，支付模块禁止直接引用实体类。
+- 回调通知处理采用分离模式：`{channel}PaymentOpenService`（实现 `PayChannelPaymentOpenService`）负责支付/退款操作，`{channel}OpenService`（实现 `PayChannelOpenService`）负责异步通知解析。
 
 **理由**：直接注入渠道 Handler（P0-04）造成硬编码依赖，新增或移除支付渠道需要修改业务代码。
 
@@ -160,16 +162,25 @@
 
 ### 新增支付渠道的标准流程
 
-1. 创建 `payflow-payment-{channel}` 模块：
-   - 实现与渠道 API 交互的 Handler 类（如 `XxxPayHandler`）
+1. 在 `payflow-payment-channels/` 下创建 `payflow-payment-{channel}` 子模块：
+   - 实现与渠道 API 交互的 Handler 类（如 `XxxPayHandler`、`XxxRefundHandler`、`XxxBillService`）
    - 实现读取 `ChannelConfigHolder` JSON 的配置加载器
-2. 在 `payflow-cashier-server` 中：
-   - 创建实现 `PayStrategy` 的策略 Bean，命名为 `{payMethodCode小写}PayStrategy`
+   - 在 `payflow-payment-channels/pom.xml` 的 `<modules>` 中加入新子模块
+2. 在 `payflow-core` 的 `PayMethod` 枚举中新增支付方式常量
+3. 在 `payflow-cashier-server` 中：
+   - 创建实现 `PayStrategy` 的策略 Bean，命名为 `{payMethodCode小写}PayStrategy`（如 `union_h5PayStrategy`）
    - 在 `openservice.payment.impl` 中创建 `PayChannelPaymentOpenService` 实现
-3. 将渠道种子数据添加到 `sql/full-reseed-payflow-demo.sql`
-4. 在 `payflow-admin-client` 中新增渠道配置页面
-5. 如果渠道提供账单下载，在 `payflow-recon-server` 中新增账单解析器
-6. 更新 `docs/CONTRACT_MATRIX.md`
+   - 在 `openservice.impl` 中创建 `PayChannelOpenService` 实现（负责回调通知解析）
+   - 在 `sdk/{channel}/` 中创建 `XxxNotifyHelper`（通知验签与业务处理组件）
+4. 将渠道种子数据添加到 `sql/migrations/`（增量迁移）和 `sql/full-reseed-payflow-demo.sql`（全量安装）
+5. 在 `payflow-admin-client` 中新增渠道配置页面
+6. 如果渠道提供账单下载，在 `payflow-recon-server` 中：
+   - 新增账单解析器（实现 `BillParser` 接口）
+   - 新增对账开放服务（实现 `ReconChannelOpenService` 接口）
+   - 更新 `ReconChannelKit` 添加渠道映射
+   - 在 recon-server 的 `pom.xml` 中添加对 `payflow-payment-{channel}` 的依赖
+7. 更新 `docs/CONTRACT_MATRIX.md`
+8. 更新 `PayChannelOpenServiceLocator.toBeanName()` 添加渠道常量映射
 
 ### 数据库迁移规范
 
@@ -189,6 +200,7 @@
 | 4xxx | 退款 |
 | 5xxx | 商户 |
 | 6xxx | 渠道 / 路由 |
+| 6100–6199 | 银联渠道（UnionPay 特有错误） |
 | 7500–7599 | 对账 |
 
 新增错误码必须使用对应模块的范围，禁止复用已有错误码。
@@ -218,4 +230,4 @@
 - 数据库 Schema 变更必须对照分区规则（原则 III）进行验证。
 - `CLAUDE.md` 文件在运行时开发指导上优先于本宪法。两者如有冲突，必须通过修订其中一份来解决。
 
-**版本**: 1.0.0 | **批准日期**: 2026-05-10 | **最后修订**: 2026-05-10
+**版本**: 1.1.0 | **批准日期**: 2026-05-10 | **最后修订**: 2026-05-13

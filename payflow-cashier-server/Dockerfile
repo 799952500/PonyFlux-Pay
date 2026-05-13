@@ -3,9 +3,10 @@ WORKDIR /app
 COPY pom.xml .
 COPY payflow-common/pom.xml payflow-common/
 COPY payflow-payment-core/pom.xml payflow-payment-core/
-COPY payflow-payment-wechat/pom.xml payflow-payment-wechat/
-COPY payflow-payment-alipay/pom.xml payflow-payment-alipay/
-COPY payflow-payment-union/pom.xml payflow-payment-union/
+COPY payflow-payment-channels/pom.xml payflow-payment-channels/
+COPY payflow-payment-channels/payflow-payment-wechat/pom.xml payflow-payment-channels/payflow-payment-wechat/
+COPY payflow-payment-channels/payflow-payment-alipay/pom.xml payflow-payment-channels/payflow-payment-alipay/
+COPY payflow-payment-channels/payflow-payment-union/pom.xml payflow-payment-channels/payflow-payment-union/
 COPY payflow-cashier-server/pom.xml payflow-cashier-server/
 RUN mvn -B -q dependency:go-offline -pl payflow-cashier-server -am || true
 COPY . .

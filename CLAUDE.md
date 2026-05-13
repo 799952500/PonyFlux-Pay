@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 语言约定
+
+所有生成的文本输出（描述、注释、提交信息、文档等）必须使用中文，但以下情况保留原文：
+- 专业术语（如 Strategy Pattern、JWT、HMAC-SHA256、Spring Boot 等）
+- 代码标识符（类名、方法名、变量名、包名）
+- 技术栈名称（MyBatis-Plus、Redis、RocketMQ、Vue 等）
+- 代码块和配置示例
+
 ## Build & Dev Commands
 
 ```bash
@@ -33,7 +41,7 @@ python scripts/verify_admin_password.py
 
 ## Architecture Overview
 
-**PonyFlux-Pay** is a payment gateway system — Java 17, Spring Boot 3.2.5, Maven multi-module (9 modules). MyBatis-Plus 3.5.7 for ORM, RocketMQ for async messaging, Redis for caching, XXL-Job for scheduled tasks.
+**PonyFlux-Pay** is a payment gateway system — Java 17, Spring Boot 3.2.5, Maven multi-module. MyBatis-Plus 3.5.7 for ORM, RocketMQ for async messaging, Redis for caching, XXL-Job for scheduled tasks.
 
 ### Module Map
 
@@ -41,9 +49,10 @@ python scripts/verify_admin_password.py
 |--------|---------|
 | `payflow-common` | Shared: `BizException`, `AesEncryptor` (AES-256-GCM), `RedisTopics` constants |
 | `payflow-payment-core` | Payment SPI: `PayStrategy` interface, `PayMethod` enum, DTOs (`PayResult`, `RefundResult`, `NotifyResult`), `ChannelConfigHolder` |
-| `payflow-payment-wechat` | WeChat Pay handlers (Native/H5/App/JSAPI/Mini/MicroPay) |
-| `payflow-payment-alipay` | Alipay handlers (QR/WAP/App/Face), `AliPayClientCache` |
-| `payflow-payment-union` | UnionPay H5 handler |
+| `payflow-payment-channels` | Aggregator POM for all payment channel submodules |
+| `payflow-payment-channels/payflow-payment-wechat` | WeChat Pay handlers (Native/H5/App/JSAPI/Mini/MicroPay) |
+| `payflow-payment-channels/payflow-payment-alipay` | Alipay handlers (QR/WAP/App/Face), `AliPayClientCache` |
+| `payflow-payment-channels/payflow-payment-union` | UnionPay handlers (H5/QR/refund/bill download), RSA-SHA256 signing, HTTP client |
 | `payflow-cashier-server` | **Merchant-facing payment service** (port 3002): order creation, payment routing, refunds, callbacks |
 | `payflow-admin-server` | **Admin management backend** (port 3003): dashboard, merchant/channel config, reconciliation UI, RBAC |
 | `payflow-recon-server` | **Reconciliation engine** (port 3004): bill download → parse → compare → diff healing |
@@ -60,8 +69,9 @@ Admin-server uses **two datasources** manually configured (no `@MapperScan` on t
 
 1. Merchant requests payment → `PaymentServiceImpl` routes via `PayChannelService.routeToAccount()` to select a `PayChannelAccount`
 2. `PayStrategyLocator` resolves the strategy bean by name (`{code_lowercase}PayStrategy`, e.g. `wechat_nativePayStrategy`)
-3. Each strategy delegates to a channel handler from `payflow-payment-*` module (e.g. `WxPayNativeHandler`)
-4. `PayStrategyRegistry` (built from Spring-injected `List<PayStrategy>`) also auto-detects channels for notify parsing (`dispatchChannelNotify`)
+3. Each strategy delegates to a channel handler from `payflow-payment-channels/payflow-payment-*` module (e.g. `WxPayNativeHandler`)
+4. `PayStrategyRegistry` (built from Spring-injected `List<PayStrategy>`) also auto-detects channels for notify parsing
+5. Notify handling is separated: `{channel}OpenService` (implements `PayChannelOpenService`) handles async callbacks, `{channel}PaymentOpenService` (implements `PayChannelPaymentOpenService`) handles payment operations
 
 ### Auth Mechanisms
 
@@ -74,7 +84,7 @@ Admin-server uses **two datasources** manually configured (no `@MapperScan` on t
 Status machine: `INIT` → `DOWNLOADING` → `PARSING` → `COMPARING` → `SUCCESS`/`FAIL`
 
 1. `ReconTaskSeedService` generates T-1 tasks per account + bill date
-2. `ReconChannelOpenService` downloads bills from Alipay/WeChat → `ReconFileStorage` (local or S3)
+2. `ReconChannelOpenService` downloads bills from Alipay/WeChat/UnionPay → `ReconFileStorage` (local or S3)
 3. `BillParser` (channel-specific) parses CSV → `recon_bill_record`
 4. `ReconCompareService` matches against `cashier_payments` → `recon_diff` with types: `CHANNEL_ONLY`, `LOCAL_ONLY`, `AMOUNT_MISMATCH`, `STATUS_MISMATCH`
 5. `ReconDiffHealService` suggests fix actions (no auto-healing)
@@ -120,5 +130,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/001-project-improvement/plan.md
+at specs/002-unionpay-channel/plan.md
 <!-- SPECKIT END -->

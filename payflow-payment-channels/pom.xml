@@ -11,15 +11,14 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>payflow-payment-union</artifactId>
-    <packaging>jar</packaging>
-    <name>payflow-payment-union</name>
-    <description>银联/云闪付支付 SPI 占位模块（H5 跳转 URL 与对接说明）</description>
+    <artifactId>payflow-payment-channels</artifactId>
+    <packaging>pom</packaging>
+    <name>payflow-payment-channels</name>
+    <description>支付渠道聚合模块 — 收纳所有 payflow-payment-* 子模块</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.payflow</groupId>
-            <artifactId>payflow-payment-core</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>payflow-payment-wechat</module>
+        <module>payflow-payment-alipay</module>
+        <module>payflow-payment-union</module>
+    </modules>
 </project>

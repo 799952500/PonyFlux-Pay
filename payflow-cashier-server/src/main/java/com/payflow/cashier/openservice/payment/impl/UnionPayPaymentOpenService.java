@@ -15,7 +15,11 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 /**
- * 银联/云闪付支付下单开放服务（当前仅 UNION_H5 占位）。
+ * 银联/云闪付支付开放服务。
+ * <p>
+ * 支持 H5（union_h5PayStrategy）和扫码 QR（union_qrPayStrategy）。
+ * 通知处理由 {@link com.payflow.cashier.openservice.impl.UnionPayOpenService} 统一负责。
+ * </p>
  */
 @Slf4j
 @Service("unionpayPaymentOpenService")
@@ -42,12 +46,13 @@ public class UnionPayPaymentOpenService implements PayChannelPaymentOpenService 
         if (methodEnum == null) {
             throw new BizException(6007, "不支持的支付方式: " + payMethod);
         }
-        if (methodEnum != PayMethod.UNION_H5) {
+        if (methodEnum != PayMethod.UNION_H5 && methodEnum != PayMethod.UNION_QR) {
             throw new BizException(7103, "支付方式与渠道不匹配: channel=UNION_PAY, payMethod=" + payMethod);
         }
         PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(payMethod);
         PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, channelExtras);
-        log.info("银联下单完成: orderId={}, action={}", orderId, result.getAction());
+        log.info("银联下单完成: orderId={}, payMethod={}, action={}, channelTradeNo={}",
+                orderId, payMethod, result.getAction(), result.getChannelTradeNo());
         return result;
     }
 
@@ -55,6 +60,9 @@ public class UnionPayPaymentOpenService implements PayChannelPaymentOpenService 
     public RefundResult refund(String orderId, String refundId,
                                Long refundAmount, Long totalAmount,
                                String reason, PayChannelAccount account) {
-        throw new BizException(6007, "银联渠道暂未接入退款");
+        PayStrategy strategy = payStrategyLocator.requireByPayMethodCode(PayMethod.UNION_H5.getCode());
+        RefundResult result = strategy.refund(orderId, refundAmount, reason, account);
+        log.info("银联退款完成: orderId={}, refundId={}, success={}", orderId, refundId, result.isSuccess());
+        return result;
     }
 }

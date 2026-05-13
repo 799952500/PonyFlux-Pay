@@ -52,6 +52,15 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 
 退款、商户查询等走 `/api/v1/refunds`、`/api/v1/merchant/**`，需商户签名或 JWT，不在默认 cashier SPA 最小路径内。
 
+### 银联/云闪付回调
+
+| 方法 | HTTP | 路径 | 后端 |
+|------|------|------|------|
+| `handleNotifyByChannel` | POST | `/notify/unionpay` | [`PayNotifyController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/PayNotifyController.java) → `UnionPayOpenService` |
+| 支付下单 `UNION_H5` | POST | `/payments` (body: `payMethod=UNION_H5`) | [`PaymentController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/PaymentController.java) → `UnionPayPaymentOpenService` → `UnionH5Strategy` |
+| 支付下单 `UNION_QR` | POST | `/payments` (body: `payMethod=UNION_QR`) | 同上 → `UnionQrStrategy` |
+| 退款 | POST | `/refunds` | `RefundServiceImpl` → `UnionPayPaymentOpenService.refund()` |
+
 ---
 
 ## 冒烟清单（本地）

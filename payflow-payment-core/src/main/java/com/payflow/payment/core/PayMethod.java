@@ -20,8 +20,10 @@ public enum PayMethod {
     ALIPAY_APP("ALIPAY_APP", "支付宝App支付"),
     /** 条码/刷脸等被扫 */
     ALIPAY_FACE("ALIPAY_FACE", "支付宝条码/当面付"),
-    /** 银联/云闪付 H5（需对接银联开放平台，当前为 SPI 占位） */
-    UNION_H5("UNION_H5", "银联云闪付H5");
+    /** 银联/云闪付 H5 */
+    UNION_H5("UNION_H5", "银联云闪付H5"),
+    /** 银联扫码支付（用户扫描二维码/主扫） */
+    UNION_QR("UNION_QR", "银联扫码支付");
 
     private final String code;
     private final String desc;

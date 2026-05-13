@@ -2,8 +2,9 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY payflow-common/pom.xml payflow-common/
-COPY payflow-payment-wechat/pom.xml payflow-payment-wechat/
-COPY payflow-payment-alipay/pom.xml payflow-payment-alipay/
+COPY payflow-payment-channels/pom.xml payflow-payment-channels/
+COPY payflow-payment-channels/payflow-payment-wechat/pom.xml payflow-payment-channels/payflow-payment-wechat/
+COPY payflow-payment-channels/payflow-payment-alipay/pom.xml payflow-payment-channels/payflow-payment-alipay/
 COPY payflow-recon-server/pom.xml payflow-recon-server/
 RUN mvn -B -q dependency:go-offline -pl payflow-recon-server -am || true
 COPY . .
