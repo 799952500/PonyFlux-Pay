@@ -43,6 +43,8 @@ export interface DashboardStats {
   yesterdayOrders: number
   todayPaid: number
   conversionRate: number
+  revenueChangePct: number
+  revenueYoYPct: number
   channelDistribution: ChannelDistItem[]
   trendData: TrendDataItem[]
   /** 后端聚合接口返回的最近订单（用于仪表盘表格） */

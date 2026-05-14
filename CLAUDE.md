@@ -94,8 +94,8 @@ Business error codes: **7500-7599** reserved for reconciliation.
 ### API Response Convention
 
 All controllers return `Map<String, Object>` with structure:
-```json
-{ "code": 0, "message": "success", "data": { ... } }
+```
+{ "code": 0, "message": "success", "data": { "..." } }
 ```
 
 Frontend Axios interceptors unwrap `data` automatically.
@@ -130,5 +130,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/003-constitution-enhancement/plan.md
+at specs/004-business-optimization/plan.md
 <!-- SPECKIT END -->

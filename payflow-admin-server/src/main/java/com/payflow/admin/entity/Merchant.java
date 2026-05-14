@@ -14,23 +14,36 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("merchants")
 /**
  * @author Lucas
  */
+@TableName("merchants")
 public class Merchant {
 
     @TableId(type = IdType.AUTO)
     @EqualsAndHashCode.Include
     @ToString.Include    private Long id;
 
-    private String merchantId;          // 商户号（如 M2024040001）
-    private String merchantName;         // 商户名称
-    private String merchantKey;           // 商户密钥（用于签名验证）
-    private String callbackUrl;          // 支付结果回调地址
-    private String notifyUrl;             // 通知地址
-    private BigDecimal commissionRate;    // 手续费分成比例
-    private String status;               // ACTIVE/SUSPENDED
+    /** 商户号（如 M2024040001） */
+    private String merchantId;
+    /** 商户名称 */
+    private String merchantName;
+    /** 商户密钥（用于签名验证） */
+    private String merchantKey;
+    /** 支付结果回调地址 */
+    private String callbackUrl;
+    /** 通知地址 */
+    private String notifyUrl;
+    /** 手续费分成比例 */
+    private BigDecimal commissionRate;
+    /** ACTIVE/SUSPENDED */
+    private String status;
+
+    /** 费率计算模式: flat=全额匹配, segmented=分段累计 */
+    private String rateCalcMode;
+
+    /** 商户所属费率组 */
+    private String merchantGroup;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

@@ -11,13 +11,20 @@
             {{ kpi.value }}
           </p>
           <p v-if="kpi.sub" class="text-xs text-[#64748B]">
-            昨日 {{ kpi.sub }}
+            {{ kpi.sub }} {{ kpi.subVal }}
             <span
               v-if="kpi.trend !== undefined && kpi.trend !== null"
               class="ml-1 font-medium"
               :class="Number(kpi.trend) > 0 ? 'text-[#047857]' : 'text-[#EF4444]'"
             >
               {{ Number(kpi.trend) >= 0 ? '↑' : '↓' }}{{ Math.abs(Number(kpi.trend)) }}%
+            </span>
+            <span
+              v-if="kpi.yoyTrend !== undefined && kpi.yoyTrend !== null"
+              class="ml-1 font-medium text-xs"
+              :class="Number(kpi.yoyTrend) > 0 ? 'text-[#047857]' : 'text-[#EF4444]'"
+            >
+              同比{{ Number(kpi.yoyTrend) >= 0 ? '↑' : '↓' }}{{ Math.abs(Number(kpi.yoyTrend)) }}%
             </span>
           </p>
         </div>
@@ -45,6 +52,43 @@
         </div>
       </el-col>
     </el-row>
+
+    <el-row :gutter="16" class="mb-5">
+      <el-col :xs="24">
+        <MerchantRanking />
+      </el-col>
+    </el-row>
+
+    <!-- 流失预警区块 -->
+    <div v-if="churnAlerts.length > 0" class="content-card mb-5" style="border-color: rgba(239,68,68,0.3)">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-[#EF4444] animate-pulse" />
+          <p class="text-[#0F172A] font-semibold text-sm">流失预警</p>
+          <el-tag size="small" type="danger">{{ churnAlerts.length }}条待处理</el-tag>
+        </div>
+        <el-button link type="primary" size="small" @click="$router.push('/admin/dashboard/churn-alerts')">
+          查看全部 →
+        </el-button>
+      </div>
+      <el-table :data="churnAlerts.slice(0, 5)" size="small" class="data-table">
+        <el-table-column label="商户ID" prop="merchantId" width="100" />
+        <el-table-column label="预警等级" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.alertLevel === 'red' ? 'danger' : 'warning'">
+              {{ row.alertLevel === 'red' ? '红色' : row.alertLevel === 'orange' ? '橙色' : '黄色' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="下降幅度" width="100">
+          <template #default="{ row }">
+            <span class="font-medium text-[#EF4444]">↓{{ row.declinePct }}%</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="连续天数" prop="consecutiveDays" width="90" />
+        <el-table-column label="创建时间" prop="createTime" width="170" />
+      </el-table>
+    </div>
 
     <div class="content-card">
       <div class="flex items-center justify-between p-5 pb-3">
@@ -98,7 +142,8 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import type { Order, OrderStatus } from '@/types'
 import type { ChannelDistItem, TrendDataItem } from '@/types'
-import { getDashboardStats } from '@/api/admin'
+import { getDashboardStats, getChurnAlerts } from '@/api/admin'
+import MerchantRanking from '@/components/dashboard/MerchantRanking.vue'
 
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 
@@ -111,13 +156,14 @@ let trendChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
 const kpiCards = reactive([
-  { label: '今日收入', value: '—', sub: '—', trend: 0 as number | undefined, icon: '💰' },
-  { label: '今日订单', value: '—', sub: '—', trend: 0 as number | undefined, icon: '📋' },
-  { label: '今日已付', value: '—', sub: '—', trend: 0 as number | undefined, icon: '✅' },
-  { label: '转化率', value: '—', sub: '—', trend: undefined as number | undefined, icon: '📈' },
+  { label: '今日收入', value: '—', sub: '昨日', subVal: '—', trend: 0 as number | undefined, yoyTrend: 0 as number | undefined, icon: '💰' },
+  { label: '今日订单', value: '—', sub: '昨日', subVal: '—', trend: 0 as number | undefined, icon: '📋' },
+  { label: '今日已付', value: '—', sub: '—', trend: undefined as number | undefined, icon: '✅' },
+  { label: '转化率', value: '—', sub: '按今日订单', trend: undefined as number | undefined, icon: '📈' },
 ])
 
 const recentOrders = ref<Partial<Order>[]>([])
+const churnAlerts = ref<any[]>([])
 
 const statusTypeMap: Record<string, string> = {
   PAID: 'success',
@@ -296,21 +342,19 @@ async function loadDashboard() {
     const data = await getDashboardStats(days)
 
     kpiCards[0].value = fmtMoneyYuan(data.todayRevenue)
-    kpiCards[0].sub = fmtMoneyYuan(data.yesterdayRevenue)
-    kpiCards[0].trend = pctChange(data.todayRevenue, data.yesterdayRevenue)
+    kpiCards[0].subVal = fmtMoneyYuan(data.yesterdayRevenue)
+    kpiCards[0].trend = data.revenueChangePct ?? pctChange(data.todayRevenue, data.yesterdayRevenue)
+    kpiCards[0].yoyTrend = data.revenueYoYPct ?? 0
 
     kpiCards[1].value = String(data.todayOrders ?? 0)
-    kpiCards[1].sub = String(data.yesterdayOrders ?? 0)
+    kpiCards[1].subVal = String(data.yesterdayOrders ?? 0)
     kpiCards[1].trend = pctChange(data.todayOrders ?? 0, data.yesterdayOrders ?? 0)
 
     kpiCards[2].value = String(data.todayPaid ?? 0)
     kpiCards[2].sub = '—'
-    kpiCards[2].trend = undefined
 
     const rate = data.conversionRate ?? 0
     kpiCards[3].value = `${rate}%`
-    kpiCards[3].sub = '按今日订单'
-    kpiCards[3].trend = undefined
 
     const rawRecent = data.recentOrders
     recentOrders.value = Array.isArray(rawRecent)
@@ -319,6 +363,14 @@ async function loadDashboard() {
 
     renderTrend(data.trendData ?? [])
     renderPie(data.channelDistribution ?? [])
+
+    // 加载流失预警摘要
+    try {
+      const churnResult = await getChurnAlerts({ page: 1, size: 5, status: 'pending' })
+      churnAlerts.value = churnResult.list
+    } catch {
+      churnAlerts.value = []
+    }
   } catch {
     ElMessage.error('加载仪表盘数据失败')
     recentOrders.value = []

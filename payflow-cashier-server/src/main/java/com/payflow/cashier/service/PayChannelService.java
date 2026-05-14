@@ -77,4 +77,17 @@ public interface PayChannelService {
      * @return 匹配账户，未配置则返回 null
      */
     PayChannelAccount routeToAccount(String merchantId, String channelCode);
+
+    /**
+     * 最低成本路由到账户（跨渠道比较费率，选最便宜渠道的账户）。
+     *
+     * @param merchantId 商户号
+     * @return 匹配账户及渠道信息，未配置则返回 null
+     */
+    ChannelRouteResult routeToLowestCostAccount(String merchantId);
+
+    /**
+     * 最低成本路由结果
+     */
+    record ChannelRouteResult(PayChannelAccount account, String channelCode, String reason, int fallbackCount) {}
 }

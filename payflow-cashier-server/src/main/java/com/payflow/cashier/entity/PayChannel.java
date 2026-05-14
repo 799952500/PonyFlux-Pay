@@ -43,6 +43,9 @@ public class PayChannel {
     /** 描述 */
     private String description;
 
+    /** 渠道手续费率（如0.0060=0.6%），用于智能路由最低成本模式 */
+    private java.math.BigDecimal feeRate;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

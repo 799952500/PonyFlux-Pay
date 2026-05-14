@@ -83,6 +83,104 @@ public interface OrderMapper extends BaseMapper<Order> {
     List<Map<String, Object>> channelDistributionLast30Days();
 
     /**
+     * 聚合查询：按时间范围统计交易数据（用于写入 admin_dashboard_metrics）
+     */
+    @Select("SELECT DATE_FORMAT(p.created_at, #{timeFormat}) AS timeBucket, "
+            + "COALESCE(NULLIF(TRIM(p.pay_channel), ''), 'ALL') AS channelCode, "
+            + "COALESCE(SUM(p.amount), 0) AS totalAmount, "
+            + "COUNT(DISTINCT p.payment_id) AS totalCount, "
+            + "COUNT(DISTINCT o.merchant_id) AS activeMerchants "
+            + "FROM cashier_payments p "
+            + "JOIN cashier_orders o ON p.order_id = o.order_id "
+            + "WHERE p.status = 'SUCCESS' AND p.created_at BETWEEN #{startTime} AND #{endTime} "
+            + "GROUP BY timeBucket, channelCode")
+    List<Map<String, Object>> aggregatePayments(@Param("startTime") LocalDateTime startTime,
+                                                 @Param("endTime") LocalDateTime endTime,
+                                                 @Param("timeFormat") String timeFormat);
+
+    /**
+     * 聚合查询：按时间范围统计退款数据
+     */
+    @Select("SELECT DATE_FORMAT(r.created_at, #{timeFormat}) AS timeBucket, "
+            + "COALESCE(NULLIF(TRIM(r.refund_channel), ''), 'ALL') AS channelCode, "
+            + "COALESCE(SUM(r.refund_amount), 0) AS refundAmount, "
+            + "COUNT(DISTINCT r.refund_id) AS refundCount "
+            + "FROM cashier_refunds r "
+            + "WHERE r.status = 'SUCCESS' AND r.created_at BETWEEN #{startTime} AND #{endTime} "
+            + "GROUP BY timeBucket, channelCode")
+    List<Map<String, Object>> aggregateRefunds(@Param("startTime") LocalDateTime startTime,
+                                                @Param("endTime") LocalDateTime endTime,
+                                                @Param("timeFormat") String timeFormat);
+
+    /**
+     * 商户交易排行：指定时间范围内按商户交易额降序
+     */
+    @Select("SELECT o.merchant_id AS merchantId, "
+            + "COALESCE(SUM(p.amount), 0) AS totalAmount, "
+            + "COUNT(DISTINCT p.payment_id) AS totalCount "
+            + "FROM cashier_payments p "
+            + "JOIN cashier_orders o ON p.order_id = o.order_id "
+            + "WHERE p.status = 'SUCCESS' AND p.created_at BETWEEN #{startTime} AND #{endTime} "
+            + "GROUP BY o.merchant_id "
+            + "ORDER BY totalAmount DESC LIMIT #{limit}")
+    List<Map<String, Object>> merchantRanking(@Param("startTime") LocalDateTime startTime,
+                                               @Param("endTime") LocalDateTime endTime,
+                                               @Param("limit") int limit);
+
+    /**
+     * 商户近30天每日交易趋势
+     */
+    @Select("SELECT DATE(o.created_at) AS date, COUNT(*) AS orders, "
+            + "COALESCE(SUM(o.pay_amount), 0) AS revenue "
+            + "FROM cashier_orders o "
+            + "WHERE o.merchant_id = #{merchantId} AND o.status IN ('PAID', 'SUCCESS') "
+            + "AND o.created_at >= #{startDate} "
+            + "GROUP BY DATE(o.created_at) ORDER BY date")
+    List<Map<String, Object>> merchantTrend30Days(@Param("merchantId") String merchantId,
+                                                    @Param("startDate") LocalDate startDate);
+
+    /**
+     * 商户渠道偏好分布
+     */
+    @Select("SELECT COALESCE(NULLIF(TRIM(o.channel), ''), 'UNKNOWN') AS channel, "
+            + "COUNT(*) AS cnt, COALESCE(SUM(o.pay_amount), 0) AS amount "
+            + "FROM cashier_orders o "
+            + "WHERE o.merchant_id = #{merchantId} AND o.status IN ('PAID', 'SUCCESS') "
+            + "AND o.created_at >= #{startDate} "
+            + "GROUP BY COALESCE(NULLIF(TRIM(o.channel), ''), 'UNKNOWN') "
+            + "ORDER BY cnt DESC")
+    List<Map<String, Object>> merchantChannelPrefs(@Param("merchantId") String merchantId,
+                                                     @Param("startDate") LocalDate startDate);
+
+    /**
+     * 商户指定日期范围内的订单日均笔数（用于流失预警）
+     */
+    @Select("SELECT o.merchant_id AS merchantId, "
+            + "CAST(COUNT(*) AS DECIMAL(10,2)) / GREATEST(DATEDIFF(#{endDate}, #{startDate}), 1) AS dailyAvg, "
+            + "COUNT(DISTINCT DATE(o.created_at)) AS consecutiveDays "
+            + "FROM cashier_orders o "
+            + "WHERE o.created_at BETWEEN #{startDate} AND #{endDate} "
+            + "AND o.merchant_id IS NOT NULL "
+            + "GROUP BY o.merchant_id "
+            + "HAVING COUNT(*) >= 3")
+    List<Map<String, Object>> merchantOrderCountsInRange(@Param("startDate") LocalDate startDate,
+                                                           @Param("endDate") LocalDate endDate);
+
+    /**
+     * 商户退款率
+     */
+    @Select("SELECT COUNT(DISTINCT r.refund_id) AS refundCount, "
+            + "COUNT(DISTINCT p.payment_id) AS totalCount, "
+            + "CONCAT(ROUND(COUNT(DISTINCT r.refund_id) * 100.0 / NULLIF(COUNT(DISTINCT p.payment_id), 0), 1), '%') AS rate "
+            + "FROM cashier_payments p "
+            + "LEFT JOIN cashier_refunds r ON r.order_id = p.order_id AND r.status = 'SUCCESS' "
+            + "JOIN cashier_orders o ON p.order_id = o.order_id "
+            + "WHERE o.merchant_id = #{merchantId} AND p.status = 'SUCCESS' "
+            + "AND p.created_at >= #{startDate}")
+    Map<String, Object> merchantRefundRate(@Param("merchantId") String merchantId,
+                                            @Param("startDate") LocalDate startDate);
+
+    /**
      * 订单号 / 商户订单号模糊检索（管理端全局搜索）
      */
     @Select("SELECT order_id AS orderId, merchant_id AS merchantId, merchant_order_no AS merchantOrderNo, "

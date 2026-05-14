@@ -1,30 +1,155 @@
 package com.payflow.admin.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.admin.entity.DashboardMetrics;
 import com.payflow.admin.entity.cashier.Order;
+import com.payflow.admin.mapper.DashboardMetricsMapper;
 import com.payflow.admin.mapper.cashier.OrderMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * 仪表盘指标聚合（基于 cashier_orders）。
+ * 仪表盘指标聚合（基于 cashier_orders + admin_dashboard_metrics 预聚合表）。
  *
  * @author Lucas
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardAggregationService {
 
     private final OrderMapper orderMapper;
+    private final DashboardMetricsMapper dashboardMetricsMapper;
+
+    // ==================== 预聚合写入 ====================
+
+    /**
+     * 从 cashier_payments/cashier_refunds 聚合数据，写入 admin_dashboard_metrics。
+     *
+     * @param granularity 粒度: 5min / hour / day
+     * @param startTime   聚合窗口起始
+     * @param endTime     聚合窗口结束
+     */
+    public int aggregateMetrics(String granularity, LocalDateTime startTime, LocalDateTime endTime) {
+        String timeFormat = switch (granularity) {
+            // truncate to 5min — handled in Java
+            case "5min" -> "%Y-%m-%d %H:%i:00";
+            case "hour" -> "%Y-%m-%d %H:00:00";
+            case "day" -> "%Y-%m-%d 00:00:00";
+            default -> "%Y-%m-%d %H:00:00";
+        };
+
+        List<Map<String, Object>> paymentRows = orderMapper.aggregatePayments(startTime, endTime, timeFormat);
+        List<Map<String, Object>> refundRows = orderMapper.aggregateRefunds(startTime, endTime, timeFormat);
+
+        // 合并 payment 和 refund 数据
+        Map<String, DashboardMetrics> metricsMap = new HashMap<>();
+
+        for (Map<String, Object> row : paymentRows) {
+            String key = buildKey(row.get("timeBucket"), row.get("channelCode"));
+            DashboardMetrics m = metricsMap.computeIfAbsent(key, k -> {
+                DashboardMetrics dm = new DashboardMetrics();
+                dm.setMetricTime(parseDateTime(row.get("timeBucket")));
+                dm.setGranularity(granularity);
+                dm.setChannelCode(str(row.get("channelCode")));
+                return dm;
+            });
+            m.setTotalAmount(toLong(row.get("totalAmount")));
+            m.setTotalCount(toInt(row.get("totalCount")));
+            m.setActiveMerchants(toInt(row.get("activeMerchants")));
+        }
+
+        for (Map<String, Object> row : refundRows) {
+            String key = buildKey(row.get("timeBucket"), row.get("channelCode"));
+            DashboardMetrics m = metricsMap.get(key);
+            if (m != null) {
+                m.setRefundAmount(toLong(row.get("refundAmount")));
+                m.setRefundCount(toInt(row.get("refundCount")));
+            }
+        }
+
+        // 批量插入
+        int count = 0;
+        for (DashboardMetrics m : metricsMap.values()) {
+            if (m.getTotalAmount() == null) {
+                m.setTotalAmount(0L);
+            }
+            if (m.getTotalCount() == null) {
+                m.setTotalCount(0);
+            }
+            if (m.getActiveMerchants() == null) {
+                m.setActiveMerchants(0);
+            }
+            if (m.getFeeIncome() == null) {
+                m.setFeeIncome(0L);
+            }
+            if (m.getRefundAmount() == null) {
+                m.setRefundAmount(0L);
+            }
+            if (m.getRefundCount() == null) {
+                m.setRefundCount(0);
+            }
+            dashboardMetricsMapper.insert(m);
+            count++;
+        }
+        log.info("聚合完成: granularity={}, window=[{} ~ {}], 写入{}条", granularity, startTime, endTime, count);
+        return count;
+    }
+
+    // ==================== 预聚合表读取 ====================
+
+    /**
+     * 从预聚合表读取仪表盘核心指标。
+     */
+    public Map<String, Object> queryMetrics(LocalDateTime start, LocalDateTime end, String granularity, String channelCode) {
+        LambdaQueryWrapper<DashboardMetrics> wrapper = new LambdaQueryWrapper<DashboardMetrics>()
+                .eq(DashboardMetrics::getGranularity, granularity)
+                .ge(DashboardMetrics::getMetricTime, start)
+                .le(DashboardMetrics::getMetricTime, end);
+        if (channelCode != null && !channelCode.isEmpty() && !"ALL".equals(channelCode)) {
+            wrapper.eq(DashboardMetrics::getChannelCode, channelCode);
+        } else {
+            wrapper.eq(DashboardMetrics::getChannelCode, "ALL");
+        }
+        wrapper.orderByAsc(DashboardMetrics::getMetricTime);
+        List<DashboardMetrics> list = dashboardMetricsMapper.selectList(wrapper);
+
+        long totalAmount = list.stream().mapToLong(DashboardMetrics::getTotalAmount).sum();
+        long totalCount = list.stream().mapToLong(DashboardMetrics::getTotalCount).sum();
+        long refundAmount = list.stream().mapToLong(DashboardMetrics::getRefundAmount).sum();
+        long refundCount = list.stream().mapToLong(DashboardMetrics::getRefundCount).sum();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalAmount", totalAmount);
+        result.put("totalCount", totalCount);
+        result.put("activeMerchants", list.isEmpty() ? 0 : list.get(list.size() - 1).getActiveMerchants());
+        result.put("refundAmount", refundAmount);
+        result.put("refundCount", refundCount);
+        result.put("trendData", list);
+        return result;
+    }
+
+    /**
+     * 获取商户交易排行（从流水表实时查询 Top N）
+     */
+    public List<Map<String, Object>> getMerchantRanking(LocalDateTime start, LocalDateTime end, int limit) {
+        return orderMapper.merchantRanking(start, end, limit);
+    }
+
+    // ==================== 现有仪表盘（兼容旧逻辑） ====================
 
     /**
      * 构建前端仪表盘所需 data 结构（与 {@code dashboard.vue} 对齐）。
@@ -77,6 +202,19 @@ public class DashboardAggregationService {
             channelDistribution.add(item);
         }
 
+        // 商户排行 Top 10（近 30 天）
+        LocalDateTime rankStart = today.minusDays(30).atStartOfDay();
+        LocalDateTime rankEnd = today.plusDays(1).atStartOfDay();
+        List<Map<String, Object>> ranking = orderMapper.merchantRanking(rankStart, rankEnd, 10);
+        List<Map<String, Object>> merchantRanking = ranking.stream().map(r -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("merchantId", str(r.get("merchantId")));
+            item.put("totalAmount", toLong(r.get("totalAmount")));
+            item.put("totalCount", toLong(r.get("totalCount")));
+            item.put("totalAmountYuan", fenToYuanNumber(toLong(r.get("totalAmount"))));
+            return item;
+        }).collect(Collectors.toList());
+
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("todayRevenue", fenToYuanNumber(todayRevenueFen));
         data.put("yesterdayRevenue", fenToYuanNumber(yesterdayRevenueFen));
@@ -86,8 +224,21 @@ public class DashboardAggregationService {
         data.put("conversionRate", conversionRate);
         data.put("trendData", trendData);
         data.put("channelDistribution", channelDistribution);
+        data.put("merchantRanking", merchantRanking);
         data.put("recentOrders", buildRecentOrders());
 
+        // 计算环比变化率
+        long revenueChangePct = yesterdayRevenueFen == 0 ? 0
+                : (todayRevenueFen - yesterdayRevenueFen) * 100 / yesterdayRevenueFen;
+
+        // 计算同比变化率（与7天前对比）
+        LocalDate sevenDaysAgo = today.minusDays(7);
+        long sevenDaysAgoRevenue = nz(orderMapper.sumPaidRevenueFenOnDay(sevenDaysAgo));
+        long revenueYoyPct = sevenDaysAgoRevenue == 0 ? 0
+                : (todayRevenueFen - sevenDaysAgoRevenue) * 100 / sevenDaysAgoRevenue;
+
+        data.put("revenueChangePct", revenueChangePct);
+        data.put("revenueYoYPct", revenueYoyPct);
         data.put("todayRefunds", 0);
         data.put("activeMerchants", 0);
         data.put("successRate",
@@ -136,6 +287,24 @@ public class DashboardAggregationService {
         return out;
     }
 
+    // ==================== 工具方法 ====================
+
+    private static String buildKey(Object timeBucket, Object channelCode) {
+        return (timeBucket != null ? timeBucket.toString() : "") + "|" + (channelCode != null ? channelCode.toString() : "ALL");
+    }
+
+    private static LocalDateTime parseDateTime(Object obj) {
+        if (obj == null) {
+            return LocalDateTime.now();
+        }
+        String s = obj.toString();
+        try {
+            return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            return LocalDateTime.now();
+        }
+    }
+
     private static long nz(Long v) {
         return v != null ? v : 0L;
     }
@@ -152,6 +321,24 @@ public class DashboardAggregationService {
         } catch (NumberFormatException e) {
             return 0L;
         }
+    }
+
+    private static int toInt(Object o) {
+        if (o == null) {
+            return 0;
+        }
+        if (o instanceof Number n) {
+            return n.intValue();
+        }
+        try {
+            return Integer.parseInt(o.toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static String str(Object o) {
+        return o != null ? o.toString() : "";
     }
 
     private static double fenToYuanNumber(long fen) {

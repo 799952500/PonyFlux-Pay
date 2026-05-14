@@ -19,6 +19,7 @@ import com.payflow.cashier.routing.ChannelHealthRedisService;
 import com.payflow.cashier.service.PayNotifyService;
 import com.payflow.cashier.service.PaymentService;
 import com.payflow.cashier.service.PayChannelService;
+import com.payflow.cashier.service.RoutingDecisionLogger;
 import com.payflow.cashier.util.SignUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,6 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PayflowProperties payflowProperties;
     private final PayNotifyService payNotifyService;
     private final ChannelHealthRedisService channelHealthRedisService;
+    private final RoutingDecisionLogger routingDecisionLogger;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,10 +78,43 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BizException(6003, "订单状态异常: " + order.getStatus() + "，无法发起支付");
         }
 
-        PayChannelAccount account = payChannelService.routeToAccount(order.getMerchantId(), payChannel);
-        if (account == null) {
-            log.error("无可用支付账户: merchantId={}, payChannel={}", order.getMerchantId(), payChannel);
-            throw new BizException(6002, "无可用支付账户，请联系商户配置");
+        // 路由选择：LOWEST_COST 模式走跨渠道最低成本路由，否则按指定渠道路由
+        long routingStart = System.currentTimeMillis();
+        PayChannelAccount account;
+        String actualChannel;
+        String selectionReason;
+        int fallbackCount = 0;
+
+        if ("LOWEST_COST".equals(payChannel) || "AUTO".equals(payChannel)) {
+            PayChannelService.ChannelRouteResult lowestCostResult =
+                    payChannelService.routeToLowestCostAccount(order.getMerchantId());
+            if (lowestCostResult == null) {
+                log.error("最低成本路由失败: merchantId={}, 无可用渠道账户", order.getMerchantId());
+                throw new BizException(6002, "无可用支付账户，请联系商户配置");
+            }
+            account = lowestCostResult.account();
+            actualChannel = lowestCostResult.channelCode();
+            selectionReason = lowestCostResult.reason();
+            fallbackCount = lowestCostResult.fallbackCount();
+        } else {
+            account = payChannelService.routeToAccount(order.getMerchantId(), payChannel);
+            if (account == null) {
+                log.error("无可用支付账户: merchantId={}, payChannel={}", order.getMerchantId(), payChannel);
+                throw new BizException(6002, "无可用支付账户，请联系商户配置");
+            }
+            actualChannel = payChannel;
+            selectionReason = "指定渠道路由: " + payChannel;
+        }
+
+        long decisionCostMs = System.currentTimeMillis() - routingStart;
+
+        // 异步记录路由决策日志
+        List<Map<String, Object>> availableChannels = new ArrayList<>();
+        try {
+            routingDecisionLogger.log(order.getOrderId(), Long.parseLong(order.getMerchantId()),
+                    availableChannels, actualChannel, selectionReason, decisionCostMs, fallbackCount);
+        } catch (Exception ignored) {
+            // 日志记录失败不影响主流程
         }
 
         String paymentId = SignUtils.generatePaymentId();
@@ -86,7 +123,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = Payment.builder()
                 .paymentId(paymentId)
                 .orderId(orderId)
-                .payChannel(payChannel)
+                .payChannel(actualChannel)
                 .accountCode(account.getAccountCode())
                 .payMethod(payMethod)
                 .amount(order.getAmount())
@@ -98,11 +135,11 @@ public class PaymentServiceImpl implements PaymentService {
 
         orderService.updateOrderStatus(orderId, Order.STATUS_PAYING, null);
 
-        String notifyUrl = buildNotifyUrl(payChannel);
+        String notifyUrl = buildNotifyUrl(actualChannel);
         String internalReturnUrl = buildInternalReturnUrl(orderId);
         try {
             CreatePaymentResponse response = dispatchToHandler(
-                    orderId, order.getAmount(), order.getSubject(), payChannel, payMethod,
+                    orderId, order.getAmount(), order.getSubject(), actualChannel, payMethod,
                     internalReturnUrl, notifyUrl, account, request);
 
             response.setPaymentId(paymentId);

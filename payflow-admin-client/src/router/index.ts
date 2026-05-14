@@ -31,6 +31,18 @@ const router = createRouter({
           meta: { title: '数据概览', requiresAuth: true },
         },
         {
+          path: 'dashboard/merchant/:merchantId',
+          name: 'MerchantInsight',
+          component: () => import('@/pages/admin/MerchantInsight.vue'),
+          meta: { title: '商户洞察', requiresAuth: true },
+        },
+        {
+          path: 'dashboard/churn-alerts',
+          name: 'ChurnAlerts',
+          component: () => import('@/pages/admin/ChurnAlerts.vue'),
+          meta: { title: '流失预警', requiresAuth: true },
+        },
+        {
           path: 'insights/funnel',
           name: 'InsightsFunnel',
           component: () => import('@/pages/admin/insights-funnel.vue'),
@@ -173,6 +185,24 @@ const router = createRouter({
           name: 'AuditLogs',
           component: () => import('@/pages/admin/audit-logs.vue'),
           meta: { title: '操作日志', requiresAuth: true },
+        },
+        {
+          path: 'fee-rate/config',
+          name: 'FeeRateConfig',
+          component: () => import('@/pages/admin/FeeRateConfig.vue'),
+          meta: { title: '阶梯费率配置', requiresAuth: true },
+        },
+        {
+          path: 'fee-rate/audit-log',
+          name: 'FeeRateAuditLog',
+          component: () => import('@/pages/admin/FeeRateAuditLog.vue'),
+          meta: { title: '费率变更审计', requiresAuth: true },
+        },
+        {
+          path: 'routing/logs',
+          name: 'RoutingLogs',
+          component: () => import('@/pages/admin/RoutingLogs.vue'),
+          meta: { title: '路由决策日志', requiresAuth: true },
         },
         {
           path: 'dicts',

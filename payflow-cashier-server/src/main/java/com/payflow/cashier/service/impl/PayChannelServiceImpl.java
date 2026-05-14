@@ -8,7 +8,6 @@ import com.payflow.cashier.dto.ChannelRouteDTO;
 import com.payflow.cashier.entity.PayChannel;
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.entity.PayChannelMerchantRoute;
-import com.payflow.common.exception.BizException;
 import com.payflow.cashier.exception.R;
 import com.payflow.cashier.mapper.PayChannelAccountMapper;
 import com.payflow.cashier.mapper.PayChannelMapper;
@@ -16,12 +15,12 @@ import com.payflow.cashier.mapper.PayChannelMerchantRouteMapper;
 import com.payflow.cashier.registry.PayChannelAccountRegistry;
 import com.payflow.cashier.routing.SmartRoutePicker;
 import com.payflow.cashier.service.PayChannelService;
+import com.payflow.cashier.service.routing.CostBasedRoutingStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -46,6 +45,7 @@ public class PayChannelServiceImpl implements PayChannelService {
     private final ObjectMapper objectMapper;
     private final PayChannelAccountRegistry payChannelAccountRegistry;
     private final SmartRoutePicker smartRoutePicker;
+    private final CostBasedRoutingStrategy costBasedRoutingStrategy;
 
     // 注入方式改为 set 注入，避免循环
     @org.springframework.beans.factory.annotation.Autowired
@@ -247,7 +247,7 @@ public class PayChannelServiceImpl implements PayChannelService {
         List<PayChannelAccount> accounts = payChannelAccountMapper.selectBatchIds(accountIds)
                 .stream()
                 .filter(a -> "ENABLED".equals(a.getStatus()))
-                .collect(Collectors.toList());
+                .toList();
 
         String channelRowKey = channelCode == null ? "" : channelCode.toLowerCase(Locale.ROOT);
         List<PayChannel> channels = payChannelMapper.selectList(
@@ -271,6 +271,52 @@ public class PayChannelServiceImpl implements PayChannelService {
                     merchantId, pick.account().getAccountCode(), pick.reason());
         }
         return pick.account();
+    }
+
+    @Override
+    public PayChannelService.ChannelRouteResult routeToLowestCostAccount(String merchantId) {
+        // 1. 获取该商户所有已开通的启用渠道
+        List<PayChannelMerchantRoute> routes = payChannelMerchantRouteMapper.selectList(
+                new LambdaQueryWrapper<PayChannelMerchantRoute>()
+                        .eq(PayChannelMerchantRoute::getMerchantId, merchantId)
+                        .eq(PayChannelMerchantRoute::getEnabled, true)
+        );
+
+        if (routes.isEmpty()) {
+            return null;
+        }
+
+        // 2. 获取商户所有可用的启用渠道（跨渠道）
+        List<PayChannel> enabledChannels = payChannelMapper.selectList(
+                new LambdaQueryWrapper<PayChannel>()
+                        .eq(PayChannel::getStatus, "ENABLED")
+                        .orderByDesc(PayChannel::getSortWeight)
+        );
+
+        if (enabledChannels.isEmpty()) {
+            return null;
+        }
+
+        // 3. 按成本排序
+        List<PayChannel> rankedChannels = costBasedRoutingStrategy.rankByCost(enabledChannels);
+
+        // 4. 依次尝试，失败降级
+        int fallbackCount = 0;
+        for (PayChannel channel : rankedChannels) {
+            PayChannelAccount account = routeToAccount(merchantId, channel.getChannelCode());
+            if (account != null) {
+                String reason = fallbackCount == 0
+                        ? "最低成本渠道: " + channel.getChannelCode() + " (费率 " + channel.getFeeRate() + ")"
+                        : "降级选择: " + channel.getChannelCode() + " (费率 " + channel.getFeeRate() + "), 已降级" + fallbackCount + "次";
+                log.info("最低成本路由: merchantId={}, channel={}, feeRate={}, fallbackCount={}",
+                        merchantId, channel.getChannelCode(), channel.getFeeRate(), fallbackCount);
+                return new PayChannelService.ChannelRouteResult(account, channel.getChannelCode(), reason, fallbackCount);
+            }
+            fallbackCount++;
+        }
+
+        log.warn("最低成本路由失败: merchantId={}, 所有渠道均无可用账户", merchantId);
+        return null;
     }
 
     // ==================== 私有方法 ====================
@@ -300,7 +346,7 @@ public class PayChannelServiceImpl implements PayChannelService {
         }
         try {
             Map<String, String> all = objectMapper.readValue(configJson,
-                    new TypeReference<Map<String, String>>() {});
+                    new TypeReference<>() {});
             Map<String, String> safe = new HashMap<>(all);
             if (safe.containsKey("appSecret")) {
                 safe.put("appSecret", "****");

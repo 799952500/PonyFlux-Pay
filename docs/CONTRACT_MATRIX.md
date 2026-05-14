@@ -11,6 +11,23 @@
 | 前端方法（参考） | HTTP | 路径 | 后端 Controller |
 |------------------|------|------|-----------------|
 | `getDashboardStats` | GET | `/admin/dashboard` | [`AdminDashboardController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminDashboardController.java) 根路径 |
+| `getDashboardMetrics` | GET | `/admin/dashboard/metrics` | 同上 `GET /metrics`（预聚合指标，支持 granularity/dateFrom/dateTo/channelCode） |
+| `getMerchantRanking` | GET | `/admin/dashboard/merchant-ranking` | 同上 `GET /merchant-ranking`（商户 Top 10 排行） |
+| `getMerchantInsight` | GET | `/admin/dashboard/merchant/{merchantId}/insight` | 同上 `GET /merchant/{merchantId}/insight`（商户钻取详情） |
+| `createExportTask` | POST | `/admin/export/report` | [`AdminExportController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminExportController.java) |
+| `getExportTasks` | GET | `/admin/export/tasks` | 同上 |
+| `getChurnAlerts` | GET | `/admin/churn-alerts` | [`ChurnAlertController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/ChurnAlertController.java) |
+| `getChurnAlertDetail` | GET | `/admin/churn-alerts/{id}` | 同上 |
+| `updateChurnAlertStatus` | PUT | `/admin/churn-alerts/{id}/status` | 同上 |
+| `getFeeRates` | GET | `/admin/fee-rates` | [`FeeRateController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/FeeRateController.java) |
+| `createFeeRate` | POST | `/admin/fee-rates` | 同上 |
+| `updateFeeRate` | PUT | `/admin/fee-rates/{id}` | 同上 |
+| `deleteFeeRate` | DELETE | `/admin/fee-rates/{id}` | 同上 |
+| `getFeeRateAuditLog` | GET | `/admin/fee-rates/audit-log` | 同上 |
+| `getMerchantFeeProgress` | GET | `/admin/merchant-fee/{merchantId}/progress` | [`MerchantFeeController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantFeeController.java) |
+| `getMerchantFeeHistory` | GET | `/admin/merchant-fee/{merchantId}/history` | 同上 |
+| `getRoutingLogs` | GET | `/admin/routing-logs` | [`RoutingLogController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/RoutingLogController.java) |
+| `exportRoutingLogs` | GET | `/admin/routing-logs/export` | 同上 |
 | `getOrders` | GET | `/admin/orders` | [`AdminOrderController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminOrderController.java) |
 | `getOrderDetail` | GET | `/admin/orders/{orderId}` | 同上 |
 | `closeOrder` | POST | `/admin/orders/{orderId}/close` | 同上 |
@@ -71,6 +88,18 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 
 - [ ] POST `/admin/auth/login`（可选：图形验证码流程）
 - [ ] GET `/admin/dashboard` — KPI 与图表数据非硬编码错误
+- [ ] GET `/admin/dashboard/metrics` — 预聚合指标查询（按粒度/日期/渠道筛选）
+- [ ] GET `/admin/dashboard/merchant-ranking` — 商户交易额 Top 10
+- [ ] GET `/admin/dashboard/merchant/{merchantId}/insight` — 商户洞察详情
+- [ ] GET `/admin/churn-alerts` — 流失预警列表
+- [ ] PUT `/admin/churn-alerts/{id}/status` — 更新预警状态
+- [ ] GET `/admin/fee-rates` — 阶梯费率规则列表
+- [ ] POST `/admin/fee-rates` — 创建费率规则
+- [ ] GET `/admin/fee-rates/audit-log` — 费率变更审计日志
+- [ ] GET `/admin/merchant-fee/{merchantId}/progress` — 商户费率进度
+- [ ] GET `/admin/routing-logs` — 路由决策日志列表
+- [ ] POST `/admin/export/report` — 创建数据导出任务
+- [ ] GET `/admin/notifications/summary` — 含流失预警超时统计
 - [ ] GET `/admin/orders` 分页、`/admin/orders/{id}` 详情
 - [ ] GET `/admin/refunds`、审批通过/拒绝（与收银台内部退款衔接）
 - [ ] GET `/admin/merchants`、`/admin/channels`、`/admin/channels/accounts`

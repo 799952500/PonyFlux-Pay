@@ -20,7 +20,27 @@
       "Bash(curl -s http://localhost:3003/api/v1/admin/auth/captcha)",
       "Bash(mvn -B -q -DskipTests spring-boot:run)",
       "Bash(curl -s -X POST http://localhost:3003/api/v1/admin/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"super_admin\",\"password\":\"admin123\",\"captchaId\":\"test\",\"captchaAnswer\":\"0\"}')",
-      "Bash(curl -s http://localhost:3003/api/v1/admin/dashboard -H \"Authorization: Bearer invalid\")"
+      "Bash(curl -s http://localhost:3003/api/v1/admin/dashboard -H \"Authorization: Bearer invalid\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(python scripts/run_mysql_sql.py sql/migrations/2026-05-13_dashboard-and-routing.sql)",
+      "Bash(mvn -B -DskipTests test-compile)",
+      "Bash(mvn -B -DskipTests test-compile -pl payflow-admin-server,payflow-cashier-server)",
+      "Bash(mvn -B -DskipTests test-compile -pl payflow-admin-server)",
+      "Bash(mysql --version)",
+      "Bash(npm --version)",
+      "Bash(ls D:/个人/pay/PonyFlux-Pay/payflow-admin-client/.eslintrc* D:/个人/pay/PonyFlux-Pay/payflow-admin-client/eslint.config* D:/个人/pay/PonyFlux-Pay/payflow-admin-client/.prettierrc* D:/个人/pay/PonyFlux-Pay/payflow-admin-client/prettier.config*)",
+      "Bash(ls -la D:/个人/pay/PonyFlux-Pay/payflow-admin-client/vitest* D:/个人/pay/PonyFlux-Pay/payflow-admin-client/vite.config*)",
+      "Bash(npm ls:*)",
+      "Bash(mvn -B test -pl payflow-common,payflow-payment-core,payflow-payment-channels/payflow-payment-wechat,payflow-payment-channels/payflow-payment-alipay,payflow-payment-channels/payflow-payment-union)",
+      "Bash(mvn -B test -pl payflow-cashier-server)",
+      "Bash(mvn -B test -pl payflow-admin-server)",
+      "Bash(mvn -B test)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(mvn -B -DskipTests compile test-compile)",
+      "Bash(mvn -B test -pl payflow-cashier-server -pl payflow-admin-server)"
     ]
   }
 }

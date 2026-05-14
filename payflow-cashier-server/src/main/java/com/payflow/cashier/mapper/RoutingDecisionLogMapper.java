@@ -1,0 +1,14 @@
+package com.payflow.cashier.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.payflow.cashier.entity.RoutingDecisionLog;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 路由决策日志 Mapper（cashier 模块）
+ *
+ * @author PayFlow Team
+ */
+@Mapper
+public interface RoutingDecisionLogMapper extends BaseMapper<RoutingDecisionLog> {
+}

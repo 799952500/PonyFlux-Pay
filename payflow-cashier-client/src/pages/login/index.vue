@@ -62,6 +62,12 @@
           与
           <a href="#" class="text-emerald-200 hover:text-white hover:underline">《隐私政策》</a>
         </p>
+
+        <p class="text-center mt-5">
+          <router-link to="/register" class="text-emerald-200/70 hover:text-white text-sm transition-colors">
+            还没有账号？立即注册 →
+          </router-link>
+        </p>
       </div>
 
       <p class="text-center text-emerald-100/45 text-xs mt-8">

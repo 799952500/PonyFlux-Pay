@@ -14,10 +14,10 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("channels")
 /**
  * @author Lucas
  */
+@TableName("channels")
 public class Channel {
 
     @TableId(type = IdType.AUTO)
@@ -26,13 +26,19 @@ public class Channel {
 
     private String channelCode;
     private String channelName;
-    private String channelType;        // WECHAT/ALIPAY/UNION/CARD
-    private String apiUrl;           // 渠道API地址
-    private String apiKey;           // 渠道密钥/公钥
+    /** WECHAT/ALIPAY/UNION/CARD */
+    private String channelType;
+    /** 渠道API地址 */
+    private String apiUrl;
+    /** 渠道密钥/公钥 */
+    private String apiKey;
     private Boolean enabled;
     private Integer priority;
     private String icon;
     private String description;
+
+    /** 渠道默认手续费率（如0.0060=0.6%） */
+    private BigDecimal feeRate;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

@@ -141,4 +141,36 @@ public class OrderService {
         wrapper.orderByDesc(Order::getCreatedAt).last("LIMIT " + cap);
         return orderMapper.selectList(wrapper);
     }
+
+    /**
+     * 获取商户交易洞察：近30天趋势、渠道偏好、退款率、最后交易时间。
+     */
+    public Map<String, Object> getMerchantInsight(String merchantId) {
+        java.util.Map<String, Object> insight = new java.util.LinkedHashMap<>();
+
+        // 近30天每日交易趋势
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate start = today.minusDays(30);
+        java.util.List<java.util.Map<String, Object>> trendRows = orderMapper.merchantTrend30Days(merchantId, start);
+        insight.put("trend30Days", trendRows);
+
+        // 渠道偏好分布
+        java.util.List<java.util.Map<String, Object>> channelPrefs = orderMapper.merchantChannelPrefs(merchantId, start);
+        insight.put("channelPreferences", channelPrefs);
+
+        // 退款率
+        java.util.Map<String, Object> refundRate = orderMapper.merchantRefundRate(merchantId, start);
+        insight.put("refundRate", refundRate != null ? refundRate : java.util.Map.of("refundCount", 0L, "totalCount", 0L, "rate", "0%"));
+
+        // 最后交易时间
+        Order lastOrder = orderMapper.selectOne(
+                new LambdaQueryWrapper<Order>()
+                        .eq(Order::getMerchantId, merchantId)
+                        .orderByDesc(Order::getCreatedAt)
+                        .last("LIMIT 1"));
+        insight.put("lastTradeTime", lastOrder != null ? lastOrder.getCreatedAt().toString() : null);
+        insight.put("merchantId", merchantId);
+
+        return insight;
+    }
 }

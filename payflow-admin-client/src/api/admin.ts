@@ -8,7 +8,6 @@ import type {
   Order,
   DashboardStats,
   RefundItem,
-  ChannelConfig,
   Merchant,
   PageResult,
   RiskRule,
@@ -587,3 +586,97 @@ export const listOnboardingApplications = (): Promise<unknown[]> =>
 
 export const getChannelRoutingHealth = (accountCode: string): Promise<Record<string, unknown>> =>
   request.get('/admin/channel-routing/health', { params: { accountCode } })
+
+// -------------------------------------------------------------------
+// 仪表盘 - 预聚合指标
+// -------------------------------------------------------------------
+export const getDashboardMetrics = (params: {
+  granularity?: string
+  dateFrom?: string
+  dateTo?: string
+  channelCode?: string
+}): Promise<any> =>
+  request.get('/admin/dashboard/metrics', { params })
+
+export const getMerchantRanking = (days: number = 30, limit: number = 10): Promise<any[]> =>
+  request.get('/admin/dashboard/merchant-ranking', { params: { days, limit } }).then((d: any) => d?.data ?? d ?? [])
+
+export const getMerchantInsight = (merchantId: string): Promise<any> =>
+  request.get(`/admin/dashboard/merchant/${encodeURIComponent(merchantId)}/insight`)
+
+// -------------------------------------------------------------------
+// 数据导出
+// -------------------------------------------------------------------
+export const createExportTask = (params: { dateFrom: string; dateTo: string; merchantId?: string }): Promise<{ taskId: string; status: string }> =>
+  request.post('/admin/export/report', null, { params })
+
+export const getExportTasks = (): Promise<any[]> =>
+  request.get('/admin/export/tasks').then((d: any) => d?.data ?? d ?? [])
+
+// -------------------------------------------------------------------
+// 流失预警
+// -------------------------------------------------------------------
+export const getChurnAlerts = (params: {
+  page?: number
+  size?: number
+  status?: string
+  merchantId?: string
+}): Promise<PageResult<any>> =>
+  request.get('/admin/churn-alerts', { params }).then((data: any) => ({
+    list: data?.data?.list ?? data?.list ?? [],
+    total: Number(data?.data?.total ?? data?.total ?? 0),
+    page: Number(data?.data?.page ?? params.page ?? 1),
+    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+  }))
+
+export const getChurnAlertDetail = (id: number): Promise<any> =>
+  request.get(`/admin/churn-alerts/${id}`)
+
+export const updateChurnAlertStatus = (id: number, data: { status: string; note?: string; assignee?: string }) =>
+  request.put(`/admin/churn-alerts/${id}/status`, data)
+
+// -------------------------------------------------------------------
+// 阶梯费率
+// -------------------------------------------------------------------
+export const getFeeRates = (): Promise<any[]> =>
+  request.get('/admin/fee-rates').then((d: any) => d?.data ?? d ?? [])
+
+export const createFeeRate = (data: any): Promise<any> =>
+  request.post('/admin/fee-rates', data)
+
+export const updateFeeRate = (id: number, data: any): Promise<any> =>
+  request.put(`/admin/fee-rates/${id}`, data)
+
+export const deleteFeeRate = (id: number): Promise<any> =>
+  request.delete(`/admin/fee-rates/${id}`)
+
+export const getFeeRateAuditLog = (params: { merchantId?: string; page?: number; size?: number }): Promise<any[]> =>
+  request.get('/admin/fee-rates/audit-log', { params }).then((d: any) => d?.data ?? d ?? [])
+
+export const getMerchantFeeProgress = (merchantId: string): Promise<any> =>
+  request.get(`/admin/merchant-fee/${encodeURIComponent(merchantId)}/progress`).then((d: any) => d?.data ?? d ?? null)
+
+export const getMerchantFeeHistory = (merchantId: string): Promise<any[]> =>
+  request.get(`/admin/merchant-fee/${encodeURIComponent(merchantId)}/history`).then((d: any) => d?.data ?? d ?? [])
+
+// -------------------------------------------------------------------
+// 路由决策日志
+// -------------------------------------------------------------------
+export const getRoutingLogs = (params: {
+  page?: number
+  size?: number
+  tradeNo?: string
+  merchantId?: string
+  selectedChannel?: string
+  startTime?: string
+  endTime?: string
+}): Promise<PageResult<any>> =>
+  request.get('/admin/routing-logs', { params }).then((data: any) => ({
+    list: data?.data?.list ?? data?.list ?? [],
+    total: Number(data?.data?.total ?? data?.total ?? 0),
+    page: Number(data?.data?.page ?? params.page ?? 1),
+    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+  }))
+
+export const exportRoutingLogs = (params: { startTime?: string; endTime?: string }): Promise<any[]> =>
+  request.get('/admin/routing-logs/export', { params }).then((d: any) => d?.data ?? d ?? [])
