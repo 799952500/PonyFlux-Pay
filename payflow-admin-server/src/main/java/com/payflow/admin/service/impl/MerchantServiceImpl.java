@@ -63,6 +63,10 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Override
     public void delete(Long id) {
-        merchantMapper.deleteById(id);
+        Merchant merchant = merchantMapper.selectById(id);
+        if (merchant != null) {
+            merchant.setStatus("DELETED");
+            merchantMapper.updateById(merchant);
+        }
     }
 }

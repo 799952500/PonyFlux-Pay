@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.dto.SavePaymentMethodRequest;
 import com.payflow.admin.entity.MerchantPaymentMethod;
 import com.payflow.admin.service.MerchantPaymentMethodService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -71,19 +73,19 @@ public class MerchantPaymentMethodController {
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> saveBatch(
-            @RequestBody Map<String, Object> request) {
-        String merchantId = (String) request.get("merchantId");
-        List<Number> methodIds = (List<Number>) request.get("paymentMethodIds");
+            @Valid @RequestBody SavePaymentMethodRequest request) {
+        String merchantId = request.getMerchantId();
+        List<Long> methodIds = request.getPaymentMethodIds();
 
         // 先删除该商户的所有支付方式配置
         service.deleteByMerchant(merchantId);
 
         // 批量新增
         if (methodIds != null) {
-            for (Number methodId : methodIds) {
+            for (Long methodId : methodIds) {
                 MerchantPaymentMethod mpm = new MerchantPaymentMethod();
                 mpm.setMerchantId(merchantId);
-                mpm.setPaymentMethodId(methodId.longValue());
+                mpm.setPaymentMethodId(methodId);
                 mpm.setEnabled(true);
                 service.create(mpm);
             }

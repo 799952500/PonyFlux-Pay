@@ -1,6 +1,9 @@
 package com.payflow.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.payflow.admin.config.EncryptedStringTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -31,6 +34,8 @@ public class Channel {
     /** 渠道API地址 */
     private String apiUrl;
     /** 渠道密钥/公钥 */
+    @JsonProperty(access = Access.WRITE_ONLY)
+    @TableField(typeHandler = EncryptedStringTypeHandler.class)
     private String apiKey;
     private Boolean enabled;
     private Integer priority;

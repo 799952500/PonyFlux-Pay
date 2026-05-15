@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SystemConfig;
+import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SystemConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -80,6 +81,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "新增系统配置")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SystemConfig config) {
         systemConfigService.save(config);
@@ -94,6 +96,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "更新系统配置")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
                                                         @RequestBody SystemConfig config) {
@@ -109,6 +112,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "删除系统配置")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         systemConfigService.delete(id);
@@ -122,6 +126,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "刷新指定key缓存")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/{key}")
     public ResponseEntity<Map<String, Object>> refreshByKey(@PathVariable String key) {
         systemConfigService.refreshCacheByKey(key);
@@ -135,6 +140,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "刷新指定分类缓存")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/category/{category}")
     public ResponseEntity<Map<String, Object>> refreshByCategory(@PathVariable String category) {
         systemConfigService.refreshCacheByCategory(category);
@@ -147,6 +153,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "全量刷新配置缓存")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/all")
     public ResponseEntity<Map<String, Object>> refreshAll() {
         systemConfigService.refreshAllCache();

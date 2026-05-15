@@ -10,8 +10,11 @@ import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.service.AuthService;
 import com.payflow.cashier.util.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 /**
  * 认证服务实现
@@ -22,13 +25,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final int MAX_LOGIN_FAILURES = 5;
+    private static final long LOCK_DURATION_MINUTES = 15;
+
     private final MerchantMapper merchantMapper;
     private final PayflowProperties properties;
+    private final StringRedisTemplate stringRedisTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public AuthServiceImpl(MerchantMapper merchantMapper, PayflowProperties properties) {
+    public AuthServiceImpl(MerchantMapper merchantMapper, PayflowProperties properties,
+                           StringRedisTemplate stringRedisTemplate) {
         this.merchantMapper = merchantMapper;
         this.properties = properties;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     @Override
@@ -37,6 +46,23 @@ public class AuthServiceImpl implements AuthService {
         String password = request.getPassword();
 
         log.info("商户登录请求: merchantId={}", merchantId);
+
+        // 0. 登录频率限制检查
+        String lockKey = "login:locked:" + merchantId;
+        try {
+            Boolean locked = stringRedisTemplate.hasKey(lockKey);
+            if (Boolean.TRUE.equals(locked)) {
+                log.warn("商户登录锁定中: merchantId={}", merchantId);
+                throw new BizException(4011,
+                        "登录失败次数过多，请" + LOCK_DURATION_MINUTES + "分钟后再试");
+            }
+        } catch (Exception e) {
+            if (e instanceof BizException) {
+                throw (BizException) e;
+            }
+            // Redis 不可用时不阻止登录
+            log.warn("Redis登录限制检查失败（已放行）: {}", e.getMessage());
+        }
 
         // 1. 查询商户
         Merchant merchant = merchantMapper.selectOne(
@@ -81,6 +107,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordMatch) {
             log.warn("密码错误: merchantId={}", merchantId);
+            recordLoginFailure(merchantId);
             throw new BizException(4010, "密码错误");
         }
 
@@ -110,7 +137,44 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         log.info("商户登录成功: merchantId={}, merchantName={}", merchantId, merchant.getMerchantName());
+
+        // 登录成功，清除失败计数
+        clearLoginAttempts(merchantId);
+
         return response;
+    }
+
+    /**
+     * 记录登录失败，达到阈值后锁定。
+     */
+    private void recordLoginFailure(String merchantId) {
+        try {
+            String attemptsKey = "login:attempts:" + merchantId;
+            Long attempts = stringRedisTemplate.opsForValue().increment(attemptsKey);
+            if (attempts != null && attempts == 1L) {
+                stringRedisTemplate.expire(attemptsKey, Duration.ofMinutes(LOCK_DURATION_MINUTES));
+            }
+            if (attempts != null && attempts >= MAX_LOGIN_FAILURES) {
+                String lockKey = "login:locked:" + merchantId;
+                stringRedisTemplate.opsForValue().set(lockKey, "1", Duration.ofMinutes(LOCK_DURATION_MINUTES));
+                stringRedisTemplate.delete(attemptsKey);
+                log.warn("商户登录已锁定: merchantId={}, failures={}", merchantId, attempts);
+            }
+        } catch (Exception e) {
+            log.warn("记录登录失败异常（不影响主流程）: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 清除登录失败计数（登录成功后调用）。
+     */
+    private void clearLoginAttempts(String merchantId) {
+        try {
+            stringRedisTemplate.delete("login:attempts:" + merchantId);
+            stringRedisTemplate.delete("login:locked:" + merchantId);
+        } catch (Exception e) {
+            log.warn("清除登录计数异常（不影响主流程）: {}", e.getMessage());
+        }
     }
 
     /**

@@ -19,6 +19,7 @@ import com.payflow.cashier.routing.ChannelHealthRedisService;
 import com.payflow.cashier.service.PayNotifyService;
 import com.payflow.cashier.service.PaymentService;
 import com.payflow.cashier.service.PayChannelService;
+import com.payflow.cashier.metrics.PaymentMetrics;
 import com.payflow.cashier.service.RoutingDecisionLogger;
 import com.payflow.cashier.util.SignUtils;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PayNotifyService payNotifyService;
     private final ChannelHealthRedisService channelHealthRedisService;
     private final RoutingDecisionLogger routingDecisionLogger;
+    private final PaymentMetrics paymentMetrics;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -150,12 +152,15 @@ public class PaymentServiceImpl implements PaymentService {
                 response.setStatus("PROCESSING");
             }
 
+            paymentMetrics.recordSuccess(actualChannel);
+
             log.info("支付下单完成: orderId={}, paymentId={}, action={}, paidImmediately={}",
                     orderId, paymentId, response.getAction(), response.getPaidImmediately());
 
             return response;
         } catch (BizException e) {
             channelHealthRedisService.recordOutcome(account.getAccountCode(), false);
+            paymentMetrics.recordFailure(actualChannel, e.getMessage());
             throw e;
         }
     }

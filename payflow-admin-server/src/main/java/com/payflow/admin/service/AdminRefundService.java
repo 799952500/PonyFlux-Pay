@@ -107,10 +107,11 @@ public class AdminRefundService {
             w.apply("1 = 0");
             return;
         }
+        // 仅允许安全字符的商户 ID（字母数字下划线连字符），防止 SQL 注入
         String inList = merchantScopeIds.stream()
                 .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(s -> "'" + s.replace("'", "''") + "'")
+                .filter(s -> !s.isEmpty() && s.matches("[A-Za-z0-9_-]+"))
+                .map(s -> "'" + s + "'")
                 .collect(Collectors.joining(","));
         if (inList.isEmpty()) {
             return;

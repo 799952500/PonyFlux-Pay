@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.scheduling.annotation.Scheduled;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,7 +43,9 @@ public class PayChannelAccountRegistry {
 
     /**
      * 刷新内存快照（原子替换）。
+     * <p>启动时自动加载，之后每 5 分钟定时刷新。</p>
      */
+    @Scheduled(fixedDelay = 300_000, initialDelay = 300_000)
     public void refresh() {
         Snapshot newSnapshot = loadSnapshot();
         snapshotRef.set(newSnapshot);

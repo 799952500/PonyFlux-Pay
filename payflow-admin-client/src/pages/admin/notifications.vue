@@ -14,6 +14,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import request from '@/api/request'
 
 const { t } = useI18n()

@@ -3,6 +3,7 @@ package com.payflow.admin.controller;
 import com.payflow.admin.entity.FeeRateConfig;
 import com.payflow.admin.entity.FeeRateAuditLog;
 import com.payflow.admin.service.FeeRateService;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -60,7 +61,7 @@ public class FeeRateController {
             @RequestParam(required = false) Long merchantId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<FeeRateAuditLog> logs = feeRateService.getAuditLogs(merchantId, page, size);
+        IPage<FeeRateAuditLog> logs = feeRateService.getAuditLogs(merchantId, page, size);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", logs));
     }
 }

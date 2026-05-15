@@ -114,3 +114,53 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 ### 回归注意
 
 - 响应 **`code === 0`** 表示业务成功；401 时前端应跳转登录页。
+
+---
+
+## Production Hardening (005) 契约变更
+
+本节记录 `005-production-hardening` 分支中所有影响前后端契约的变更。
+
+### 新增 API
+
+| 前端方法 | HTTP | 路径 | 后端 Controller | 说明 |
+|----------|------|------|-----------------|------|
+| Webhook 端点管理 | CRUD | `/admin/webhook-endpoints` | （新增实体+Mapper，Controller 待定） | 管理商户 Webhook 回调 URL 及签名密钥 |
+| 频道健康检查 | GET | `/actuator/health` | [`ChannelHealthIndicator`](payflow-cashier-server/src/main/java/com/payflow/cashier/metrics/ChannelHealthIndicator.java) | 支付渠道可用性健康指标 |
+| 支付/退款计数 | GET | `/actuator/metrics` | [`PaymentMetrics`](payflow-cashier-server/src/main/java/com/payflow/cashier/metrics/PaymentMetrics.java) | Micrometer 自定义指标（payments/refunds success/failure count + duration） |
+
+### 请求体 DTO 变更（前端需同步）
+
+| Controller | 方法 | 变更前 | 变更后 |
+|------------|------|--------|--------|
+| `AdminMerchantController` | `PUT /{merchantId}` | `Map<String, Object>`（无校验） | `UpdateMerchantRequest` DTO（含 `@Size`、`@Pattern` 校验） |
+| `AdminRiskController` | `PUT /rules/{ruleId}` | `Map<String, Object>`（无校验） | `UpdateRiskRuleRequest` DTO |
+| `MerchantPaymentRouteController` | `POST /item`、`PUT /{id}` | `Map<String, Object>` | `PaymentRouteRequest` DTO（含 `@NotBlank`、`@NotNull`） |
+| `MerchantPaymentMethodController` | `POST` (saveBatch) | `Map<String, Object>`（`paymentMethodIds` 为 `List<Number>`） | `SavePaymentMethodRequest` DTO（`paymentMethodIds` 为 `List<Long>`） |
+
+> **前端适配提示**：DTO 校验失败时后端返回 400 + `{ "code": 1, "message": "校验失败详情..." }`，前端需处理新的错误格式。
+
+### RBAC 角色管控收紧
+
+以下 Controller 方法新增 `@RequireRole(SUPER_ADMIN)`，普通 ADMIN 角色将返回 403：
+
+| Controller | 受限方法 |
+|------------|----------|
+| `SysUserController` | `POST /admin/users`（创建用户）、`PUT /admin/users/{id}/reset-password` |
+| `SystemConfigController` | `POST /admin/system-configs`、`PUT`、`DELETE`、`POST /refresh/*` |
+| `SysRoleController` | `POST /admin/roles`、`DELETE /admin/roles/{id}`、`PUT /admin/roles/{id}/menus` |
+
+### 安全加固
+
+| 变更项 | 模块 | 说明 |
+|--------|------|------|
+| 敏感字段加密存储 | admin-server | `Channel.apiKey`、`PaymentAccount.appSecret/mchKey/certPassword`、`Merchant.merchantKey` 使用 AES-256-GCM 加密落库，API 响应自动过滤（`@JsonProperty(WRITE_ONLY)`） |
+| JWT 密钥无硬编码默认值 | admin-server + cashier-server | `jwt.secret`、`payflow.jwt.secret`、`payflow.signature.secret` 不再有默认值，未配置时启动报错 |
+| 商户密钥不落配置文件 | cashier-server | `payflow.merchants: []` — 商户签名密钥仅从数据库加载 |
+| 回调签名校验强化 | cashier-server | Alipay/UnionPay 回调新增 RSA-SHA256 签名验证（通过 Order→Payment→Account 链查找公钥） |
+| SQL 注入加固 | admin-server | `AdminRefundService.applyMerchantScope()` 商户 ID 正则过滤 + 子查询；`FeeRateService.getAuditLogs()` 改用 MyBatis-Plus Page 分页 |
+| CSV 注入防护 | admin-server | `AdminOrderController.csvEscape()` 对 `=`/`+`/`-`/`@` 开头单元格加单引号前缀 |
+| 登录爆破防护 | admin-server + cashier-server | Redis 计数 + 锁 Key：5 次失败锁 15min |
+| Redis 故障关闭 | cashier-server | 拦截器中 Redis 不可用时抛 `BizException(5000)` 而非放行 |
+| 商户软删除 | admin-server | `DELETE /admin/merchants/{merchantId}` 改为设置 `status='DELETED'`，不再物理删除 |
+| sql.init.mode | cashier-server | `always` → `never`，防止 dev 环境误重置数据 |

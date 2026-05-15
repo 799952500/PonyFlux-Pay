@@ -3,9 +3,12 @@ package com.payflow.admin.config;
 import com.payflow.admin.interceptor.AdminAuditInterceptor;
 import com.payflow.admin.interceptor.InternalApiTokenInterceptor;
 import com.payflow.admin.interceptor.JwtInterceptor;
+import com.payflow.admin.interceptor.RoleBasedInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -27,6 +30,7 @@ import java.util.List;
 public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtInterceptor jwtInterceptor;
+    private final RoleBasedInterceptor roleBasedInterceptor;
     private final AdminAuditInterceptor adminAuditInterceptor;
     private final InternalApiTokenInterceptor internalApiTokenInterceptor;
 
@@ -42,7 +46,15 @@ public class SecurityConfig implements WebMvcConfigurer {
         registry.addInterceptor(internalApiTokenInterceptor)
                 .addPathPatterns("/api/v1/internal/**");
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/api/v1/admin/**")
+                .addPathPatterns("/api/v1/admin/**", "/api/v1/merchants/**")
+                .excludePathPatterns(
+                        "/api/v1/admin/auth/login",
+                        "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/auth/logout",
+                        "/api/v1/admin/meta/**"
+                );
+        registry.addInterceptor(roleBasedInterceptor)
+                .addPathPatterns("/api/v1/admin/**", "/api/v1/merchants/**")
                 .excludePathPatterns(
                         "/api/v1/admin/auth/login",
                         "/api/v1/admin/auth/captcha",
@@ -73,5 +85,23 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600L);
+    }
+
+    @Bean
+    public FilterRegistrationBean<SecurityHeadersFilter> securityHeadersFilter() {
+        FilterRegistrationBean<SecurityHeadersFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new SecurityHeadersFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Integer.MIN_VALUE);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<TraceFilter> traceFilter() {
+        FilterRegistrationBean<TraceFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new TraceFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Integer.MIN_VALUE + 1);
+        return registration;
     }
 }

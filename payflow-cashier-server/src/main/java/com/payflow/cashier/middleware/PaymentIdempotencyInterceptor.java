@@ -4,6 +4,7 @@ import com.payflow.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,6 +14,7 @@ import java.time.Duration;
 /**
  * 支付创建幂等：请求头 Idempotency-Key + 商户号，在 TTL 内禁止重复提交。
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PaymentIdempotencyInterceptor implements HandlerInterceptor {
@@ -41,7 +43,8 @@ public class PaymentIdempotencyInterceptor implements HandlerInterceptor {
         } catch (BizException e) {
             throw e;
         } catch (Exception e) {
-            return true;
+            log.error("Redis幂等性检查异常，拒绝请求以保证安全", e);
+            throw new BizException(5000, "服务暂不可用，请稍后重试");
         }
         return true;
     }

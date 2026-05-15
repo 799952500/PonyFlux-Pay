@@ -67,8 +67,12 @@ public class JwtInterceptor implements HandlerInterceptor {
                     return false;
                 }
             } catch (Exception e) {
-                // Redis 不可用 → fail-open，不阻塞正常登录
-                log.warn("Redis黑名单检查失败（已放行）: {}", e.getMessage());
+                // Redis 不可用 → fail-close，拒绝请求以保证安全
+                log.error("Redis黑名单检查失败（已拒绝）: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":503,\"message\":\"服务暂不可用，请稍后重试\",\"data\":null}");
+                return false;
             }
         }
 

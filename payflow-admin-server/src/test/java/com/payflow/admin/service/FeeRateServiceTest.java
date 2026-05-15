@@ -1,5 +1,7 @@
 package com.payflow.admin.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.FeeRateAuditLog;
 import com.payflow.admin.entity.FeeRateConfig;
 import com.payflow.admin.entity.Merchant;
@@ -203,14 +205,19 @@ class FeeRateServiceTest {
     @Test
     @DisplayName("获取审计日志")
     void getAuditLogs() {
-        when(feeRateAuditLogMapper.selectList(any()))
-                .thenReturn(new ArrayList<>(List.of(createAuditLog())));
+        List<FeeRateAuditLog> auditLogs = new ArrayList<>(List.of(createAuditLog()));
+        Page<FeeRateAuditLog> mockPage = new Page<>(1, 20);
+        mockPage.setRecords(auditLogs);
+        mockPage.setTotal(1);
+        when(feeRateAuditLogMapper.selectPage(any(Page.class), any()))
+                .thenReturn(mockPage);
 
-        List<FeeRateAuditLog> logs = service.getAuditLogs(null, 1, 20);
+        IPage<FeeRateAuditLog> logs = service.getAuditLogs(null, 1, 20);
 
         assertNotNull(logs);
-        assertEquals(1, logs.size());
-        assertEquals(BigDecimal.valueOf(0.005), logs.get(0).getNewRate());
+        assertEquals(1, logs.getTotal());
+        assertEquals(1, logs.getRecords().size());
+        assertEquals(BigDecimal.valueOf(0.005), logs.getRecords().get(0).getNewRate());
     }
 
     // ==================== 辅助方法 ====================

@@ -1,7 +1,12 @@
 server:
   port: 3002
+  shutdown: graceful
   servlet:
     context-path: /
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
 spring:
   application:
@@ -19,11 +24,17 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 5000
+      idle-timeout: 300000
+      max-lifetime: 600000
 
   # SQL 初始化
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath:sql/schema.sql
       data-locations: classpath:sql/data.sql
       encoding: UTF-8
@@ -80,14 +91,8 @@ payflow:
     # 回调路径前缀；完整 notify_url = base-url + unified-path + /{channelCode}，例如 .../notify/wxpay
     unified-path: /notify
   # 商户签名密钥配置（兜底配置，优先于数据库）
-  # 生产环境建议从 merchant_app_secret 表读取
-  merchants:
-    - id: M2024040001
-      name: XX科技旗舰店
-      appSecret: 4f3c2b1a0e9d8c7b6a5f4e3d2c1b0a9f
-    - id: M10002
-      name: 测试商户2
-      appSecret: abcdef1234567890fedcba0987654321
+  # 生产环境必须从数据库 merchants 表读取，禁止在此硬编码密钥
+  merchants: []
 
 # SpringDoc OpenAPI
 springdoc:
@@ -109,7 +114,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when_authorized

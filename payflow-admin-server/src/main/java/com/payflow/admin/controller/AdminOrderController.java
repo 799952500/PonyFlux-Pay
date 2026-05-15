@@ -101,6 +101,10 @@ public class AdminOrderController {
         if (s == null) {
             return "";
         }
+        // 防止 CSV 公式注入：以 = + - @ 开头的值添加单引号前缀
+        if (!s.isEmpty() && (s.charAt(0) == '=' || s.charAt(0) == '+' || s.charAt(0) == '-' || s.charAt(0) == '@')) {
+            s = "'" + s;
+        }
         String v = s.replace("\"", "\"\"");
         if (v.contains(",") || v.contains("\"") || v.contains("\n")) {
             return "\"" + v + "\"";

@@ -42,6 +42,8 @@ public class CashierApplication {
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("cashier-async-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(30);
         executor.initialize();
         return executor;
     }

@@ -102,7 +102,7 @@ public interface OrderMapper extends BaseMapper<Order> {
      * 聚合查询：按时间范围统计退款数据
      */
     @Select("SELECT DATE_FORMAT(r.created_at, #{timeFormat}) AS timeBucket, "
-            + "COALESCE(NULLIF(TRIM(r.refund_channel), ''), 'ALL') AS channelCode, "
+            + "COALESCE(NULLIF(TRIM(r.pay_channel), ''), 'ALL') AS channelCode, "
             + "COALESCE(SUM(r.refund_amount), 0) AS refundAmount, "
             + "COUNT(DISTINCT r.refund_id) AS refundCount "
             + "FROM cashier_refunds r "

@@ -1,5 +1,6 @@
 server:
   port: 3003
+  shutdown: graceful
   servlet:
     encoding:
       charset: UTF-8
@@ -7,6 +8,8 @@ server:
       force: true
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   application:
     name: payflow-admin-server
   datasource:
@@ -16,12 +19,24 @@ spring:
       jdbc-url: jdbc:mysql://127.0.0.1:3306/payflow_admin?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       username: ${DB_USERNAME:root}
       password: ${DB_PASSWORD:root}
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 5000
+        idle-timeout: 300000
+        max-lifetime: 600000
     # 第二数据源 - cashier 库（订单、支付记录）
     cashier:
       driver-class-name: com.mysql.cj.jdbc.Driver
       jdbc-url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/payflow_cashier?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       username: ${DB_USERNAME:root}
       password: ${DB_PASSWORD:root}
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 5000
+        idle-timeout: 300000
+        max-lifetime: 600000
   # Redis：默认连接本机 6379。Windows 下可执行文件目录示例 D:\apps\Redis，需先运行 redis-server.exe
   data:
     redis:
@@ -41,7 +56,7 @@ mybatis-plus:
       id-type: auto
 
 jwt:
-  secret: ${JWT_SECRET:PayFlowAdminSecretKey2026VeryLongAndSecureKeyForHS256Algorithm}
+  secret: ${JWT_SECRET}
   expiration: 86400000   # 24 hours in milliseconds
   header: Authorization
   prefix: "Bearer "
@@ -65,7 +80,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when_authorized

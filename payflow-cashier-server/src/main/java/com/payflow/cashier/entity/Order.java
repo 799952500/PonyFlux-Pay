@@ -2,6 +2,8 @@ package com.payflow.cashier.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +40,7 @@ public class Order {
     private String merchantOrderNo;
 
     @Schema(description = "订单金额（分）")
+    @NotNull(message = "订单金额不能为空")
     private Long amount;
 
     @Schema(description = "币种")
@@ -48,6 +51,7 @@ public class Order {
     private Long payAmount;
 
     @Schema(description = "订单标题")
+    @NotBlank(message = "订单标题不能为空")
     private String subject;
 
     @Schema(description = "订单详情")

@@ -2,6 +2,7 @@ package com.payflow.cashier.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,6 +53,7 @@ public class Payment {
     private String channelTransactionId;
 
     @Schema(description = "支付金额（分）")
+    @NotNull(message = "支付金额不能为空")
     private Long amount;
 
     @Schema(description = "支付状态")

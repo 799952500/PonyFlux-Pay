@@ -1,6 +1,9 @@
 package com.payflow.admin.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.payflow.admin.config.EncryptedStringTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -29,6 +32,8 @@ public class Merchant {
     /** 商户名称 */
     private String merchantName;
     /** 商户密钥（用于签名验证） */
+    @JsonProperty(access = Access.WRITE_ONLY)
+    @TableField(typeHandler = EncryptedStringTypeHandler.class)
     private String merchantKey;
     /** 支付结果回调地址 */
     private String callbackUrl;

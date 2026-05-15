@@ -111,11 +111,12 @@ public class MerchantSignatureInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * 获取商户签名密钥
+     * 获取商户签名密钥，同时校验商户状态。
      * 优先级：配置文件 merchants 配置 > 数据库 merchants.app_secret 字段
      *
      * @param merchantId 商户号
-     * @return 商户密钥，未找到返回 null
+     * @return 商户密钥
+     * @throws BizException 商户已暂停或关闭
      */
     private String getMerchantAppSecret(String merchantId) {
         // 1. 优先从配置文件读取
@@ -124,15 +125,23 @@ public class MerchantSignatureInterceptor implements HandlerInterceptor {
             log.debug("从配置文件获取商户密钥: merchantId={}", merchantId);
             return appSecret;
         }
-        // 2. 配置为空时从数据库查询
+        // 2. 配置为空时从数据库查询（同时校验商户状态）
         log.debug("配置中未找到密钥，尝试从数据库查询: merchantId={}", merchantId);
         Merchant merchant = merchantMapper.selectOne(
                 new LambdaQueryWrapper<Merchant>()
                         .eq(Merchant::getMerchantId, merchantId)
                         .isNotNull(Merchant::getAppSecret)
-                        .select(Merchant::getAppSecret)
+                        .select(Merchant::getAppSecret, Merchant::getStatus)
         );
-        return merchant != null ? merchant.getAppSecret() : null;
+        if (merchant == null) {
+            return null;
+        }
+        if (!Merchant.STATUS_ACTIVE.equals(merchant.getStatus())) {
+            log.warn("商户状态异常，拒绝服务: merchantId={}, status={}", merchantId, merchant.getStatus());
+            throw new com.payflow.common.exception.BizException(5001,
+                    "商户已暂停服务（" + merchant.getStatus() + "）");
+        }
+        return merchant.getAppSecret();
     }
 
     private boolean fail(HttpServletResponse response, String message) throws Exception {

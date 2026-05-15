@@ -1,15 +1,16 @@
 package com.payflow.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.payflow.admin.dto.UpdateMerchantRequest;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.service.MerchantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class AdminMerchantController {
     @PutMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> updateMerchant(
             @PathVariable String merchantId,
-            @RequestBody Map<String, Object> body) {
+            @Valid @RequestBody UpdateMerchantRequest body) {
         Merchant existing = merchantService.getByMerchantId(merchantId);
         if (existing == null) {
             Map<String, Object> resp = new HashMap<>();
@@ -129,26 +130,23 @@ public class AdminMerchantController {
             return ResponseEntity.status(404).body(resp);
         }
 
-        if (body.containsKey("merchantName")) {
-            existing.setMerchantName((String) body.get("merchantName"));
+        if (body.getMerchantName() != null) {
+            existing.setMerchantName(body.getMerchantName());
         }
-        if (body.containsKey("merchantKey")) {
-            existing.setMerchantKey((String) body.get("merchantKey"));
+        if (body.getMerchantKey() != null) {
+            existing.setMerchantKey(body.getMerchantKey());
         }
-        if (body.containsKey("callbackUrl")) {
-            existing.setCallbackUrl((String) body.get("callbackUrl"));
+        if (body.getCallbackUrl() != null) {
+            existing.setCallbackUrl(body.getCallbackUrl());
         }
-        if (body.containsKey("notifyUrl")) {
-            existing.setNotifyUrl((String) body.get("notifyUrl"));
+        if (body.getNotifyUrl() != null) {
+            existing.setNotifyUrl(body.getNotifyUrl());
         }
-        if (body.containsKey("commissionRate")) {
-            Object rate = body.get("commissionRate");
-            if (rate instanceof Number) {
-                existing.setCommissionRate(new BigDecimal(rate.toString()));
-            }
+        if (body.getCommissionRate() != null) {
+            existing.setCommissionRate(body.getCommissionRate());
         }
-        if (body.containsKey("status")) {
-            existing.setStatus((String) body.get("status"));
+        if (body.getStatus() != null) {
+            existing.setStatus(body.getStatus());
         }
 
         merchantService.update(existing.getId(), existing);

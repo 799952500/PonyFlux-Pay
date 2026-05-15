@@ -1,6 +1,7 @@
 package com.payflow.cashier.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,6 +37,7 @@ public class Refund {
     private String payChannel;
 
     /** 退款金额（分） */
+    @NotNull(message = "退款金额不能为空")
     private Long refundAmount;
 
     /** 退款原因 */
@@ -43,6 +45,10 @@ public class Refund {
 
     /** 退款状态 */
     private String status;
+
+    /** 乐观锁版本号，防止并发退款超额 */
+    @Version
+    private Integer version;
 
     /** 渠道退款单号 */
     private String channelRefundNo;

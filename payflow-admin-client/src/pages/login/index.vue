@@ -152,7 +152,7 @@ const captchaId = ref('')
 
 async function refreshCaptcha() {
   try {
-    const data = await request.get('/admin/auth/captcha')
+    const data = await request.get('/admin/auth/captcha') as any
     if (data && data.captchaId) {
       captchaId.value = data.captchaId
       captchaQuestion.value = data.question

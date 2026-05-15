@@ -114,6 +114,10 @@
                 <artifactId>s3</artifactId>
                 <version>${aws-sdk.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

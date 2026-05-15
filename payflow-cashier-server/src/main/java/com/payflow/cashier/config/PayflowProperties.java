@@ -1,6 +1,8 @@
 package com.payflow.cashier.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,7 @@ import java.util.Optional;
  *
  * @author PayFlow Team
  */
+@Slf4j
 @Data
 @Component
 @ConfigurationProperties(prefix = "payflow")
@@ -36,6 +39,26 @@ public class PayflowProperties {
     /** 管理端地址（用于拉取商户支付方式路由） */
     private Admin admin = new Admin();
 
+    /** 启动时校验关键配置项 */
+    @PostConstruct
+    public void validate() {
+        if (jwt.secret == null || jwt.secret.isBlank()) {
+            throw new IllegalStateException(
+                "JWT 密钥未配置！生产环境必须设置环境变量 JWT_SECRET。"
+                + "开发环境可在 application.yml 中设置 payflow.jwt.secret。"
+            );
+        }
+        if (jwt.secret.length() < 16) {
+            log.warn("JWT 密钥长度不足 16 字符，建议使用更强的密钥");
+        }
+        if (signature.secret == null || signature.secret.isBlank()) {
+            throw new IllegalStateException(
+                "签名密钥未配置！生产环境必须设置环境变量 SIGNATURE_SECRET。"
+                + "开发环境可在 application.yml 中设置 payflow.signature.secret。"
+            );
+        }
+    }
+
     /**
      * 根据商户号查找签名密钥配置
      *
@@ -52,15 +75,16 @@ public class PayflowProperties {
 
     @Data
     public static class Jwt {
-        /** JWT 签名密钥 */
-        private String secret = "default_jwt_secret";
+        /** JWT 签名密钥（生产环境必须通过环境变量注入） */
+        private String secret;
         /** Token 有效期（秒），默认 24 小时 */
         private long expireSeconds = 86400;
     }
 
     @Data
     public static class Signature {
-        private String secret = "default_signature_secret";
+        /** 签名密钥（生产环境必须通过环境变量注入） */
+        private String secret;
         private int timestampTolerance = 300;
     }
 

@@ -1,5 +1,6 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.dto.PaymentRouteRequest;
 import com.payflow.admin.entity.MerchantPaymentRoute;
 import com.payflow.admin.entity.PaymentAccount;
 import com.payflow.admin.entity.PaymentMethod;
@@ -7,6 +8,7 @@ import com.payflow.admin.kit.ClientScopesKit;
 import com.payflow.admin.service.MerchantPaymentRouteService;
 import com.payflow.admin.service.PaymentAccountService;
 import com.payflow.admin.service.PaymentMethodService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,8 +69,14 @@ public class MerchantPaymentRouteController {
      * 新增单条路由（不替换整商户配置）。
      */
     @PostMapping("/item")
-    public ResponseEntity<Map<String, Object>> createOne(@RequestBody Map<String, Object> body) {
-        MerchantPaymentRoute route = mapBodyToRoute(body, true);
+    public ResponseEntity<Map<String, Object>> createOne(@Valid @RequestBody PaymentRouteRequest body) {
+        MerchantPaymentRoute route = new MerchantPaymentRoute();
+        route.setMerchantId(body.getMerchantId());
+        route.setPaymentMethodId(body.getPaymentMethodId());
+        route.setPaymentAccountId(body.getPaymentAccountId());
+        route.setEnabled(body.getEnabled() != null ? body.getEnabled() : Boolean.TRUE);
+        route.setPriority(body.getPriority() != null ? body.getPriority() : 0);
+        route.setClientScopes(ClientScopesKit.normalizeToDb(body.getClientScopes()));
         assertAccountMatchesMethod(route.getPaymentMethodId(), route.getPaymentAccountId());
         routeService.createRoute(route);
         return ResponseEntity.ok(Map.of(
@@ -80,23 +88,21 @@ public class MerchantPaymentRouteController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
-                                                      @RequestBody Map<String, Object> body) {
+                                                      @Valid @RequestBody PaymentRouteRequest body) {
         MerchantPaymentRoute patch = new MerchantPaymentRoute();
-        if (body.containsKey("paymentMethodId") && body.get("paymentMethodId") != null) {
-            patch.setPaymentMethodId(((Number) body.get("paymentMethodId")).longValue());
+        if (body.getPaymentMethodId() != null) {
+            patch.setPaymentMethodId(body.getPaymentMethodId());
         }
-        if (body.containsKey("paymentAccountId") && body.get("paymentAccountId") != null) {
-            patch.setPaymentAccountId(((Number) body.get("paymentAccountId")).longValue());
+        if (body.getPaymentAccountId() != null) {
+            patch.setPaymentAccountId(body.getPaymentAccountId());
         }
-        if (body.containsKey("enabled")) {
-            patch.setEnabled((Boolean) body.get("enabled"));
+        if (body.getEnabled() != null) {
+            patch.setEnabled(body.getEnabled());
         }
-        if (body.containsKey("priority") && body.get("priority") != null) {
-            patch.setPriority(((Number) body.get("priority")).intValue());
+        if (body.getPriority() != null) {
+            patch.setPriority(body.getPriority());
         }
-        if (body.containsKey("clientScopes")) {
-            patch.setClientScopes(ClientScopesKit.normalizeToDb(body.get("clientScopes")));
-        }
+        patch.setClientScopes(ClientScopesKit.normalizeToDb(body.getClientScopes()));
 
         Long methodId = patch.getPaymentMethodId();
         Long accountId = patch.getPaymentAccountId();
@@ -212,32 +218,6 @@ public class MerchantPaymentRouteController {
         m.put("enabled", account.getEnabled());
         m.put("priority", account.getPriority());
         return m;
-    }
-
-    private MerchantPaymentRoute mapBodyToRoute(Map<String, Object> body, boolean requireMerchant) {
-        MerchantPaymentRoute r = new MerchantPaymentRoute();
-        if (requireMerchant) {
-            String mid = body.get("merchantId") == null ? null : body.get("merchantId").toString();
-            r.setMerchantId(mid);
-        }
-        Object methodId = body.get("paymentMethodId");
-        Object accountId = body.get("paymentAccountId");
-        Object enabled = body.get("enabled");
-        Object priority = body.get("priority");
-        if (methodId != null) {
-            r.setPaymentMethodId(((Number) methodId).longValue());
-        }
-        if (accountId != null) {
-            r.setPaymentAccountId(((Number) accountId).longValue());
-        }
-        if (enabled != null) {
-            r.setEnabled((Boolean) enabled);
-        }
-        if (priority != null) {
-            r.setPriority(((Number) priority).intValue());
-        }
-        r.setClientScopes(ClientScopesKit.normalizeToDb(body.get("clientScopes")));
-        return r;
     }
 
     private void assertAccountMatchesMethod(Long paymentMethodId, Long paymentAccountId) {

@@ -3,10 +3,12 @@ package com.payflow.cashier.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.cashier.dto.RefundRequest;
 import com.payflow.cashier.dto.RefundResponse;
+import com.payflow.cashier.entity.Merchant;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.entity.Refund;
+import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
 import com.payflow.cashier.mapper.RefundMapper;
@@ -43,6 +45,7 @@ public class RefundServiceImpl implements RefundService {
     private final RefundMapper refundMapper;
     private final PaymentMapper paymentMapper;
     private final OrderMapper orderMapper;
+    private final MerchantMapper merchantMapper;
     private final PayChannelService payChannelService;
     private final PayChannelPaymentOpenServiceLocator paymentOpenServiceLocator;
     private final OrderMqProducer orderMqProducer;
@@ -95,6 +98,18 @@ public class RefundServiceImpl implements RefundService {
         }
         if (!merchantId.equals(order.getMerchantId())) {
             throw new BizException(6005, "无权对此支付发起退款");
+        }
+
+        // 校验商户状态（非 ACTIVE 商户禁止退款）
+        Merchant merchant = merchantMapper.selectOne(
+                new LambdaQueryWrapper<Merchant>()
+                        .eq(Merchant::getMerchantId, merchantId)
+                        .select(Merchant::getStatus));
+        if (merchant == null) {
+            throw new BizException(6004, "商户不存在: " + merchantId);
+        }
+        if (!Merchant.STATUS_ACTIVE.equals(merchant.getStatus())) {
+            throw new BizException(5001, "商户已暂停服务（" + merchant.getStatus() + "）");
         }
 
         PayChannelAccount account = resolveChannelAccount(order, payment);
@@ -272,13 +287,25 @@ public class RefundServiceImpl implements RefundService {
      */
     private boolean finalizeRefund(Refund refund, String channelRefundNo,
                                     Payment payment, Long refundAmount) {
+        // 二次校验：当前累计退款（含本次）是否超额
+        long alreadyRefunded = sumRefundedAmount(refund.getPaymentId());
+        long totalAfterRefund = alreadyRefunded + refundAmount;
+        if (totalAfterRefund > payment.getAmount()) {
+            log.error("退款超额拒绝: paymentId={}, refundId={}, alreadyRefunded={}, currentRefund={}, payAmount={}",
+                    refund.getPaymentId(), refund.getRefundId(), alreadyRefunded, refundAmount, payment.getAmount());
+            refund.setStatus(Refund.STATUS_FAILED);
+            refund.setUpdatedAt(LocalDateTime.now());
+            refundMapper.updateById(refund);
+            throw new BizException(6011,
+                    "累计退款超出支付金额: 已退=" + alreadyRefunded + "，本次=" + refundAmount);
+        }
+
         refund.setChannelRefundNo(channelRefundNo);
         refund.setStatus(Refund.STATUS_REFUNDED);
         refund.setUpdatedAt(LocalDateTime.now());
         refundMapper.updateById(refund);
 
-        long alreadyRefunded = sumRefundedAmount(refund.getPaymentId());
-        boolean fullRefund = alreadyRefunded >= payment.getAmount();
+        boolean fullRefund = totalAfterRefund >= payment.getAmount();
         payment.setStatus(fullRefund ? Payment.STATUS_REFUNDED : Payment.STATUS_PARTIAL_REFUND);
         payment.setUpdatedAt(LocalDateTime.now());
         paymentMapper.updateById(payment);

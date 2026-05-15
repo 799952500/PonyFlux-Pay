@@ -1,8 +1,10 @@
 package com.payflow.cashier.middleware;
 
+import com.payflow.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import java.time.Duration;
 /**
  * 商户维度简单限流：按分钟滑动窗口计数，超限返回 429。
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MerchantRateLimitInterceptor implements HandlerInterceptor {
@@ -40,7 +43,8 @@ public class MerchantRateLimitInterceptor implements HandlerInterceptor {
                 return false;
             }
         } catch (Exception e) {
-            return true;
+            log.error("Redis限流检查异常，拒绝请求以保证安全", e);
+            throw new BizException(5000, "服务暂不可用，请稍后重试");
         }
         return true;
     }

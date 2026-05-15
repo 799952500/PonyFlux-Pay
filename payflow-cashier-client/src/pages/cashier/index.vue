@@ -99,10 +99,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useCashierStore } from '@/stores/cashier'
+import type { PayChannel } from '@/types'
 import { getCashierInfo, createPayment, pollPaymentStatus } from '@/api/cashier'
 
 /** 根据支付方式解析收银台订单上的 payChannel */
-function resolvePayChannel(methodCode: string): string {
+function resolvePayChannel(methodCode: string): PayChannel {
   if (methodCode.startsWith('WECHAT_')) return 'WECHAT_PAY'
   if (methodCode.startsWith('ALIPAY_')) return 'ALIPAY'
   if (methodCode.startsWith('UNION_')) return 'UNION_PAY'

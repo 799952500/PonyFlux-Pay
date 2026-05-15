@@ -1,15 +1,16 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.dto.UpdateRiskRuleRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.RiskRule;
 import com.payflow.admin.mapper.RiskRuleMapper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class AdminRiskController {
     @Operation(summary = "更新风控规则")
     @PutMapping("/rules/{ruleId}")
     public ResponseEntity<Map<String, Object>> updateRule(@PathVariable Long ruleId,
-                                                          @RequestBody Map<String, Object> body) {
+                                                          @Valid @RequestBody UpdateRiskRuleRequest body) {
         RiskRule exist = riskRuleMapper.selectById(ruleId);
         if (exist == null) {
             return ResponseEntity.ok(Map.of(
@@ -66,32 +67,26 @@ public class AdminRiskController {
             ));
         }
 
-        if (body.containsKey("enabled")) {
-            Object enabled = body.get("enabled");
-            exist.setEnabled(enabled != null && (Boolean) enabled);
+        if (body.getEnabled() != null) {
+            exist.setEnabled(body.getEnabled());
         }
-        if (body.containsKey("threshold")) {
-            Object threshold = body.get("threshold");
-            if (threshold == null) {
-                exist.setThreshold(null);
-            } else {
-                exist.setThreshold(new BigDecimal(String.valueOf(threshold)));
-            }
+        if (body.getThreshold() != null) {
+            exist.setThreshold(body.getThreshold());
         }
-        if (body.containsKey("unit")) {
-            exist.setUnit((String) body.get("unit"));
+        if (body.getUnit() != null) {
+            exist.setUnit(body.getUnit());
         }
-        if (body.containsKey("description")) {
-            exist.setDescription((String) body.get("description"));
+        if (body.getDescription() != null) {
+            exist.setDescription(body.getDescription());
         }
-        if (body.containsKey("ruleName")) {
-            exist.setRuleName((String) body.get("ruleName"));
+        if (body.getRuleName() != null) {
+            exist.setRuleName(body.getRuleName());
         }
-        if (body.containsKey("action")) {
-            exist.setAction((String) body.get("action"));
+        if (body.getAction() != null) {
+            exist.setAction(body.getAction());
         }
-        if (body.containsKey("ruleType")) {
-            exist.setRuleType((String) body.get("ruleType"));
+        if (body.getRuleType() != null) {
+            exist.setRuleType(body.getRuleType());
         }
 
         riskRuleMapper.updateById(exist);

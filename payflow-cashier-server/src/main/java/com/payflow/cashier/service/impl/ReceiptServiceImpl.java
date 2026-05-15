@@ -37,8 +37,12 @@ public class ReceiptServiceImpl implements ReceiptService {
     private final MerchantMapper merchantMapper;
     private final ReceiptPdfGenerator receiptPdfGenerator;
 
-    /** 收据序号生成器（单JVM内递增，生产环境应使用数据库序列或分布式ID） */
-    private static final AtomicLong RECEIPT_SEQ = new AtomicLong(0);
+    /**
+     * 收据序号生成器（单JVM内递增）。
+     * 使用当前时间戳毫秒的后6位作为初始种子，降低 JVM 重启后序号重复的概率。
+     * 注意：多实例部署或每日收据超过百万时需要改用数据库序列生成。
+     */
+    private static final AtomicLong RECEIPT_SEQ = new AtomicLong(System.currentTimeMillis() % 1_000_000);
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

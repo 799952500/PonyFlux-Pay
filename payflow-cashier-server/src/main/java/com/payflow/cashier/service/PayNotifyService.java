@@ -5,6 +5,7 @@ import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.cashier.metrics.PaymentMetrics;
 import com.payflow.cashier.routing.ChannelHealthRedisService;
 import com.payflow.cashier.webhook.WebhookDispatchService;
 import com.payflow.cashier.webhook.WebhookEventCode;
@@ -34,6 +35,7 @@ public class PayNotifyService {
     private final OrderService orderService;
     private final ChannelHealthRedisService channelHealthRedisService;
     private final WebhookDispatchService webhookDispatchService;
+    private final PaymentMetrics paymentMetrics;
 
     /**
      * 处理支付成功（更新 Payment + Order 状态）。
@@ -63,16 +65,21 @@ public class PayNotifyService {
         if (payment.getAccountCode() != null) {
             channelHealthRedisService.recordOutcome(payment.getAccountCode(), true);
         }
+        paymentMetrics.recordSuccess(payment.getPayChannel());
 
         // 更新 Order
         Order order = orderMapper.selectOne(
                 new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
         if (order != null) {
-            orderService.updateOrderStatus(orderId, Order.STATUS_PAID, null);
+            orderService.updateOrderStatus(orderId, Order.STATUS_PAID, payment.getAmount());
             Map<String, Object> payload = new HashMap<>();
             payload.put("orderId", orderId);
             payload.put("paymentId", payment.getPaymentId());
             payload.put("channelTransactionId", channelTransactionId != null ? channelTransactionId : "");
+            payload.put("amount", order.getAmount());
+            payload.put("currency", order.getCurrency());
+            payload.put("status", Order.STATUS_PAID);
+            payload.put("paidAt", LocalDateTime.now().toString());
             webhookDispatchService.publish(order.getMerchantId(), WebhookEventCode.PAYMENT_SUCCESS, payload);
         }
 

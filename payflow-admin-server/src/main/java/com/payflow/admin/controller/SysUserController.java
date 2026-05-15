@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SysUser;
+import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,6 +60,7 @@ public class SysUserController {
      * @return 操作结果
      */
     @Operation(summary = "新增系统用户")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping
     public Map<String, Object> create(@RequestBody SysUser user) {
         sysUserService.create(user);
@@ -87,6 +89,7 @@ public class SysUserController {
      * @return 操作结果
      */
     @Operation(summary = "重置用户密码")
+    @RequireRole(RequireRole.SUPER_ADMIN)
     @PutMapping("/{id}/reset-password")
     public Map<String, Object> resetPassword(@PathVariable Long id,
                                              @RequestBody Map<String, String> body) {

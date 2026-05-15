@@ -1,6 +1,8 @@
 package com.payflow.admin.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.*;
 import com.payflow.admin.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -196,14 +198,13 @@ public class FeeRateService {
 
     // ==================== 审计日志 ====================
 
-    public List<FeeRateAuditLog> getAuditLogs(Long merchantId, int page, int size) {
+    public IPage<FeeRateAuditLog> getAuditLogs(Long merchantId, int page, int size) {
         LambdaQueryWrapper<FeeRateAuditLog> wrapper = new LambdaQueryWrapper<FeeRateAuditLog>()
                 .orderByDesc(FeeRateAuditLog::getChangeTime);
         if (merchantId != null) {
             wrapper.eq(FeeRateAuditLog::getMerchantId, merchantId);
         }
-        wrapper.last("LIMIT " + (page - 1) * size + ", " + size);
-        return feeRateAuditLogMapper.selectList(wrapper);
+        return feeRateAuditLogMapper.selectPage(new Page<>(page, size), wrapper);
     }
 
     // ==================== 私有方法 ====================

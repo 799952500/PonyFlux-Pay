@@ -212,9 +212,7 @@ public class AdminChannelAccountController {
         m.put("channelName", a.getChannelName());
         m.put("accountCode", a.getAccountCode());
         m.put("accountName", a.getAccountName());
-        m.put("appId", a.getAppId());
-        m.put("mchId", a.getMchId());
-        m.put("configJson", a.getConfigJson());
+        // appId、mchId、configJson 属于半敏感信息，不向前端暴露
         m.put("enabled", a.getEnabled());
         m.put("priority", a.getPriority());
         m.put("description", a.getDescription());
