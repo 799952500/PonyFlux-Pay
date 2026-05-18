@@ -1,6 +1,7 @@
 package com.payflow.cashier.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.Payment;
 import com.payflow.cashier.mapper.OrderMapper;
@@ -44,7 +45,10 @@ public class PayNotifyService {
      * @param channelTransactionId   渠道交易号
      */
     public void handlePaymentSuccess(String orderId, String channelTransactionId) {
-        // 查询 Payment 记录
+        MerchantScopeHolder.runInSystemMode(() -> handlePaymentSuccessInternal(orderId, channelTransactionId));
+    }
+
+    private void handlePaymentSuccessInternal(String orderId, String channelTransactionId) {
         Payment payment = paymentMapper.selectOne(
                 new LambdaQueryWrapper<Payment>()
                         .eq(Payment::getOrderId, orderId)

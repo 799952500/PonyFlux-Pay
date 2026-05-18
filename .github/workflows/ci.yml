@@ -28,6 +28,13 @@ jobs:
             payflow-admin-client/package-lock.json
             payflow-cashier-client/package-lock.json
 
+      - name: Merchant isolation security gate (cashier-server)
+        run: >
+          mvn -B -q -pl payflow-cashier-server -am
+          "-Dsurefire.failIfNoSpecifiedTests=false"
+          "-Dtest=MerchantIsolationSecurityTest,MerchantControllerArchTest,MerchantIdGuardTest,ResourceOwnershipServiceTest"
+          test
+
       - name: Maven compile + test (all modules)
         run: mvn -B -q compile test
 

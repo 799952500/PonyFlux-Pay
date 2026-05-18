@@ -4,11 +4,10 @@ import com.payflow.cashier.dto.CreateOrderRequest;
 import com.payflow.cashier.dto.CreateOrderResponse;
 import com.payflow.cashier.dto.OrderDetailResponse;
 import com.payflow.cashier.exception.R;
-import com.payflow.cashier.middleware.JwtAuthInterceptor;
+import com.payflow.cashier.context.MerchantContext;
 import com.payflow.cashier.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -38,16 +37,10 @@ public class OrderController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE,
                  produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "创建订单", description = "创建支付订单，返回收银台跳转链接")
-    public R<CreateOrderResponse> createOrder(
-            @Valid @RequestBody CreateOrderRequest request,
-            HttpServletRequest httpRequest) {
+    public R<CreateOrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
 
-        // 从 JWT 拦截器注入的 merchantId
-        String merchantId = (String) httpRequest.getAttribute(JwtAuthInterceptor.ATTR_MERCHANT_ID);
-        // 如果前端传了 merchantId，以传入为准（允许覆盖）
-        if (request.getMerchantId() == null || request.getMerchantId().isBlank()) {
-            request.setMerchantId(merchantId);
-        }
+        String merchantId = MerchantContext.getMerchantId();
+        request.setMerchantId(merchantId);
 
         log.info("创建订单: merchantId={}, merchantOrderNo={}", merchantId, request.getMerchantOrderNo());
         CreateOrderResponse response = orderService.createOrder(request);

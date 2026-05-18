@@ -3,6 +3,7 @@ package com.payflow.cashier.middleware;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payflow.cashier.config.PayflowProperties;
+import com.payflow.cashier.context.AuthMode;
 import com.payflow.cashier.entity.Merchant;
 import com.payflow.cashier.exception.R;
 import com.payflow.cashier.mapper.MerchantMapper;
@@ -104,8 +105,8 @@ public class MerchantSignatureInterceptor implements HandlerInterceptor {
             return fail(response, "签名验证失败");
         }
 
-        // 5. 注入 merchantId 到请求属性
         request.setAttribute(ATTR_MERCHANT_ID, merchantId);
+        request.setAttribute(MerchantContextInterceptor.ATTR_AUTH_MODE, AuthMode.HMAC);
         log.debug("商户签名验证成功: merchantId={}, path={}", merchantId, request.getRequestURI());
         return true;
     }

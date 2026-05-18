@@ -2,6 +2,7 @@ package com.payflow.cashier.middleware;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payflow.cashier.config.PayflowProperties;
+import com.payflow.cashier.context.AuthMode;
 import com.payflow.cashier.exception.R;
 import com.payflow.cashier.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,8 +86,8 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             }
         }
 
-        // 将 merchantId 注入到请求上下文
         request.setAttribute(ATTR_MERCHANT_ID, merchantId);
+        request.setAttribute(MerchantContextInterceptor.ATTR_AUTH_MODE, AuthMode.JWT);
         log.debug("JWT认证成功: merchantId={}, path={}", merchantId, request.getRequestURI());
         return true;
     }

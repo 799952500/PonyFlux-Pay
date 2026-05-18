@@ -1,6 +1,7 @@
 package com.payflow.cashier.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.openservice.PayChannelOpenService;
@@ -59,6 +60,10 @@ public class PayNotifyController {
      */
     @PostMapping("/{channelCode}")
     public String handleNotifyByChannel(HttpServletRequest request, @PathVariable String channelCode) {
+        return MerchantScopeHolder.callInSystemMode(() -> handleNotifyByChannelInternal(request, channelCode));
+    }
+
+    private String handleNotifyByChannelInternal(HttpServletRequest request, String channelCode) {
         // 0) 约束：channelCode 必须为小写（避免出现 WxPay/AliPay 等多种写法导致配置混乱）
         if (channelCode == null || channelCode.isBlank()) {
             throw new BizException(7004, "回调路径缺少 channelCode");
@@ -104,6 +109,10 @@ public class PayNotifyController {
      */
     @PostMapping("/order/{outTradeNo}")
     public String handleNotifyByOrder(HttpServletRequest request, @PathVariable String outTradeNo) {
+        return MerchantScopeHolder.callInSystemMode(() -> handleNotifyByOrderInternal(request, outTradeNo));
+    }
+
+    private String handleNotifyByOrderInternal(HttpServletRequest request, String outTradeNo) {
         // 1) 订单号 -> 订单 -> 渠道
         Order order = orderMapper.selectOne(new LambdaQueryWrapper<Order>().eq(Order::getOrderId, outTradeNo));
         if (order == null) {

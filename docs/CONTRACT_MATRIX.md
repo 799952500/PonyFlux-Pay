@@ -51,6 +51,7 @@
 | 全局搜索 | GET | `/admin/search` | [`AdminSearchController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSearchController.java) |
 | 通知摘要 | GET | `/admin/notifications/summary` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
 | 审计日志 | GET | `/admin/audit-logs` | [`AdminAuditLogController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminAuditLogController.java) |
+| 安全审计（越权拒绝） | GET | `/admin/security/audit` | [`AdminSecurityAuditController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSecurityAuditController.java)（`RISK` / `SUPER_ADMIN`） |
 | 验证码 | GET | `/admin/auth/captcha` | [`AuthController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AuthController.java) |
 | 版本信息 | GET | `/admin/meta/version` | [`AdminMetaController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminMetaController.java) |
 
@@ -68,6 +69,8 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 | `pollPaymentStatus` | GET | `/payments/status/{paymentId}` | 同上（无需商户签名） |
 
 退款、商户查询等走 `/api/v1/refunds`、`/api/v1/merchant/**`，需商户签名或 JWT，不在默认 cashier SPA 最小路径内。
+
+**商户隔离（006）**：JWT/HMAC 认证后的 `/api/v1/orders/**`、`/api/v1/payments/**`（除 status 轮询）、`/api/v1/refunds/**`、`/api/v1/merchant/**`、`/api/v1/payment-links/**` 均经过 `merchantId` 绑定与资源所有权校验；跨商户访问统一 **HTTP 404 + code 5102**（不泄漏资源字段），`merchantId` 与认证不一致为 **HTTP 403 + code 5101**。
 
 ### 银联/云闪付回调
 
@@ -105,6 +108,7 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 - [ ] GET `/admin/merchants`、`/admin/channels`、`/admin/channels/accounts`
 - [ ] GET `/admin/dicts`、`/admin/meta/version`、`/admin/search?q=`
 - [ ] GET `/admin/orders/export` 下载 CSV（权限：登录即可，生产建议加角色）
+- [ ] GET `/admin/security/audit` — 安全审计（`RISK`/`SUPER_ADMIN`），筛选 merchantId/reasonCode
 
 ### 收银台客户端
 
@@ -164,3 +168,40 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 | Redis 故障关闭 | cashier-server | 拦截器中 Redis 不可用时抛 `BizException(5000)` 而非放行 |
 | 商户软删除 | admin-server | `DELETE /admin/merchants/{merchantId}` 改为设置 `status='DELETED'`，不再物理删除 |
 | sql.init.mode | cashier-server | `always` → `never`，防止 dev 环境误重置数据 |
+
+---
+
+## 商户数据隔离 (006-merchant-isolation) 契约变更
+
+### 收银台错误码（HTTP 状态）
+
+| code | HTTP | 对外 message | 说明 |
+|------|------|--------------|------|
+| `5101` | 403 | 商户身份与请求不匹配 | 请求体/query 中 `merchantId` 与 JWT/HMAC 上下文不一致 |
+| `5102` | 404 | 请求的资源不存在 | 资源不存在或跨商户访问（对外统一文案） |
+| `5103` | — | （不对外返回） | 仅写入 `cashier_security_audit.reason_code`，表示真实越权 |
+
+### 新增管理端 API
+
+| 前端方法 | HTTP | 路径 | 后端 | 权限 |
+|----------|------|------|------|------|
+| `getSecurityAuditList` | GET | `/admin/security/audit` | [`AdminSecurityAuditController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSecurityAuditController.java) | `RISK`、`SUPER_ADMIN` |
+
+查询参数：`page`、`pageSize`（≤100）、`merchantId`、`outcome`、`reasonCode`、`requestPath`、`startDate`、`endDate`。
+
+前端页面：[`security-audit.vue`](payflow-admin-client/src/pages/admin/security-audit.vue)，路由 `/admin/security-audit`，菜单「系统管理 → 安全审计」。
+
+### 收银台受保护端点行为摘要
+
+| 路径模式 | 认证 | 隔离行为 |
+|----------|------|----------|
+| `POST /api/v1/orders` | JWT | `merchantId` 由服务端注入；请求体传其他商户 → 5101 |
+| `GET /api/v1/orders/{orderId}` | JWT | 非本商户订单 → 5102/404 |
+| `POST /api/v1/refunds` | HMAC | `paymentId` 须属当前商户；否则 5102/404 |
+| `GET /api/v1/refunds/{refundId}` | HMAC | 非本商户退款 → 5102/404 |
+| `GET /api/v1/merchant/orders/{orderId}` 等 | HMAC | 同上 |
+| `GET /api/v1/payments/status/{paymentId}` | 无 | **白名单**：消费者轮询，不做商户隔离 |
+| `GET /api/v1/cashier/{orderId}` | 无 | **白名单**：收银台页 |
+| `POST /notify/**` | 渠道签名校验 | **系统模式**：`MerchantScopeHolder.runInSystemMode` |
+
+持久层：`cashier_orders`、`cashier_payment_link` 在商户上下文中自动追加 `merchant_id` 条件（MyBatis TenantLine）。

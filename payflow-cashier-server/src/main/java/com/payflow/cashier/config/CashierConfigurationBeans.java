@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Configuration;
  * @author Lucas
  */
 @Configuration
-@EnableConfigurationProperties(InternalApiProperties.class)
+@EnableConfigurationProperties({InternalApiProperties.class, MerchantSecurityProperties.class})
 public class CashierConfigurationBeans {
 }

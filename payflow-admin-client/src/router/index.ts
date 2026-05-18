@@ -187,6 +187,12 @@ const router = createRouter({
           meta: { title: '操作日志', requiresAuth: true },
         },
         {
+          path: 'security-audit',
+          name: 'SecurityAudit',
+          component: () => import('@/pages/admin/security-audit.vue'),
+          meta: { title: '安全审计', requiresAuth: true },
+        },
+        {
           path: 'fee-rate/config',
           name: 'FeeRateConfig',
           component: () => import('@/pages/admin/FeeRateConfig.vue'),

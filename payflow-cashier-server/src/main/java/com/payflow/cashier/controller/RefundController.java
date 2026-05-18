@@ -5,6 +5,7 @@ import com.payflow.cashier.dto.RefundResponse;
 import com.payflow.cashier.exception.R;
 import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import com.payflow.cashier.service.RefundService;
+import com.payflow.cashier.service.ResourceOwnershipService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class RefundController {
 
     private final RefundService refundService;
+    private final ResourceOwnershipService resourceOwnershipService;
 
     @PostMapping
     @Operation(summary = "申请退款", description = "对已支付订单申请退款（需商户 HMAC 头）")
@@ -32,6 +34,10 @@ public class RefundController {
             @Valid @RequestBody RefundRequest request,
             HttpServletRequest httpRequest) {
         String merchantId = (String) httpRequest.getAttribute(MerchantSignatureInterceptor.ATTR_MERCHANT_ID);
+        String clientIp = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
+        resourceOwnershipService.assertPaymentOwned(
+                request.getPaymentId(), httpRequest.getMethod(), httpRequest.getRequestURI(), clientIp, userAgent);
         log.info("收到退款申请: merchantId={}, paymentId={}, amount={}",
                 merchantId, request.getPaymentId(), request.getRefundAmount());
         RefundResponse response = refundService.refund(merchantId, request);

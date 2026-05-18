@@ -3,6 +3,7 @@ package com.payflow.cashier.consumer;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payflow.cashier.config.MqConfig;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.dto.MqMessage;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.entity.PayChannelAccount;
@@ -72,6 +73,13 @@ public class OrderMqConsumer {
             }
 
             try {
+                MerchantScopeHolder.runInSystemMode(() -> processOrderTimeout(orderId, message));
+            } catch (Exception e) {
+                log.error("[订单超时] 处理失败: orderId={}, error={}", orderId, e.getMessage(), e);
+            }
+        }
+
+        private void processOrderTimeout(String orderId, MqMessage message) {
                 Order order = orderMapper.selectOne(
                         new LambdaQueryWrapper<Order>().eq(Order::getOrderId, orderId));
 
@@ -103,9 +111,6 @@ public class OrderMqConsumer {
                     log.info("[订单超时] 订单已非待支付状态，忽略: orderId={}, status={}",
                             orderId, order.getStatus());
                 }
-            } catch (Exception e) {
-                log.error("[订单超时] 处理异常: orderId={}, error={}", orderId, e.getMessage(), e);
-            }
         }
 
         /**

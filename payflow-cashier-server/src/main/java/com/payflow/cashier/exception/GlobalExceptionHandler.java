@@ -1,5 +1,6 @@
 package com.payflow.cashier.exception;
 
+import com.payflow.cashier.constant.MerchantSecurityErrorCodes;
 import com.payflow.common.exception.BizException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +47,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BizException.class)
     public R<Void> handleBizException(BizException e, HttpServletResponse response) throws Exception {
         HttpStatus status = HttpStatus.BAD_REQUEST;
-        if (e.getCode() == 6001 || e.getCode() == 6002) {
+        if (e.getCode() == MerchantSecurityErrorCodes.MERCHANT_ID_MISMATCH) {
+            status = HttpStatus.FORBIDDEN;
+        } else if (e.getCode() == MerchantSecurityErrorCodes.RESOURCE_NOT_FOUND
+                || e.getCode() == MerchantSecurityErrorCodes.RESOURCE_FORBIDDEN_INTERNAL) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (e.getCode() == 6001 || e.getCode() == 6002) {
             status = HttpStatus.NOT_FOUND;
         } else if (e.getCode() == 6006) {
             status = HttpStatus.CONFLICT;

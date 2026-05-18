@@ -2,6 +2,7 @@ package com.payflow.cashier.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.service.OrderCacheService;
@@ -40,6 +41,10 @@ public class OrderTimeoutTask {
      */
     @Scheduled(fixedDelay = 300000, initialDelay = 60000)
     public void scanExpiredOrders() {
+        MerchantScopeHolder.runInSystemMode(this::scanExpiredOrdersInternal);
+    }
+
+    private void scanExpiredOrdersInternal() {
         log.info("[超时扫描] 开始扫描过期订单...");
         try {
             LocalDateTime cutoff = LocalDateTime.now().minusMinutes(TIMEOUT_MINUTES);

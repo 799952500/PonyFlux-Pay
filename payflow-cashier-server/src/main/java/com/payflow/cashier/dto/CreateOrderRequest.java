@@ -21,8 +21,13 @@ import lombok.NoArgsConstructor;
 @Schema(name = "CreateOrderRequest", description = "创建订单请求参数")
 public class CreateOrderRequest {
 
-    /** 商户号（从 JWT 自动注入，可覆盖） */
-    @Schema(description = "商户号")
+    /**
+     * 商户号由服务端从 JWT 注入，客户端传入将被校验且不得与认证身份不一致。
+     *
+     * @deprecated 请勿在请求体中传递，由 {@link com.payflow.cashier.context.MerchantContext} 提供
+     */
+    @Deprecated
+    @Schema(description = "商户号（已废弃，由服务端注入）", deprecated = true)
     private String merchantId;
 
     /** 商户侧订单号 */

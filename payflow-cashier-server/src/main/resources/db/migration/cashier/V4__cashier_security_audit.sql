@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS cashier_security_audit (
+    id                  BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    merchant_id         VARCHAR(64)  NOT NULL COMMENT '调用方商户号',
+    target_merchant_id  VARCHAR(64)  NULL COMMENT '请求体中声称的商户号',
+    auth_mode           VARCHAR(16)  NOT NULL COMMENT 'JWT/HMAC/INTERNAL',
+    http_method         VARCHAR(10)  NOT NULL COMMENT 'HTTP 方法',
+    request_path        VARCHAR(512) NOT NULL COMMENT '请求路径',
+    resource_type       VARCHAR(32)  NULL COMMENT '资源类型',
+    resource_id         VARCHAR(64)  NULL COMMENT '资源 ID',
+    client_ip           VARCHAR(64)  NULL COMMENT '客户端 IP',
+    user_agent          VARCHAR(512) NULL COMMENT 'User-Agent',
+    outcome             VARCHAR(16)  NOT NULL COMMENT 'DENIED',
+    reason_code         VARCHAR(16)  NOT NULL COMMENT '5101/5102/5103',
+    reason_detail       VARCHAR(512) NULL COMMENT '内部原因',
+    created_at          DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '发生时间',
+    PRIMARY KEY (id),
+    KEY idx_merchant_created (merchant_id, created_at),
+    KEY idx_outcome_created (outcome, created_at),
+    KEY idx_reason_created (reason_code, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商户安全审计（越权拒绝）';

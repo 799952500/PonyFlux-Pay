@@ -27,6 +27,7 @@ public @interface RequireRole {
     /** 允许的角色常量 */
     String SUPER_ADMIN = "SUPER_ADMIN";
     String ADMIN = "ADMIN";
+    String RISK = "RISK";
 
     /**
      * 所需的角色列表，满足其一即放行。
