@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 顶部工具栏 -->
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="商户">
           <el-select v-model="queryForm.merchantId" placeholder="全部商户" clearable style="width: 200px" @change="handleSearch">
@@ -20,7 +20,7 @@
     </div>
 
     <!-- 支付路由列表 -->
-    <div class="bg-white rounded-xl card-shadow">
+    <div class="content-card">
       <el-table v-loading="loading" :data="routeList" stripe size="small" class="data-table">
         <el-table-column label="路由ID" prop="routeId" min-width="100">
           <template #default="{ row }">
@@ -82,7 +82,7 @@
       <el-empty v-if="!loading && !routeList.length" description="暂无支付路由，请先创建支付路由" class="py-12" />
 
       <!-- 分页 -->
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="page"
           v-model:page-size="pageSize"
@@ -335,56 +335,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.card-shadow {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.08);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 9px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 9px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-
-.data-table :deep(th) {
-  background: linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.04) 100%) !important;
-  color: #374151;
-  font-weight: 600;
-  font-size: 13px;
-  border-bottom: 2px solid rgba(99, 102, 241, 0.1) !important;
-}
-
-.data-table :deep(tr:hover td) {
-  background: rgba(99, 102, 241, 0.03) !important;
-}
-
-.data-table :deep(td) {
-  border-bottom: 1px solid rgba(99, 102, 241, 0.06) !important;
-}
-</style>

@@ -5,7 +5,7 @@
     </div>
 
     <div class="space-y-4">
-      <div v-for="rule in ruleList" :key="rule.ruleId" class="bg-white rounded-xl card-shadow p-5">
+      <div v-for="rule in ruleList" :key="rule.ruleId" class="content-card">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-start gap-4 flex-1 min-w-0">
             <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" :style="{ background: ruleTypeBg[rule.ruleType] }">{{ ruleTypeIcon[rule.ruleType] ?? '🛡️' }}</div>
@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <div v-if="ruleList.length === 0 && !loading" class="bg-white rounded-xl p-12 text-center text-gray-400">
+      <div v-if="ruleList.length === 0 && !loading" class="content-card text-center text-gray-400 py-12">
         <p class="text-4xl mb-3">🛡️</p>
         <p>暂无风控规则，点击上方按钮新增</p>
       </div>

@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <p class="text-sm text-slate-600 m-0">
         枚举字典来自接口 <code class="text-xs bg-slate-100 px-1 rounded">GET /api/v1/admin/dicts</code>，供筛选选项与前后端对齐。
       </p>
     </div>
-    <div v-loading="loading" class="bg-white rounded-xl card-shadow p-5">
+    <div v-loading="loading" class="content-card">
       <el-tabs v-if="loaded" v-model="activeTab">
         <el-tab-pane v-for="(val, key) in raw" :key="key" :label="String(key)" :name="String(key)">
           <pre class="dict-pre text-xs text-slate-700 overflow-auto max-h-[480px] m-0">{{ format(val) }}</pre>
@@ -48,16 +48,3 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.card-shadow {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.08);
-}
-
-.dict-pre {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: #f8fafc;
-  padding: 12px;
-  border-radius: 8px;
-}
-</style>

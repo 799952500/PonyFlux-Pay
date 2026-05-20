@@ -40,7 +40,9 @@ public class PaymentMethod {
     private Boolean enabled;
     private Integer priority;
     private String description;
-    private String status;              // 状态字段（前端用）
+    /** 前端展示用，非数据库列 */
+    @TableField(exist = false)
+    private String status;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

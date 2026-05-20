@@ -84,6 +84,12 @@ public class EncryptedStringTypeHandler extends BaseTypeHandler<String> {
             log.warn("主密钥未配置，返回密文原文");
             return ciphertext;
         }
-        return AesEncryptor.decrypt(ciphertext, masterKey);
+        try {
+            return AesEncryptor.decrypt(ciphertext, masterKey);
+        } catch (RuntimeException ex) {
+            // 兼容演示库/历史数据中的明文密钥（非 AES-GCM 密文）
+            log.debug("字段解密失败，按明文返回: {}", ex.getMessage());
+            return ciphertext;
+        }
     }
 }

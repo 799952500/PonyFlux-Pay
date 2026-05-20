@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="操作者">
           <el-input v-model="queryForm.username" placeholder="用户名模糊" clearable style="width: 140px" @keyup.enter="handleSearch" />
@@ -33,8 +33,8 @@
       </el-form>
     </div>
 
-    <div class="bg-white rounded-xl card-shadow">
-      <el-table v-loading="loading" :data="list" stripe size="small">
+    <div class="content-card">
+      <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
         <el-table-column label="时间" prop="createdAt" width="170" />
         <el-table-column label="操作者" prop="username" width="120">
           <template #default="{ row }">
@@ -63,7 +63,7 @@
         </el-table-column>
       </el-table>
 
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -134,27 +134,3 @@ function handleReset() {
 onMounted(() => loadData())
 </script>
 
-<style scoped>
-.card-shadow {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.08);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #e2e8f0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-}
-</style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl card-shadow">
+    <div class="content-card">
       <div class="flex items-center justify-between px-5 pt-4 pb-2">
         <span class="text-base font-semibold text-gray-700">菜单管理</span>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd()">新增菜单</el-button>
@@ -245,35 +245,3 @@ async function handleDelete(row: SysMenu) {
 onMounted(() => { loadMenuTree() })
 </script>
 
-<style scoped>
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-</style>

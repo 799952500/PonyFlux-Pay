@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 顶部筛选工具栏 -->
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" placeholder="渠道编码 / 名称" clearable style="width: 180px" @keyup.enter="handleSearch" />
@@ -158,7 +158,7 @@
       destroy-on-close
     >
       <div v-loading="drawerLoading" class="min-h-[120px]">
-        <el-table v-if="drawerMethods.length" :data="drawerMethods" stripe size="small" class="w-full">
+        <el-table v-if="drawerMethods.length" :data="drawerMethods" stripe size="small" class="data-table w-full">
           <el-table-column label="编号" prop="methodCode" min-width="120" show-overflow-tooltip />
           <el-table-column label="名称" prop="methodName" min-width="140" show-overflow-tooltip />
           <el-table-column label="状态" width="88" align="center">
@@ -413,59 +413,10 @@ onMounted(() => { loadChannels() })
 </script>
 
 <style scoped>
-.card-shadow {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.08);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 9px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 9px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-
-.content-card {
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 20px;
-  transition: box-shadow 0.2s;
-}
-
 .channel-card-shell.content-card {
   padding: 18px 20px 16px;
   display: flex;
   flex-direction: column;
-}
-
-.content-card:hover {
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
 }
 
 .card-action-btn {

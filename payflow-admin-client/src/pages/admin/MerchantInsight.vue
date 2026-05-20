@@ -205,19 +205,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.content-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-  margin-bottom: 16px;
-}
-.stat-card {
-  background: #FFFFFF;
-  border-radius: 12px;
-  border: 1px solid rgba(99, 102, 241, 0.06);
-  padding: 16px;
-}
-</style>

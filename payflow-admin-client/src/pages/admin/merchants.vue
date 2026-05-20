@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="关键词"><el-input v-model="queryForm.keyword" placeholder="商户号 / 商户名称" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
         <el-form-item label="状态">
@@ -15,8 +15,8 @@
       </el-form>
     </div>
 
-    <div class="bg-white rounded-xl card-shadow">
-      <el-table v-loading="loading" :data="merchantList" stripe size="small">
+    <div class="content-card">
+      <el-table v-loading="loading" :data="merchantList" stripe size="small" class="data-table">
         <el-table-column label="商户号" prop="merchantId" min-width="150">
           <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-primary cursor-pointer">{{ row.merchantId }}</span></template>
         </el-table-column>
@@ -50,7 +50,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination v-model:current-page="queryForm.page" v-model:page-size="queryForm.pageSize" :total="total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="loadMerchants" @current-change="loadMerchants" />
       </div>
     </div>
@@ -141,7 +141,7 @@
           <div class="text-sm text-gray-500">为该商户配置「支付方式 + 收款账号 + 终端（PC/H5/APP）」：</div>
           <el-button type="primary" class="btn-primary" size="small" @click="addRoute">新增路由</el-button>
         </div>
-        <el-table :data="merchantRoutes" stripe size="small" max-height="420">
+        <el-table :data="merchantRoutes" stripe size="small" class="data-table" max-height="420">
           <el-table-column label="支付方式" min-width="220">
             <template #default="{ row }">
               <el-select v-model="row.paymentMethodId" placeholder="请选择支付方式" filterable style="width: 100%" @change="handleRouteMethodChange(row)">
@@ -428,36 +428,3 @@ async function savePaymentRoutes() {
 onMounted(() => { loadMerchants() })
 </script>
 
-<style scoped>
-/* 按钮样式（与 orders/index.vue 保持一致） */
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-</style>

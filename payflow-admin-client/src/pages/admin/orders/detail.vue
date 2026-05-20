@@ -10,7 +10,7 @@
     </div>
 
     <div v-else-if="order" class="space-y-6">
-      <div class="bg-white rounded-xl card-shadow p-6">
+      <div class="content-card">
         <h3 class="text-sm font-semibold text-gray-700 mb-4 border-b pb-2">基本信息</h3>
         <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
           <dt class="text-gray-400">订单号</dt><dd class="text-gray-800 font-medium tabular-nums">{{ order.orderId }}</dd>
@@ -20,7 +20,7 @@
           <dt class="text-gray-400">金额</dt><dd class="text-gray-800 font-bold">¥{{ (order.amount / 100).toFixed(2) }}</dd>
         </dl>
       </div>
-      <div class="bg-white rounded-xl card-shadow p-6">
+      <div class="content-card">
         <h3 class="text-sm font-semibold text-gray-700 mb-4 border-b pb-2">支付信息</h3>
         <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
           <dt class="text-gray-400">渠道</dt><dd>{{ order.channel }}</dd>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 顶部筛选 -->
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="所属渠道">
           <el-select v-model="queryForm.channelId" placeholder="全部渠道" clearable style="width: 180px">
@@ -19,13 +19,13 @@
     </div>
 
     <!-- 表格区 -->
-    <div class="bg-white rounded-xl card-shadow">
+    <div class="content-card">
       <div class="flex items-center justify-between px-5 pt-4 pb-2">
         <h3 class="text-base font-semibold text-gray-700 m-0">支付账号列表</h3>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增账号</el-button>
       </div>
 
-      <el-table v-loading="loading" :data="accountList" stripe size="small">
+      <el-table v-loading="loading" :data="accountList" stripe size="small" class="data-table">
         <el-table-column label="账号编码" prop="accountCode" min-width="140">
           <template #default="{ row }">
             <span class="text-xs font-mono font-medium text-primary">{{ row.accountCode }}</span>
@@ -59,7 +59,7 @@
         </el-table-column>
       </el-table>
 
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -321,35 +321,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-</style>

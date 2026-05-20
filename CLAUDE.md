@@ -32,8 +32,8 @@ cd payflow-admin-client && npm ci && npm run dev    # dev on :3001
 cd payflow-cashier-client && npm ci && npm run dev  # dev on :5173
 cd payflow-admin-client && npm run build            # production build
 
-# Reset demo database
-python scripts/run_mysql_sql.py sql/full-reseed-payflow-demo.sql
+# Reset demo database (schema + seed)
+python scripts/install_demo_db.py
 
 # Verify admin passwords after reseed
 python scripts/verify_admin_password.py
@@ -116,8 +116,10 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 | `docs/reconciliation.md` | Recon architecture, tables, flow, error codes |
 | `docs/REFUND_STATE_MACHINE.md` | Refund states and approval process |
 | `docs/optimization-full-report.md` | Full system optimization audit (2026-05) |
-| `sql/migrations/` | All schema migrations in chronological order |
-| `sql/full-reseed-payflow-demo.sql` | Complete demo data reseed script |
+| `sql/schema/` | Full DDL per database (`payflow_admin`, `payflow_cashier`) |
+| `sql/seed/` | Realistic demo data for all admin pages |
+| `sql/migrations/` | Historical Flyway-style incremental migrations (reference) |
+| `scripts/install_demo_db.py` | One-shot install: schema + seed |
 
 ### Port Assignments
 

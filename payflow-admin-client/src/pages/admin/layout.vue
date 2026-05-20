@@ -26,106 +26,166 @@
         <template v-else>
         <el-sub-menu index="workspace-group">
           <template #title>
-            <span class="menu-icon">🏠</span>
+            <el-icon class="menu-icon"><Monitor /></el-icon>
             <span class="menu-text">{{ t('menu.groupWorkspace') }}</span>
           </template>
           <el-menu-item index="/admin/dashboard">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.dashboard') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/insights/funnel">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.insightsFunnel') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/dashboard/churn-alerts">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.churnAlerts') }}</span>
+          </el-menu-item>
           <el-menu-item index="/admin/notifications">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.notifications') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/search">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.globalSearch') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="trade-group">
           <template #title>
-            <span class="menu-icon">📋</span>
+            <el-icon class="menu-icon"><Document /></el-icon>
             <span class="menu-text">{{ t('menu.groupTrade') }}</span>
           </template>
           <el-menu-item index="/admin/orders">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.orders') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/refunds">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.refunds') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="reconcile-group">
           <template #title>
-            <span class="menu-icon">📒</span>
+            <el-icon class="menu-icon"><Memo /></el-icon>
             <span class="menu-text">{{ t('menu.groupReconcile') }}</span>
           </template>
           <el-menu-item index="/admin/reconcile/tasks">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.reconcileTasks') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/reconcile/results">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.reconcileResults') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/reconcile/summary">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.reconcileSummary') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="channel-pay-group">
+        <el-sub-menu index="channel-account-group">
           <template #title>
-            <span class="menu-icon">💳</span>
-            <span class="menu-text">{{ t('menu.groupChannelPay') }}</span>
+            <el-icon class="menu-icon"><CreditCard /></el-icon>
+            <span class="menu-text">{{ t('menu.groupChannelAccount') }}</span>
           </template>
           <el-menu-item index="/admin/channels">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.channels') }}</span>
           </el-menu-item>
-          <el-menu-item index="/admin/channel-routes">
-            <span class="menu-text">{{ t('menu.channelRoutes') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/merchant-payments">
-            <span class="menu-text">{{ t('menu.merchantPayments') }}</span>
-          </el-menu-item>
           <el-menu-item index="/admin/payment-methods">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.paymentMethods') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/payment-accounts">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.paymentAccounts') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/merchant-payments">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.merchantPayments') }}</span>
+          </el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="routing-group">
+          <template #title>
+            <el-icon class="menu-icon"><Connection /></el-icon>
+            <span class="menu-text">{{ t('menu.groupRouting') }}</span>
+          </template>
+          <el-menu-item index="/admin/channel-routes">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.channelRoutes') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/channel-routing/health">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.channelRoutingHealth') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/routing/logs">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.routingLogs') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/fee-rate/config">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.feeRateConfig') }}</span>
+          </el-menu-item>
+          <el-menu-item index="/admin/fee-rate/audit-log">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.feeRateAuditLog') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="merchant-risk-group">
           <template #title>
-            <span class="menu-icon">🏪</span>
+            <el-icon class="menu-icon"><Shop /></el-icon>
             <span class="menu-text">{{ t('menu.groupMerchantRisk') }}</span>
           </template>
           <el-menu-item index="/admin/merchants">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.merchants') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/onboarding">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.onboarding') }}</span>
+          </el-menu-item>
           <el-menu-item index="/admin/risk">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.risk') }}</span>
           </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="system-group">
           <template #title>
-            <span class="menu-icon">⚙️</span>
+            <el-icon class="menu-icon"><Setting /></el-icon>
             <span class="menu-text">{{ t('menu.groupSystem') }}</span>
           </template>
           <el-menu-item index="/admin/settings">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.settings') }}</span>
           </el-menu-item>
+          <el-menu-item index="/admin/users">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.users') }}</span>
+          </el-menu-item>
           <el-menu-item index="/admin/roles">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.roles') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/menus">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.menus') }}</span>
           </el-menu-item>
-          <el-menu-item index="/admin/users">
-            <span class="menu-text">{{ t('menu.users') }}</span>
+          <el-menu-item index="/admin/dicts">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.dicts') }}</span>
           </el-menu-item>
           <el-menu-item index="/admin/audit-logs">
+            <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.auditLogs') }}</span>
           </el-menu-item>
-          <el-menu-item index="/admin/dicts">
-            <span class="menu-text">{{ t('menu.dicts') }}</span>
+          <el-menu-item index="/admin/security-audit">
+            <span class="menu-leaf-dot" />
+            <span class="menu-text">{{ t('menu.securityAudit') }}</span>
           </el-menu-item>
         </el-sub-menu>
         </template>
@@ -156,7 +216,7 @@
       <!-- 顶部工具栏（与侧栏同一套森林模糊底） -->
       <div class="admin-topbar h-[60px] shrink-0 topbar relative border-b border-white/10">
         <div class="admin-topbar__inner relative z-[1] flex h-full w-full items-center px-6">
-        <h1 class="text-white/95 font-semibold text-base m-0 tracking-tight">{{ pageTitle }}</h1>
+        <h1 class="topbar-title text-white/95 font-semibold text-base m-0 tracking-tight">{{ pageTitle }}</h1>
         <el-input
           v-model="topSearchQ"
           clearable
@@ -192,6 +252,15 @@ import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import {
+  Monitor,
+  Document,
+  Memo,
+  CreditCard,
+  Connection,
+  Shop,
+  Setting,
+} from '@element-plus/icons-vue'
 import { useAdminStore } from '@/stores/admin'
 import { getAdminProfile } from '@/api/auth'
 import AdminSidebarMenu from '@/components/AdminSidebarMenu.vue'
@@ -247,6 +316,7 @@ const menuDefaultOpeneds = computed(() => {
   const path = route.path
   if (
     path.startsWith('/admin/dashboard')
+    || path.startsWith('/admin/insights')
     || path.startsWith('/admin/notifications')
     || path.startsWith('/admin/search')
   ) {
@@ -260,14 +330,25 @@ const menuDefaultOpeneds = computed(() => {
   }
   if (
     path.startsWith('/admin/channels')
-    || path.startsWith('/admin/channel-routes')
     || path.startsWith('/admin/merchant-payments')
     || path.startsWith('/admin/payment-methods')
     || path.startsWith('/admin/payment-accounts')
   ) {
-    return ['channel-pay-group']
+    return ['channel-account-group']
   }
-  if (path.startsWith('/admin/merchants') || path.startsWith('/admin/risk')) {
+  if (
+    path.startsWith('/admin/channel-routes')
+    || path.startsWith('/admin/channel-routing')
+    || path.startsWith('/admin/fee-rate')
+    || path.startsWith('/admin/routing')
+  ) {
+    return ['routing-group']
+  }
+  if (
+    path.startsWith('/admin/merchants')
+    || path.startsWith('/admin/onboarding')
+    || path.startsWith('/admin/risk')
+  ) {
     return ['merchant-risk-group']
   }
   if (
@@ -276,6 +357,7 @@ const menuDefaultOpeneds = computed(() => {
     || path.startsWith('/admin/menus')
     || path.startsWith('/admin/users')
     || path.startsWith('/admin/audit-logs')
+    || path.startsWith('/admin/security-audit')
     || path.startsWith('/admin/dicts')
   ) {
     return ['system-group']
@@ -443,16 +525,44 @@ async function handleLogout() {
 
 /* 菜单图标 */
 .menu-icon {
-  font-size: 16px;
-  width: 24px;
-  text-align: center;
+  font-size: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.admin-menu :deep(.el-sub-menu.is-opened > .el-sub-menu__title .menu-icon),
+.admin-menu :deep(.el-sub-menu__title:hover .menu-icon) {
+  color: #5eead4;
+}
+
+/* 叶子菜单小圆点 */
+.menu-leaf-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.6);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.admin-menu :deep(.el-menu-item.is-active .menu-leaf-dot) {
+  background: #14b8a6;
+  box-shadow: 0 0 6px rgba(20, 184, 166, 0.6);
 }
 
 /* 菜单文字 */
 .menu-text {
   font-size: 14px;
   font-weight: 500;
+}
+
+.topbar-title {
+  max-width: min(280px, 32vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 一级菜单项 */
@@ -475,9 +585,9 @@ async function handleLogout() {
 }
 
 .admin-menu :deep(.el-menu-item.is-active) {
-  background: rgba(4, 120, 87, 0.28) !important;
+  background: linear-gradient(90deg, rgba(4, 120, 87, 0.35) 0%, rgba(13, 148, 136, 0.15) 100%) !important;
   color: #ffffff !important;
-  border-left: 3px solid #0d9488;
+  border-left: 3px solid #14b8a6;
   font-weight: 600;
 }
 
@@ -502,10 +612,13 @@ async function handleLogout() {
 
 /* 子菜单展开后的容器 */
 .admin-menu :deep(.el-menu--inline) {
+  position: relative;
   background: rgba(2, 22, 20, 0.32) !important;
   border-radius: 0 0 8px 8px;
-  margin: 0 12px;
-  padding: 4px 0;
+  margin: 0 12px 6px;
+  padding: 4px 0 6px 8px;
+  border-left: 2px solid transparent;
+  border-image: linear-gradient(180deg, #0d9488 0%, rgba(13, 148, 136, 0.15) 70%, transparent 100%) 1;
 }
 
 /* 子菜单项 */
@@ -513,8 +626,9 @@ async function handleLogout() {
   margin: 2px 8px;
   height: 38px;
   line-height: 38px;
-  padding-left: 44px !important;
+  padding-left: 20px !important;
   font-size: 13px;
+  gap: 8px;
 }
 
 .admin-menu :deep(.el-menu--inline .el-menu-item:hover) {
@@ -522,7 +636,7 @@ async function handleLogout() {
 }
 
 .admin-menu :deep(.el-menu--inline .el-menu-item.is-active) {
-  background: rgba(4, 120, 87, 0.3) !important;
+  background: linear-gradient(90deg, rgba(4, 120, 87, 0.32) 0%, rgba(13, 148, 136, 0.12) 100%) !important;
   border-left: 3px solid #14b8a6;
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="content-card mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="账单日" required>
           <el-date-picker

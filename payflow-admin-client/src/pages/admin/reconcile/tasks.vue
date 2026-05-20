@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="content-card mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="账单日">
           <el-date-picker
@@ -62,7 +62,7 @@
         </el-table-column>
       </el-table>
 
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"

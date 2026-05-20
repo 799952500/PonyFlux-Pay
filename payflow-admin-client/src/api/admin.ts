@@ -650,8 +650,17 @@ export const updateFeeRate = (id: number, data: any): Promise<any> =>
 export const deleteFeeRate = (id: number): Promise<any> =>
   request.delete(`/admin/fee-rates/${id}`)
 
-export const getFeeRateAuditLog = (params: { merchantId?: string; page?: number; size?: number }): Promise<any[]> =>
-  request.get('/admin/fee-rates/audit-log', { params }).then((d: any) => d?.data ?? d ?? [])
+export const getFeeRateAuditLog = (params: {
+  merchantId?: string
+  page?: number
+  size?: number
+}): Promise<PageResult<any>> =>
+  request.get('/admin/fee-rates/audit-log', { params }).then((data: any) => ({
+    list: data?.records ?? data?.list ?? (Array.isArray(data) ? data : []),
+    total: Number(data?.total ?? 0),
+    page: Number(data?.current ?? params.page ?? 1),
+    pageSize: Number(data?.size ?? params.size ?? 20),
+  }))
 
 export const getMerchantFeeProgress = (merchantId: string): Promise<any> =>
   request.get(`/admin/merchant-fee/${encodeURIComponent(merchantId)}/progress`).then((d: any) => d?.data ?? d ?? null)

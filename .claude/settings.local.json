@@ -40,7 +40,10 @@
       "Bash(npx vue-tsc:*)",
       "Bash(npx vite:*)",
       "Bash(mvn -B -DskipTests compile test-compile)",
-      "Bash(mvn -B test -pl payflow-cashier-server -pl payflow-admin-server)"
+      "Bash(mvn -B test -pl payflow-cashier-server -pl payflow-admin-server)",
+      "Bash(ls:*)",
+      "Bash(npm run:*)",
+      "Bash(mvn -B -pl payflow-admin-server -DskipTests=false test -Dtest=FeeRateServiceTest)"
     ]
   }
 }

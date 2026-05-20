@@ -2,7 +2,7 @@
 SET NAMES utf8mb4;
 
 INSERT INTO sys_menus (id, parent_id, menu_code, menu_name, menu_type, path, icon, sort_order, visible, status, created_at, updated_at)
-VALUES (64, 12, 'security_audit', '安全审计', 'MENU', '/admin/security-audit', NULL, 5, 1, 'ACTIVE', NOW(), NOW())
+VALUES (64, 50, 'security_audit', '安全审计', 'MENU', '/admin/security-audit', NULL, 5, 1, 'ACTIVE', NOW(), NOW())
 ON DUPLICATE KEY UPDATE
   parent_id = VALUES(parent_id),
   menu_name = VALUES(menu_name),

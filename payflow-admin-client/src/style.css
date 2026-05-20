@@ -161,3 +161,88 @@ body {
   align-items: center;
   gap: 4px;
 }
+
+/* =============================================
+   管理后台列表页通用样式
+   ============================================= */
+
+.content-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(4, 120, 87, 0.08);
+  box-shadow: 0 2px 12px rgba(4, 120, 87, 0.04);
+  padding: 20px;
+  transition: box-shadow 0.2s;
+}
+
+.content-card:hover {
+  box-shadow: 0 6px 22px rgba(4, 120, 87, 0.08);
+}
+
+.filter-bar {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(4, 120, 87, 0.08);
+  box-shadow: 0 2px 12px rgba(4, 120, 87, 0.04);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 4px 4px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.32);
+}
+
+.btn-outline {
+  background: transparent !important;
+  border: 1.5px solid #e2e8f0 !important;
+  color: #374151 !important;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-outline:hover {
+  border-color: #047857 !important;
+  color: #047857 !important;
+}
+
+.data-table .el-table__header-wrapper th.el-table__cell {
+  background: linear-gradient(90deg, rgba(13, 148, 136, 0.06) 0%, rgba(4, 120, 87, 0.03) 100%) !important;
+  color: #334155;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid rgba(13, 148, 136, 0.18) !important;
+}
+
+.data-table .el-table__body tr:hover > td.el-table__cell {
+  background: rgba(13, 148, 136, 0.04) !important;
+}
+
+.data-table .el-table__body td.el-table__cell {
+  border-bottom: 1px solid rgba(13, 148, 136, 0.06) !important;
+}
+
+.stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}

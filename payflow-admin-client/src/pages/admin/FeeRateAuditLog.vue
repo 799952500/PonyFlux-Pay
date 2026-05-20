@@ -40,7 +40,8 @@
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
           small
-          @change="loadLogs"
+          @size-change="loadLogs"
+          @current-change="loadLogs"
         />
       </div>
     </div>
@@ -61,13 +62,16 @@ const pagination = reactive({ page: 1, size: 20, total: 0 })
 async function loadLogs() {
   loading.value = true
   try {
-    logs.value = await getFeeRateAuditLog({
+    const result = await getFeeRateAuditLog({
       merchantId: filters.merchantId || undefined,
       page: pagination.page,
       size: pagination.size,
     })
-    pagination.total = Array.isArray(logs.value) ? logs.value.length : 0
+    logs.value = result.list ?? []
+    pagination.total = result.total ?? 0
   } catch {
+    logs.value = []
+    pagination.total = 0
     ElMessage.error('加载审计日志失败')
   } finally {
     loading.value = false
@@ -77,20 +81,3 @@ async function loadLogs() {
 loadLogs()
 </script>
 
-<style scoped>
-.content-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-}
-
-.data-table :deep(th) {
-  background: linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.04) 100%) !important;
-  color: #374151;
-  font-weight: 600;
-  font-size: 13px;
-  border-bottom: 2px solid rgba(99, 102, 241, 0.1) !important;
-}
-</style>

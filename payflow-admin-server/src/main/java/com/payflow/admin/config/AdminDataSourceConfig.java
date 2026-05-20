@@ -8,6 +8,12 @@ import com.payflow.admin.mapper.AdminAuditLogMapper;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.mapper.ChannelRouteMapper;
+import com.payflow.admin.mapper.ChurnAlertMapper;
+import com.payflow.admin.mapper.DashboardMetricsMapper;
+import com.payflow.admin.mapper.FeeRateAuditLogMapper;
+import com.payflow.admin.mapper.FeeRateConfigMapper;
+import com.payflow.admin.mapper.MerchantFeeSnapshotMapper;
+import com.payflow.admin.mapper.RoutingDecisionLogMapper;
 import com.payflow.admin.mapper.MerchantApplicationEntityMapper;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.MerchantPaymentMethodMapper;
@@ -101,144 +107,144 @@ public class AdminDataSourceConfig {
     @Bean
     @Primary
     public MapperFactoryBean<AdminUserMapper> adminUserMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<AdminUserMapper> factory = new MapperFactoryBean<>(AdminUserMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<AdminAuditLogMapper> adminAuditLogMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<AdminAuditLogMapper> factory = new MapperFactoryBean<>(AdminAuditLogMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<ChannelMapper> channelMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ChannelMapper> factory = new MapperFactoryBean<>(ChannelMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<MerchantMapper> merchantMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<MerchantMapper> factory = new MapperFactoryBean<>(MerchantMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<MerchantPaymentMethodMapper> merchantPaymentMethodMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<MerchantPaymentMethodMapper> factory = new MapperFactoryBean<>(MerchantPaymentMethodMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<PaymentMethodMapper> paymentMethodMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<PaymentMethodMapper> factory = new MapperFactoryBean<>(PaymentMethodMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<PaymentAccountMapper> paymentAccountMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<PaymentAccountMapper> factory = new MapperFactoryBean<>(PaymentAccountMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<RiskRuleMapper> riskRuleMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<RiskRuleMapper> factory = new MapperFactoryBean<>(RiskRuleMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<MerchantPaymentRouteMapper> merchantPaymentRouteMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<MerchantPaymentRouteMapper> factory = new MapperFactoryBean<>(MerchantPaymentRouteMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<ChannelRouteMapper> channelRouteMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ChannelRouteMapper> factory = new MapperFactoryBean<>(ChannelRouteMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SysRoleMapper> sysRoleMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SysRoleMapper> factory = new MapperFactoryBean<>(SysRoleMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SysMenuMapper> sysMenuMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SysMenuMapper> factory = new MapperFactoryBean<>(SysMenuMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SysRoleMenuMapper> sysRoleMenuMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SysRoleMenuMapper> factory = new MapperFactoryBean<>(SysRoleMenuMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SysUserRoleMapper> sysUserRoleMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SysUserRoleMapper> factory = new MapperFactoryBean<>(SysUserRoleMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SystemConfigMapper> systemConfigMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SystemConfigMapper> factory = new MapperFactoryBean<>(SystemConfigMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<SysUserMapper> sysUserMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<SysUserMapper> factory = new MapperFactoryBean<>(SysUserMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
@@ -247,45 +253,99 @@ public class AdminDataSourceConfig {
     @Bean
     @Primary
     public MapperFactoryBean<ReconTaskEntityMapper> reconTaskEntityMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ReconTaskEntityMapper> factory = new MapperFactoryBean<>(ReconTaskEntityMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<ReconDiffEntityMapper> reconDiffEntityMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ReconDiffEntityMapper> factory = new MapperFactoryBean<>(ReconDiffEntityMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<ReconHandlerAuditEntityMapper> reconHandlerAuditEntityMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ReconHandlerAuditEntityMapper> factory = new MapperFactoryBean<>(ReconHandlerAuditEntityMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<ReconMerchantTaskEntityMapper> reconMerchantTaskEntityMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ReconMerchantTaskEntityMapper> factory = new MapperFactoryBean<>(ReconMerchantTaskEntityMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 
     @Bean
     @Primary
     public MapperFactoryBean<MerchantApplicationEntityMapper> merchantApplicationEntityMapper(
-            @Qualifier("adminSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<MerchantApplicationEntityMapper> factory = new MapperFactoryBean<>(MerchantApplicationEntityMapper.class);
-        factory.setSqlSessionFactory(sqlSessionFactory);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<DashboardMetricsMapper> dashboardMetricsMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<DashboardMetricsMapper> factory = new MapperFactoryBean<>(DashboardMetricsMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<FeeRateConfigMapper> feeRateConfigMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<FeeRateConfigMapper> factory = new MapperFactoryBean<>(FeeRateConfigMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<MerchantFeeSnapshotMapper> merchantFeeSnapshotMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<MerchantFeeSnapshotMapper> factory = new MapperFactoryBean<>(MerchantFeeSnapshotMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<FeeRateAuditLogMapper> feeRateAuditLogMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<FeeRateAuditLogMapper> factory = new MapperFactoryBean<>(FeeRateAuditLogMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<RoutingDecisionLogMapper> routingDecisionLogMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<RoutingDecisionLogMapper> factory = new MapperFactoryBean<>(RoutingDecisionLogMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ChurnAlertMapper> churnAlertMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ChurnAlertMapper> factory = new MapperFactoryBean<>(ChurnAlertMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
 }

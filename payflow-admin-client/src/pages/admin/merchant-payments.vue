@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="选择商户">
           <el-select v-model="queryForm.merchantId" placeholder="全部商户" clearable filterable style="width: 240px" @change="handleMerchantChange">
@@ -26,7 +26,7 @@
       </el-form>
     </div>
 
-    <div class="bg-white rounded-xl card-shadow">
+    <div class="content-card">
       <div class="p-4 flex justify-between items-center border-b">
         <div>
           <span class="text-sm font-semibold text-gray-600">商户支付配置</span>
@@ -34,7 +34,7 @@
         </div>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd">新增配置</el-button>
       </div>
-      <el-table v-loading="loading" :data="tableData" stripe size="small">
+      <el-table v-loading="loading" :data="tableData" stripe size="small" class="data-table">
         <el-table-column label="商户ID" prop="merchantId" min-width="140">
           <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-primary">{{ row.merchantId }}</span></template>
         </el-table-column>
@@ -77,7 +77,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -373,35 +373,3 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #e2e8f0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-</style>

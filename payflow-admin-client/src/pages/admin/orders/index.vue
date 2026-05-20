@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="orderStats" class="content-card mb-4 flex flex-wrap items-center gap-3">
+    <div v-if="orderStats" class="content-card mb-4 stats-bar">
       <span class="text-sm text-slate-600 font-medium">订单统计</span>
       <el-tag type="info" effect="plain">全部 {{ orderStats.total }}</el-tag>
       <el-tag
@@ -13,7 +13,7 @@
       </el-tag>
     </div>
     <!-- 筛选工具栏 -->
-    <div class="content-card mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="商户号">
           <el-input v-model="queryForm.merchantId" placeholder="筛选商户" clearable style="width: 160px" @keyup.enter="handleSearch" />
@@ -83,7 +83,7 @@
         </el-table-column>
       </el-table>
 
-      <div class="flex justify-end p-4">
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -252,69 +252,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-/* 内容卡片统一样式 */
-.content-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-  transition: box-shadow 0.2s;
-}
-
-.content-card:hover {
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
-}
-
-/* 按钮样式 */
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-
-/* 表格样式 */
-.data-table :deep(th) {
-  background: linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.04) 100%) !important;
-  color: #374151;
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid rgba(99, 102, 241, 0.1) !important;
-}
-
-.data-table :deep(tr:hover td) {
-  background: rgba(99, 102, 241, 0.03) !important;
-}
-
-.data-table :deep(td) {
-  border-bottom: 1px solid rgba(99, 102, 241, 0.06) !important;
-}
-</style>

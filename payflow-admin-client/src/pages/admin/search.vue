@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <el-form :inline="true" @submit.prevent="runSearch">
         <el-form-item label="关键词">
           <el-input
@@ -20,8 +20,8 @@
       </el-form>
     </div>
 
-    <div class="bg-white rounded-xl card-shadow">
-      <el-table v-loading="loading" :data="hits" stripe size="small" @row-click="openOrder">
+    <div class="content-card">
+      <el-table v-loading="loading" :data="hits" stripe size="small" class="data-table" @row-click="openOrder">
         <el-table-column label="订单号" prop="orderId" min-width="170">
           <template #default="{ row }">
             <span class="text-xs tabular-nums text-[#047857] cursor-pointer">#{{ row.orderId }}</span>
@@ -90,18 +90,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.card-shadow {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.08);
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-}
-</style>

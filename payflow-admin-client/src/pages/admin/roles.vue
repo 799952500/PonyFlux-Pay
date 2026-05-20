@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 顶部操作栏 -->
-    <div class="bg-white rounded-xl p-5 card-shadow mb-4">
+    <div class="filter-bar">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-semibold text-gray-700 m-0">角色列表</h3>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增角色</el-button>
@@ -9,8 +9,8 @@
     </div>
 
     <!-- 表格区 -->
-    <div class="bg-white rounded-xl card-shadow">
-      <el-table v-loading="loading" :data="roleList" stripe size="small">
+    <div class="content-card">
+      <el-table v-loading="loading" :data="roleList" stripe size="small" class="data-table">
         <el-table-column label="角色编码" prop="roleCode" min-width="140">
           <template #default="{ row }">
             <span class="text-xs font-mono font-medium text-primary">{{ row.roleCode }}</span>
@@ -260,35 +260,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.btn-primary {
-  background: linear-gradient(135deg, #065f46 0%, #0d9488 100%);
-  border: none;
-  color: white;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #E2E8F0;
-  color: #374151;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.btn-outline:hover {
-  border-color: #047857;
-  color: #047857;
-}
-</style>

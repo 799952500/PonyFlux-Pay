@@ -1,14 +1,6 @@
 <template>
-  <motion.div
-    :initial="{ opacity: 0, y: 8 }"
-    :animate="{ opacity: 1, y: 0 }"
-    class="space-y-4"
-  >
-    <motion.div
-      :initial="{ opacity: 0 }"
-      :animate="{ opacity: 1 }"
-      class="bg-white rounded-xl p-5 card-shadow"
-    >
+  <div class="space-y-4">
+    <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="商户号">
           <el-input v-model="queryForm.merchantId" placeholder="merchantId" clearable style="width: 140px" />
@@ -46,15 +38,10 @@
           <el-button class="btn-outline" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-    </motion.div>
+    </div>
 
-    <motion.div
-      :initial="{ opacity: 0 }"
-      :animate="{ opacity: 1 }"
-      :transition="{ delay: 0.05 }"
-      class="bg-white rounded-xl card-shadow"
-    >
-      <el-table v-loading="loading" :data="list" stripe size="small">
+    <div class="content-card">
+      <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
         <el-table-column label="时间" prop="createdAt" width="170" />
         <el-table-column label="商户" prop="merchantId" width="120" />
         <el-table-column label="声称商户" prop="targetMerchantId" width="120">
@@ -78,11 +65,7 @@
         <el-table-column label="IP" prop="clientIp" width="120" />
       </el-table>
 
-      <motion.div
-        :initial="{ opacity: 0 }"
-        :animate="{ opacity: 1 }"
-        class="flex justify-end p-4"
-      >
+      <div class="pagination-bar">
         <el-pagination
           v-model:current-page="queryForm.page"
           v-model:page-size="queryForm.pageSize"
@@ -92,15 +75,14 @@
           @size-change="loadData"
           @current-change="loadData"
         />
-      </motion.div>
-    </motion.div>
-  </motion.div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { motion } from 'motion-v'
 import { getSecurityAuditList, type SecurityAuditItem } from '@/api/securityAudit'
 
 const loading = ref(false)

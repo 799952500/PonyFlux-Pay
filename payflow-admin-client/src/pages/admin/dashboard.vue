@@ -402,35 +402,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.content-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-  transition: box-shadow 0.2s;
-}
-
-.content-card:hover {
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
-}
-
-.data-table :deep(th) {
-  background: linear-gradient(90deg, rgba(99,102,241,0.06) 0%, rgba(129,140,248,0.04) 100%) !important;
-  color: #374151;
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid rgba(99, 102, 241, 0.1) !important;
-}
-
-.data-table :deep(tr:hover td) {
-  background: rgba(99, 102, 241, 0.03) !important;
-}
-
-.data-table :deep(td) {
-  border-bottom: 1px solid rgba(99, 102, 241, 0.06) !important;
-}
-</style>
