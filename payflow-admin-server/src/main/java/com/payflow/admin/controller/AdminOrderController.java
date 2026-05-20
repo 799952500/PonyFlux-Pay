@@ -168,9 +168,12 @@ public class AdminOrderController {
      */
     @Operation(summary = "订单状态统计")
     @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getStats() {
-        List<Map<String, Object>> statusCount = orderService.countByStatus();
-        long total = orderService.count();
+    public ResponseEntity<Map<String, Object>> getStats(
+            HttpServletRequest request,
+            @RequestParam(required = false) String merchantId) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
+        List<Map<String, Object>> statusCount = orderService.countByStatus(merchantId, scope);
+        long total = orderService.count(merchantId, scope);
 
         Map<String, Object> data = new HashMap<>();
         data.put("total", total);

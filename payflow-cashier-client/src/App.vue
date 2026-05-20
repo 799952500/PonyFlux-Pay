@@ -1,7 +1,16 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <transition name="page-zoom" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
 </template>
 
 <script setup lang="ts">
-// App.vue — 根组件，渲染路由视图
+import { onMounted } from 'vue'
+import { installGlowPulseDelegation } from '@/utils/glowPulse'
+
+onMounted(() => {
+  installGlowPulseDelegation()
+})
 </script>

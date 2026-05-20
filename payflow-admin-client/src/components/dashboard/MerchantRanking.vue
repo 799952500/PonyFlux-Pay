@@ -19,6 +19,7 @@ import { BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { getMerchantRanking } from '@/api/admin'
+import { registerFlipSource } from '@/transitions/flipShared'
 
 echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
@@ -102,9 +103,17 @@ async function loadRanking() {
     chart.on('click', (params: any) => {
       const idx = params.dataIndex
       const item = ranking[idx]
-      if (item?.merchantId) {
-        router.push(`/admin/dashboard/merchant/${encodeURIComponent(item.merchantId)}`)
+      if (!item?.merchantId) return
+
+      const mouse = params.event?.event as MouseEvent | undefined
+      if (mouse) {
+        registerFlipSource(
+          `merchant-${item.merchantId}`,
+          new DOMRect(mouse.clientX - 48, mouse.clientY - 24, 96, 48),
+        )
       }
+
+      router.push(`/admin/dashboard/merchant/${encodeURIComponent(item.merchantId)}`)
     })
   } catch {
     // 静默处理

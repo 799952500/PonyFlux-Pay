@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <!-- 顶部工具栏 -->
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="商户">
@@ -13,14 +12,15 @@
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
-        <el-form-item class="ml-auto">
-          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建支付路由</el-button>
-        </el-form-item>
       </el-form>
     </div>
 
-    <!-- 支付路由列表 -->
     <div class="content-card">
+      <TableToolbar title="支付路由列表" :total="total">
+        <template #actions>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建支付路由</el-button>
+        </template>
+      </TableToolbar>
       <el-table v-loading="loading" :data="routeList" stripe size="small" class="data-table">
         <el-table-column label="路由ID" prop="routeId" min-width="100">
           <template #default="{ row }">
@@ -39,10 +39,9 @@
         </el-table-column>
         <el-table-column label="渠道" min-width="130">
           <template #default="{ row }">
-            <div class="flex items-center gap-2">
-              <span>{{ channelEmoji[String(row.channelName ?? '')] ?? '🏦' }}</span>
-              <span class="font-medium">{{ row.channelName ?? row.channelId }}</span>
-            </div>
+            <el-tag size="small" :type="channelTagType(row.channelName ?? row.channelCode)" effect="light">
+              {{ channelLabel(row.channelName ?? row.channelCode ?? row.channelId) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="账户名称" prop="accountName" min-width="150">
@@ -60,10 +59,14 @@
             <el-tag size="small" type="warning" effect="plain">{{ row.priority ?? 0 }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="启用状态" prop="enabled" width="100">
+        <el-table-column label="启用状态" prop="enabled" width="100" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.enabled ? 'success' : 'info'" effect="plain">
-              {{ row.enabled ? 'ENABLED' : 'DISABLED' }}
+            <el-tag
+              size="small"
+              :type="tagTypeOf(ENABLE_STATUS_TAG, row.enabled ? 'ENABLED' : 'DISABLED')"
+              effect="plain"
+            >
+              {{ labelOf(ENABLE_STATUS_LABEL, row.enabled ? 'ENABLED' : 'DISABLED') }}
             </el-tag>
           </template>
         </el-table-column>
@@ -82,17 +85,14 @@
       <el-empty v-if="!loading && !routeList.length" description="暂无支付路由，请先创建支付路由" class="py-12" />
 
       <!-- 分页 -->
-      <div class="pagination-bar">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="loadRoutes"
-          @current-change="loadRoutes"
-        />
-      </div>
+      <AdminPagination
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        @size-change="loadRoutes"
+        @current-change="loadRoutes"
+      />
     </div>
 
     <!-- 新建支付路由弹窗 -->
@@ -146,6 +146,16 @@ import {
   getPaymentAccounts,
   getMerchantsSimple,
 } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
+import {
+  channelLabel,
+  channelTagType,
+  ENABLE_STATUS_LABEL,
+  ENABLE_STATUS_TAG,
+  labelOf,
+  tagTypeOf,
+} from '@/utils/format'
 import type { Channel } from '@/types'
 
 interface ChannelAccount {
@@ -185,15 +195,6 @@ const pageSize = ref(20)
 const total = ref(0)
 
 const queryForm = reactive({ merchantId: '' })
-
-const channelEmoji: Record<string, string> = {
-  WECHAT_PAY: '💚',
-  ALIPAY: '💳',
-  UNION_PAY: '🏦',
-  微信支付: '💚',
-  支付宝: '💳',
-  银联: '🏦',
-}
 
 const form = reactive({
   merchantId: '',

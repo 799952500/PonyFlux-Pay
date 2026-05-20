@@ -17,7 +17,7 @@
         :key="sidebarMenuKey"
         :default-active="activeMenu"
         :default-openeds="menuDefaultOpeneds"
-        class="flex-1 overflow-y-auto border-none admin-menu"
+        class="flex-1 overflow-y-auto border-none admin-menu scrollbar-dark"
         router
       >
         <template v-if="useDynamicMenu">
@@ -102,10 +102,6 @@
             <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.paymentAccounts') }}</span>
           </el-menu-item>
-          <el-menu-item index="/admin/merchant-payments">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.merchantPayments') }}</span>
-          </el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="routing-group">
@@ -113,10 +109,6 @@
             <el-icon class="menu-icon"><Connection /></el-icon>
             <span class="menu-text">{{ t('menu.groupRouting') }}</span>
           </template>
-          <el-menu-item index="/admin/channel-routes">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.channelRoutes') }}</span>
-          </el-menu-item>
           <el-menu-item index="/admin/channel-routing/health">
             <span class="menu-leaf-dot" />
             <span class="menu-text">{{ t('menu.channelRoutingHealth') }}</span>
@@ -212,7 +204,7 @@
     </el-aside>
 
     <!-- 主内容区 -->
-    <el-container class="flex-col">
+    <el-container class="flex-col flex-1 min-h-0 overflow-hidden">
       <!-- 顶部工具栏（与侧栏同一套森林模糊底） -->
       <div class="admin-topbar h-[60px] shrink-0 topbar relative border-b border-white/10">
         <div class="admin-topbar__inner relative z-[1] flex h-full w-full items-center px-6">
@@ -240,8 +232,12 @@
       </div>
 
       <!-- 页面内容 -->
-      <el-main class="admin-main overflow-y-auto">
-        <router-view />
+      <el-main class="admin-main flex-1 min-h-0 overflow-y-auto scrollbar-light">
+        <router-view v-slot="{ Component }">
+          <transition name="page-zoom" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
@@ -330,7 +326,6 @@ const menuDefaultOpeneds = computed(() => {
   }
   if (
     path.startsWith('/admin/channels')
-    || path.startsWith('/admin/merchant-payments')
     || path.startsWith('/admin/payment-methods')
     || path.startsWith('/admin/payment-accounts')
   ) {
@@ -368,7 +363,8 @@ const menuDefaultOpeneds = computed(() => {
 /** 切换顶层分组时通过 :key 重挂载侧栏，使 default-openeds 与当前模块一致 */
 const sidebarMenuKey = computed(() => {
   if (useDynamicMenu.value) {
-    return 'dyn-' + route.path
+    const openKeys = collectDynamicOpenKeys(dynamicMenuRoots.value, route.path) ?? []
+    return 'dyn-' + (openKeys[0] ?? 'root')
   }
   return menuDefaultOpeneds.value[0] ?? 'workspace-group'
 })
@@ -565,9 +561,10 @@ async function handleLogout() {
   white-space: nowrap;
 }
 
-/* 一级菜单项 */
+/* 一级菜单项：胶囊指示条 + 渐变填充 */
 .admin-menu :deep(.el-menu-item) {
-  border-radius: 8px;
+  position: relative;
+  border-radius: 10px;
   margin: 4px 12px;
   height: 44px;
   line-height: 44px;
@@ -576,24 +573,56 @@ async function handleLogout() {
   align-items: center;
   gap: 10px;
   padding: 0 16px !important;
-  transition: all 0.2s;
+  transition: background-color .28s cubic-bezier(.32,.72,0,1),
+              color .22s ease,
+              transform .28s cubic-bezier(.32,.72,0,1);
+  overflow: hidden;
 }
 
-.admin-menu :deep(.el-menu-item:hover) {
+/* 胶囊指示条（默认隐藏） */
+.admin-menu :deep(.el-menu-item)::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 3px;
+  height: 60%;
+  border-radius: 4px;
+  background: #5eead4;
+  transform: translateY(-50%) scaleY(0);
+  opacity: 0;
+  transition: transform .28s cubic-bezier(.34,1.28,.64,1),
+              opacity .22s ease;
+  box-shadow: 0 0 10px rgba(94, 234, 212, .6);
+  pointer-events: none;
+}
+
+.admin-menu :deep(.el-menu-item:not(.is-active):hover) {
   background: rgba(13, 148, 136, 0.12) !important;
   color: #ccfbf1 !important;
+  transform: translateX(2px);
+}
+
+.admin-menu :deep(.el-menu-item:not(.is-active):hover)::before {
+  transform: translateY(-50%) scaleY(.4);
+  opacity: .35;
 }
 
 .admin-menu :deep(.el-menu-item.is-active) {
-  background: linear-gradient(90deg, rgba(4, 120, 87, 0.35) 0%, rgba(13, 148, 136, 0.15) 100%) !important;
+  background: linear-gradient(90deg, rgba(13, 148, 136, 0.42) 0%, rgba(4, 120, 87, 0.15) 100%) !important;
   color: #ffffff !important;
-  border-left: 3px solid #14b8a6;
   font-weight: 600;
+}
+
+.admin-menu :deep(.el-menu-item.is-active)::before {
+  transform: translateY(-50%) scaleY(1);
+  opacity: 1;
 }
 
 /* ========== 子菜单样式 ========== */
 .admin-menu :deep(.el-sub-menu__title) {
-  border-radius: 8px;
+  position: relative;
+  border-radius: 10px;
   margin: 4px 12px;
   height: 44px !important;
   line-height: 44px !important;
@@ -602,12 +631,16 @@ async function handleLogout() {
   align-items: center;
   gap: 10px;
   padding: 0 16px !important;
-  transition: all 0.2s;
+  transition: background-color .28s cubic-bezier(.32,.72,0,1),
+              color .22s ease,
+              transform .28s cubic-bezier(.32,.72,0,1);
+  overflow: hidden;
 }
 
 .admin-menu :deep(.el-sub-menu__title:hover) {
   background: rgba(13, 148, 136, 0.12) !important;
   color: #ccfbf1 !important;
+  transform: translateX(2px);
 }
 
 /* 子菜单展开后的容器 */
@@ -621,7 +654,7 @@ async function handleLogout() {
   border-image: linear-gradient(180deg, #0d9488 0%, rgba(13, 148, 136, 0.15) 70%, transparent 100%) 1;
 }
 
-/* 子菜单项 */
+/* 子菜单项：更纤细的胶囊指示条 */
 .admin-menu :deep(.el-menu--inline .el-menu-item) {
   margin: 2px 8px;
   height: 38px;
@@ -631,13 +664,18 @@ async function handleLogout() {
   gap: 8px;
 }
 
-.admin-menu :deep(.el-menu--inline .el-menu-item:hover) {
+.admin-menu :deep(.el-menu--inline .el-menu-item)::before {
+  width: 2px;
+  height: 50%;
+  left: 2px;
+}
+
+.admin-menu :deep(.el-menu--inline .el-menu-item:not(.is-active):hover) {
   background: rgba(4, 120, 87, 0.2) !important;
 }
 
 .admin-menu :deep(.el-menu--inline .el-menu-item.is-active) {
-  background: linear-gradient(90deg, rgba(4, 120, 87, 0.32) 0%, rgba(13, 148, 136, 0.12) 100%) !important;
-  border-left: 3px solid #14b8a6;
+  background: linear-gradient(90deg, rgba(13, 148, 136, 0.42) 0%, rgba(4, 120, 87, 0.12) 100%) !important;
 }
 
 /* ========== 主内容区 ========== */
@@ -645,8 +683,7 @@ async function handleLogout() {
   background: rgba(236, 253, 245, 0.72);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  min-height: 100vh;
-  padding: 24px;
+  padding: 24px 24px 80px;
   border-left: 1px solid rgba(6, 78, 59, 0.12);
 }
 

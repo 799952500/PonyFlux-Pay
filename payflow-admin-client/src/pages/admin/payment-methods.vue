@@ -1,18 +1,15 @@
 <template>
-  <div>
-    <!-- 顶部渠道筛选 -->
-    <div class="filter-bar flex items-center gap-3">
-      <span class="text-sm text-gray-500 font-medium">按渠道筛选：</span>
-      <el-radio-group v-model="selectedChannel" size="default" @change="handleChannelChange">
-        <el-radio-button value="">全部</el-radio-button>
-        <el-radio-button value="WECHAT">微信支付</el-radio-button>
-        <el-radio-button value="ALIPAY">支付宝</el-radio-button>
-        <el-radio-button value="UNIONPAY">银联</el-radio-button>
-      </el-radio-group>
-    </div>
-
-    <!-- 查询表单 -->
-    <div class="filter-bar">
+  <div class="page-table-shell">
+    <div class="filter-bar filter-bar--stacked">
+      <div class="filter-row">
+        <span class="filter-label">渠道快筛</span>
+        <el-radio-group v-model="selectedChannel" size="default" @change="handleChannelChange">
+          <el-radio-button value="">全部</el-radio-button>
+          <el-radio-button value="WECHAT">微信支付</el-radio-button>
+          <el-radio-button value="ALIPAY">支付宝</el-radio-button>
+          <el-radio-button value="UNIONPAY">银联</el-radio-button>
+        </el-radio-group>
+      </div>
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="所属渠道">
           <el-select v-model="queryForm.channel" placeholder="全部渠道" clearable style="width: 150px">
@@ -22,7 +19,9 @@
             <el-option label="银联" value="UNIONPAY" />
           </el-select>
         </el-form-item>
-        <el-form-item label="支付方式"><el-input v-model="queryForm.name" placeholder="支付方式名称" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
+        <el-form-item label="支付方式">
+          <el-input v-model="queryForm.name" placeholder="支付方式名称" clearable style="width: 180px" @keyup.enter="handleSearch" />
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryForm.status" placeholder="全部" clearable style="width: 140px">
             <el-option label="全部" value="" />
@@ -37,55 +36,65 @@
       </el-form>
     </div>
 
-    <!-- 表格 -->
     <div class="content-card">
-      <div class="p-4 flex justify-between items-center border-b">
-        <div class="flex flex-col gap-1">
-          <span class="text-sm font-semibold text-gray-600">支付方式列表</span>
-          <span v-if="activeChannelIdFromQuery != null" class="text-xs text-gray-500">
+      <div class="table-toolbar">
+        <div>
+          <div class="table-toolbar__title">支付方式列表</div>
+          <span v-if="activeChannelIdFromQuery != null" class="table-toolbar__hint">
             已按渠道筛选（渠道 ID：{{ activeChannelIdFromQuery }}）
             <el-button type="primary" link class="!p-0 !h-auto align-baseline ml-1" @click="clearChannelQuery">清除筛选</el-button>
           </span>
+          <span v-else class="table-toolbar__hint">共 {{ total }} 条记录</span>
         </div>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
       </div>
+
       <el-table v-loading="loading" :data="displayTableData" stripe size="small" class="data-table">
-        <el-table-column label="支付方式编号" prop="methodCode" min-width="140">
-          <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-primary cursor-pointer" @click="openDetail(row)">{{ row.methodCode }}</span></template>
-        </el-table-column>
-        <el-table-column label="支付方式名称" prop="methodName" min-width="160">
-          <template #default="{ row }"><span class="font-medium">{{ row.methodName }}</span></template>
-        </el-table-column>
-        <el-table-column label="所属渠道" prop="channelType" width="120">
+        <el-table-column label="支付方式编号" prop="methodCode" min-width="148">
           <template #default="{ row }">
-            <el-tag size="small" :type="channelTagType[row.channelType]">{{ channelLabel[row.channelType] ?? row.channelType }}</el-tag>
+            <span class="cell-mono text-[#047857] font-medium cursor-pointer hover:underline" @click="openDetail(row)">{{ row.methodCode }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="appId" prop="appId" min-width="200">
-          <template #default="{ row }"><span class="text-xs font-mono text-gray-500">{{ maskValue(row.appId) }}</span></template>
+        <el-table-column label="支付方式名称" prop="methodName" min-width="160">
+          <template #default="{ row }"><span class="font-medium text-slate-800">{{ row.methodName }}</span></template>
         </el-table-column>
-        <el-table-column label="状态" prop="status" width="90">
-          <template #default="{ row }"><el-tag size="small" :type="row.status === 'ACTIVE' ? 'success' : 'danger'">{{ row.status === 'ACTIVE' ? '启用' : '停用' }}</el-tag></template>
+        <el-table-column label="所属渠道" prop="channelType" width="112" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="channelTagType(row.channelType)" effect="light">
+              {{ channelLabel(row.channelType) }}
+            </el-tag>
+          </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="appId" prop="appId" min-width="160">
+          <template #default="{ row }"><span class="cell-mono">{{ maskSecret(row.appId) }}</span></template>
+        </el-table-column>
+        <el-table-column label="状态" prop="status" width="88" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.status === 'ACTIVE' ? 'success' : 'danger'" effect="plain">
+              {{ row.status === 'ACTIVE' ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
             <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div v-if="activeChannelIdFromQuery == null" class="pagination-bar">
-        <el-pagination
-          v-model:current-page="queryForm.page"
-          v-model:page-size="queryForm.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
-      </div>
+      <AdminPagination
+        v-if="activeChannelIdFromQuery == null"
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadData"
+        @current-change="loadData"
+      />
     </div>
 
     <!-- 新建/编辑弹窗 -->
@@ -141,9 +150,9 @@
           <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
             <dt class="text-gray-400">支付方式编号</dt><dd class="text-gray-800 font-medium">{{ currentRow.methodCode }}</dd>
             <dt class="text-gray-400">支付方式名称</dt><dd class="text-gray-800">{{ currentRow.methodName }}</dd>
-            <dt class="text-gray-400">所属渠道</dt><dd><el-tag size="small" :type="channelTagType[currentRow.channelId]">{{ currentRow.channelName }}</el-tag></dd>
+            <dt class="text-gray-400">所属渠道</dt><dd><el-tag size="small" :type="channelTagType(currentRow.channelId ?? currentRow.channelType)">{{ currentRow.channelName ?? channelLabel(currentRow.channelType) }}</el-tag></dd>
             <dt class="text-gray-400">状态</dt><dd><el-tag size="small" :type="currentRow.status === 'ACTIVE' ? 'success' : 'danger'">{{ currentRow.status === 'ACTIVE' ? '启用' : '停用' }}</el-tag></dd>
-            <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800">{{ currentRow.createdAt }}</dd>
+            <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800 tabular-nums">{{ formatDateTime(currentRow.createdAt) }}</dd>
           </dl>
         </section>
         <section>
@@ -174,7 +183,9 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'
+import { channelLabel, channelTagType, formatDateTime, maskSecret } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -220,18 +231,6 @@ const rules: FormRules = {
   methodName: [{ required: true, message: '请输入支付方式名称', trigger: 'blur' }],
 }
 
-const channelTagType: Record<string, string> = {
-  WECHAT: 'success',
-  ALIPAY: 'primary',
-  UNIONPAY: 'warning',
-}
-
-const channelLabel: Record<string, string> = {
-  WECHAT: '微信支付',
-  ALIPAY: '支付宝',
-  UNIONPAY: '银联',
-}
-
 /** 从渠道管理抽屉跳转时的 ?channelId= */
 const activeChannelIdFromQuery = computed(() => {
   const raw = route.query.channelId
@@ -249,12 +248,6 @@ const displayTableData = computed(() => {
 
 function clearChannelQuery() {
   router.replace({ path: '/admin/payment-methods' })
-}
-
-function maskValue(val: string | undefined) {
-  if (!val) return '—'
-  if (val.length <= 8) return val
-  return val.substring(0, 4) + '****' + val.substring(val.length - 4)
 }
 
 async function loadChannels() {

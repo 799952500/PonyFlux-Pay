@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="关键词"><el-input v-model="queryForm.keyword" placeholder="商户号 / 商户名称" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
@@ -16,9 +16,17 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="商户列表" :total="total" />
+
       <el-table v-loading="loading" :data="merchantList" stripe size="small" class="data-table">
         <el-table-column label="商户号" prop="merchantId" min-width="150">
-          <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-primary cursor-pointer">{{ row.merchantId }}</span></template>
+          <template #default="{ row }">
+            <span
+              :data-flip="`merchant-${row.merchantId}`"
+              class="text-xs tabular-nums font-medium text-primary cursor-pointer"
+              @click.stop="goMerchantInsight(row)"
+            >{{ row.merchantId }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="商户名称" prop="merchantName" min-width="180"><template #default="{ row }"><span class="font-medium">{{ row.merchantName }}</span></template></el-table-column>
         <el-table-column label="类型" prop="merchantType" width="100">
@@ -29,30 +37,43 @@
         </el-table-column>
         <el-table-column label="商户密钥" prop="merchantKey" width="140">
           <template #default="{ row }">
-            <span class="text-xs font-mono text-gray-500">{{ maskKey(row.merchantKey) }}</span>
+            <span class="text-xs font-mono text-gray-500">{{ maskSecret(row.merchantKey) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="手续费率" width="110">
           <template #default="{ row }">
-            <span class="text-sm">{{ row.commissionRate != null ? `${(row.commissionRate * 100).toFixed(2)}%` : '—' }}</span>
+            <span class="text-sm tabular-nums">{{ formatRatePercent(row.commissionRate) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" prop="status" width="90">
-          <template #default="{ row }"><el-tag size="small" :type="statusTypeMap[row.status]">{{ statusLabelMap[row.status] }}</el-tag></template>
-        </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
-        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
+            <el-tag size="small" :type="tagTypeOf(MERCHANT_STATUS_TAG, row.status)">
+              {{ labelOf(MERCHANT_STATUS_LABEL, row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="280" fixed="right">
+          <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
+            <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付配置</el-button>
+            <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
             <el-button link type="primary" size="small" @click.stop="goMerchantOrders(row)">订单</el-button>
-            <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付方式</el-button>
+            <el-button link type="primary" size="small" @click.stop="goMerchantInsight(row)">洞察</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <div class="pagination-bar">
-        <el-pagination v-model:current-page="queryForm.page" v-model:page-size="queryForm.pageSize" :total="total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="loadMerchants" @current-change="loadMerchants" />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadMerchants"
+        @current-change="loadMerchants"
+      />
     </div>
 
     <!-- 商户详情弹窗 -->
@@ -65,9 +86,14 @@
             <dt class="text-gray-400">商户号</dt><dd class="text-gray-800 font-medium tabular-nums">{{ currentMerchant.merchantId }}</dd>
             <dt class="text-gray-400">商户名称</dt><dd class="text-gray-800">{{ currentMerchant.merchantName }}</dd>
             <dt class="text-gray-400">类型</dt><dd><el-tag size="small" :type="currentMerchant.merchantType === 'ENTERPRISE' ? 'primary' : 'info'">{{ currentMerchant.merchantType === 'ENTERPRISE' ? '企业' : '个人' }}</el-tag></dd>
-            <dt class="text-gray-400">状态</dt><dd><el-tag size="small" :type="statusTypeMap[currentMerchant.status]">{{ statusLabelMap[currentMerchant.status] }}</el-tag></dd>
-            <dt class="text-gray-400">手续费率</dt><dd class="text-gray-800">{{ currentMerchant.commissionRate != null ? `${(currentMerchant.commissionRate * 100).toFixed(2)}%` : '—' }}</dd>
-            <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800">{{ currentMerchant.createdAt }}</dd>
+            <dt class="text-gray-400">状态</dt>
+            <dd>
+              <el-tag size="small" :type="tagTypeOf(MERCHANT_STATUS_TAG, currentMerchant.status)">
+                {{ labelOf(MERCHANT_STATUS_LABEL, currentMerchant.status) }}
+              </el-tag>
+            </dd>
+            <dt class="text-gray-400">手续费率</dt><dd class="text-gray-800">{{ formatRatePercent(currentMerchant.commissionRate) }}</dd>
+            <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800 tabular-nums">{{ formatDateTime(currentMerchant.createdAt) }}</dd>
           </dl>
         </section>
         <section>
@@ -80,13 +106,23 @@
         <section>
           <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">支付配置</h3>
           <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-            <dt class="text-gray-400">商户密钥</dt><dd class="text-gray-800 font-mono text-xs">{{ maskKey(currentMerchant.merchantKey) }}</dd>
+            <dt class="text-gray-400">商户密钥</dt><dd class="text-gray-800 font-mono text-xs">{{ maskSecret(currentMerchant.merchantKey) }}</dd>
             <dt class="text-gray-400">回调地址</dt><dd class="text-gray-800 break-all">{{ currentMerchant.callbackUrl ?? '—' }}</dd>
             <dt class="text-gray-400">通知地址</dt><dd class="text-gray-800 break-all">{{ currentMerchant.notifyUrl ?? '—' }}</dd>
           </dl>
         </section>
       </div>
-      <template #footer><el-button type="primary" @click="detailVisible = false">关闭</el-button></template>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button
+          v-if="currentMerchant"
+          type="primary"
+          class="btn-primary"
+          @click="openPaymentConfigFromDetail"
+        >
+          支付配置
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 编辑商户弹窗 -->
@@ -133,12 +169,20 @@
       </template>
     </el-dialog>
 
-    <!-- 商户支付方式配置弹窗（方式+账号路由） -->
-    <el-dialog v-model="paymentConfigVisible" :title="`支付方式配置 - ${currentMerchant?.merchantName || ''}`" width="860px" destroy-on-close>
+    <!-- 商户支付配置弹窗（方式 + 收款账号 + 终端，按商户维度维护） -->
+    <el-dialog
+      v-model="paymentConfigVisible"
+      :title="`支付配置 · ${currentMerchant?.merchantName || currentMerchant?.merchantId || ''}`"
+      width="920px"
+      destroy-on-close
+      class="merchant-payment-dialog"
+    >
       <div v-if="paymentConfigLoading" class="p-4"><el-skeleton animated :rows="4" /></div>
       <div v-else>
         <div class="flex items-center justify-between mb-3">
-          <div class="text-sm text-gray-500">为该商户配置「支付方式 + 收款账号 + 终端（PC/H5/APP）」：</div>
+          <div class="text-sm text-gray-500">
+            商户号 <span class="font-mono text-slate-700">{{ currentMerchant?.merchantId }}</span> — 配置可用支付方式、收款账号及终端可见范围（PC/H5/APP）
+          </div>
           <el-button type="primary" class="btn-primary" size="small" @click="addRoute">新增路由</el-button>
         </div>
         <el-table :data="merchantRoutes" stripe size="small" class="data-table" max-height="420">
@@ -171,12 +215,12 @@
               <el-input-number v-model="row.priority" :min="0" :max="9999" controls-position="right" style="width: 100%" />
             </template>
           </el-table-column>
-          <el-table-column label="终端可见" min-width="168">
+          <el-table-column label="终端可见" min-width="200" class-name="col-tags">
             <template #default="{ row }">
-              <el-checkbox-group v-model="row.clientScopes" size="small" class="flex flex-wrap gap-1">
-                <el-checkbox label="PC">PC</el-checkbox>
-                <el-checkbox label="H5">H5</el-checkbox>
-                <el-checkbox label="APP">APP</el-checkbox>
+              <el-checkbox-group v-model="row.clientScopes" size="small" class="merchant-route-scopes">
+                <el-checkbox label="PC">{{ labelOf(CLIENT_SCOPE_LABEL, 'PC') }}</el-checkbox>
+                <el-checkbox label="H5">{{ labelOf(CLIENT_SCOPE_LABEL, 'H5') }}</el-checkbox>
+                <el-checkbox label="APP">{{ labelOf(CLIENT_SCOPE_LABEL, 'APP') }}</el-checkbox>
               </el-checkbox-group>
             </template>
           </el-table-column>
@@ -202,11 +246,24 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { getMerchants, getPaymentMethods, getPaymentAccounts, getMerchantPaymentRoutes, replaceMerchantPaymentRoutes, updateMerchant } from '@/api/admin'
 import type { Merchant, PaymentMethod, PaymentAccount, MerchantPaymentRoute } from '@/types'
+import {
+  formatDateTime,
+  formatRatePercent,
+  labelOf,
+  maskSecret,
+  CLIENT_SCOPE_LABEL,
+  MERCHANT_STATUS_LABEL,
+  MERCHANT_STATUS_TAG,
+  tagTypeOf,
+} from '@/utils/format'
 
+const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
@@ -229,9 +286,6 @@ const allPaymentMethods = ref<PaymentMethod[]>([])
 const allPaymentAccounts = ref<PaymentAccount[]>([])
 const merchantRoutes = ref<Array<MerchantPaymentRoute & { _tmpId: string }>>([])
 
-const statusTypeMap: Record<string, string> = { ACTIVE: 'success', SUSPENDED: 'warning', CLOSED: 'danger' }
-const statusLabelMap: Record<string, string> = { ACTIVE: '正常', SUSPENDED: '停用', CLOSED: '关闭' }
-
 const editTitle = computed(() => isEdit.value ? '编辑商户' : '新建商户')
 
 const editForm = reactive({
@@ -248,17 +302,13 @@ const editRules: FormRules = {
   merchantName: [{ required: true, message: '请输入商户名称', trigger: 'blur' }],
 }
 
-function maskKey(key?: string) {
-  if (!key || key.length < 4) return key ?? '—'
-  return `${key.slice(0, 4)}****`
-}
-
 async function loadMerchants() {
   loading.value = true
   try {
     const resp = await getMerchants(queryForm as Parameters<typeof getMerchants>[0])
     merchantList.value = resp.list
     total.value = resp.total
+    await tryOpenPaymentFromQuery()
   } catch {
     ElMessage.error('加载商户列表失败')
   } finally {
@@ -274,8 +324,19 @@ async function openDetail(merchant: Merchant) {
   detailVisible.value = true
 }
 
+function openPaymentConfigFromDetail() {
+  const m = currentMerchant.value
+  if (!m) return
+  detailVisible.value = false
+  openPaymentConfig(m)
+}
+
 function goMerchantOrders(merchant: Merchant) {
   router.push({ path: '/admin/orders', query: { merchantId: merchant.merchantId } })
+}
+
+function goMerchantInsight(merchant: Merchant) {
+  router.push(`/admin/dashboard/merchant/${encodeURIComponent(merchant.merchantId)}`)
 }
 
 function openEdit(merchant: Merchant) {
@@ -425,6 +486,30 @@ async function savePaymentRoutes() {
   }
 }
 
+/** 兼容旧链接 /admin/merchant-payments?merchantId=xxx */
+async function tryOpenPaymentFromQuery() {
+  const raw = route.query.openPayment ?? route.query.merchantId
+  const merchantId = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  if (!merchantId) return
+  const merchant = merchantList.value.find((m) => m.merchantId === merchantId)
+  if (merchant) {
+    await openPaymentConfig(merchant)
+    router.replace({ path: '/admin/merchants' })
+  }
+}
+
 onMounted(() => { loadMerchants() })
 </script>
+
+<style scoped>
+.merchant-route-scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.merchant-route-scopes :deep(.el-checkbox) {
+  margin-right: 0;
+}
+</style>
 

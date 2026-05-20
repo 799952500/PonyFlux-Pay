@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-channel-shell">
     <!-- 顶部筛选工具栏 -->
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
@@ -24,8 +24,8 @@
     </div>
 
     <!-- 渠道卡片区 -->
-    <div v-loading="loading">
-      <el-row :gutter="16" class="channel-card-row mb-1" v-if="channelList.length">
+    <div v-loading="loading" class="channel-page-grid">
+      <el-row v-if="channelList.length" :gutter="20" class="channel-card-row">
         <!-- 适中密度：平板两列、中屏三列、大屏四列，兼顾可读性与屏占比 -->
         <el-col
           v-for="channel in channelList"
@@ -36,7 +36,7 @@
           :lg="8"
           :xl="6"
         >
-          <div class="content-card channel-card-shell mb-4">
+          <div class="content-card channel-card-shell">
             <!-- 上：图标 + 名称/编码（独占整行，不与按钮抢横向空间） -->
             <div class="channel-card-identity">
               <div
@@ -413,10 +413,31 @@ onMounted(() => { loadChannels() })
 </script>
 
 <style scoped>
-.channel-card-shell.content-card {
-  padding: 18px 20px 16px;
+.page-channel-shell {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+
+.channel-page-grid {
+  padding-top: 4px;
+}
+
+.channel-card-row :deep(.el-col) {
+  margin-bottom: 20px;
+}
+
+.channel-card-shell.content-card {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+.channel-card-shell.content-card:hover {
+  transform: none;
+  box-shadow: 0 2px 12px rgba(4, 120, 87, 0.04);
 }
 
 .card-action-btn {
@@ -428,14 +449,14 @@ onMounted(() => { loadChannels() })
 .channel-card-identity {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 2px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .channel-card-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -468,7 +489,7 @@ onMounted(() => { loadChannels() })
 }
 
 .channel-card-code {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 12px;
   color: #64748b;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -482,10 +503,10 @@ onMounted(() => { loadChannels() })
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 0 12px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 12px 16px;
+  padding: 0 0 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(4, 120, 87, 0.1);
 }
 
 .channel-card-toolbar-btns {
@@ -509,14 +530,17 @@ onMounted(() => { loadChannels() })
 
 .channel-card-desc {
   flex: 1;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.55;
   color: #64748b;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
 }
 
 .channel-card-methods {
@@ -524,8 +548,8 @@ onMounted(() => { loadChannels() })
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  margin: 0 0 10px;
-  padding: 8px 10px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
   border: 1px dashed #cbd5e1;
   border-radius: 10px;
   background: #f8fafc;
@@ -550,9 +574,9 @@ onMounted(() => { loadChannels() })
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 10px;
+  padding-top: 14px;
   margin-top: auto;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(4, 120, 87, 0.1);
 }
 
 .channel-card-footer-label {

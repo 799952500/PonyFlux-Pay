@@ -1,19 +1,16 @@
 <template>
-  <div>
-    <!-- 顶部操作栏 -->
-    <div class="filter-bar">
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-semibold text-gray-700 m-0">角色列表</h3>
-        <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增角色</el-button>
-      </div>
-    </div>
-
-    <!-- 表格区 -->
+  <div class="page-table-shell">
     <div class="content-card">
+      <TableToolbar title="角色列表" :total="roleList.length">
+        <template #actions>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增角色</el-button>
+        </template>
+      </TableToolbar>
+
       <el-table v-loading="loading" :data="roleList" stripe size="small" class="data-table">
         <el-table-column label="角色编码" prop="roleCode" min-width="140">
           <template #default="{ row }">
-            <span class="text-xs font-mono font-medium text-primary">{{ row.roleCode }}</span>
+            <span class="cell-mono font-medium text-[#047857]">{{ row.roleCode }}</span>
           </template>
         </el-table-column>
         <el-table-column label="角色名称" prop="roleName" min-width="160">
@@ -26,12 +23,16 @@
         </el-table-column>
         <el-table-column label="状态" prop="status" width="100" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.status === 'ACTIVE' ? 'success' : 'danger'" effect="plain">
-              {{ row.status === 'ACTIVE' ? '启用' : '禁用' }}
+            <el-tag size="small" :type="tagTypeOf(ENABLE_STATUS_TAG, row.status)" effect="plain">
+              {{ labelOf(ENABLE_STATUS_LABEL, row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
@@ -94,12 +95,19 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import type { ElTree } from 'element-plus'
 import { getRoles, createRole, updateRole, deleteRole, getRoleMenus, assignRoleMenus, getMenuTree } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import {
+  ENABLE_STATUS_LABEL,
+  ENABLE_STATUS_TAG,
+  formatDateTime,
+  labelOf,
+  tagTypeOf,
+} from '@/utils/format'
 import type { SysRole, SysMenu } from '@/types'
 
 const loading = ref(false)
 const roleList = ref<SysRole[]>([])
 
-// 表单
 const formVisible = ref(false)
 const isEdit = ref(false)
 const submitting = ref(false)
@@ -119,7 +127,6 @@ const formRules: FormRules = {
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 }
 
-// 权限分配
 const permVisible = ref(false)
 const permLoading = ref(false)
 const permSaving = ref(false)
@@ -208,7 +215,6 @@ async function handleDelete(row: SysRole) {
   }
 }
 
-// ========== 分配权限 ==========
 function collectLeafIds(menus: SysMenu[]): number[] {
   const ids: number[] = []
   for (const m of menus) {
@@ -229,7 +235,6 @@ async function openPermission(role: SysRole) {
     const [tree, roleMenuList] = await Promise.all([getMenuTree(), getRoleMenus(role.id)])
     menuTree.value = Array.isArray(tree) ? tree : []
     const menus = Array.isArray(roleMenuList) ? roleMenuList : []
-    // el-tree 的 default-checked-keys 只应包含叶子节点
     checkedMenuIds.value = collectLeafIds(menus)
   } catch {
     ElMessage.error('加载菜单数据失败')
@@ -259,4 +264,3 @@ onMounted(() => {
   loadRoles()
 })
 </script>
-

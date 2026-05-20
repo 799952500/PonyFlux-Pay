@@ -2,7 +2,10 @@
   <div>
     <el-page-header class="mb-5" @back="$router.back()">
       <template #content>
-        <span class="text-[#0F172A] font-semibold">
+        <span
+          :data-flip="`merchant-${merchantId}`"
+          class="text-[#0F172A] font-semibold"
+        >
           商户洞察 — {{ merchantId }}
         </span>
       </template>

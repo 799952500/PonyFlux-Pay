@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="账单日">
@@ -39,18 +39,33 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="对账任务" :total="total" />
+
       <el-table v-loading="loading" :data="taskList" stripe size="small" class="data-table">
         <el-table-column label="任务号" prop="taskId" min-width="200" show-overflow-tooltip />
-        <el-table-column label="渠道" prop="channel" width="90" />
+        <el-table-column label="渠道" prop="channel" width="90">
+          <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
+        </el-table-column>
         <el-table-column label="账户" prop="accountCode" width="140" show-overflow-tooltip />
-        <el-table-column label="账单日" prop="billDate" width="120" />
-        <el-table-column label="状态" prop="status" width="110">
+        <el-table-column label="账单日" prop="billDate" width="120">
           <template #default="{ row }">
-            <el-tag size="small" :type="statusTag(row.status)">{{ row.status }}</el-tag>
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDate(row.billDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" prop="status" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="tagTypeOf(RECON_STATUS_TAG, row.status)">
+              {{ labelOf(RECON_STATUS_LABEL, row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="差异数" prop="diffCount" width="80" align="right" />
         <el-table-column label="触发" prop="triggeredBy" width="100" />
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openDrawer(row)">详情</el-button>
@@ -62,17 +77,14 @@
         </el-table-column>
       </el-table>
 
-      <div class="pagination-bar">
-        <el-pagination
-          v-model:current-page="queryForm.page"
-          v-model:page-size="queryForm.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadTasks"
-          @current-change="loadTasks"
-        />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        @size-change="loadTasks"
+        @current-change="loadTasks"
+      />
     </div>
 
     <el-drawer v-model="drawerVisible" title="对账任务" direction="rtl" size="640px">
@@ -84,11 +96,15 @@
               <dt class="text-gray-400">任务号</dt>
               <dd class="text-gray-800 font-mono break-all">{{ currentTask.taskId }}</dd>
               <dt class="text-gray-400">渠道 / 账户</dt>
-              <dd>{{ currentTask.channel }} / {{ currentTask.accountCode }}</dd>
+              <dd>{{ channelLabel(currentTask.channel) }} / {{ currentTask.accountCode }}</dd>
               <dt class="text-gray-400">账单日</dt>
-              <dd>{{ currentTask.billDate }}</dd>
+              <dd>{{ formatDate(currentTask.billDate) }}</dd>
               <dt class="text-gray-400">状态</dt>
-              <dd><el-tag size="small" :type="statusTag(currentTask.status)">{{ currentTask.status }}</el-tag></dd>
+              <dd>
+                <el-tag size="small" :type="tagTypeOf(RECON_STATUS_TAG, currentTask.status)">
+                  {{ labelOf(RECON_STATUS_LABEL, currentTask.status) }}
+                </el-tag>
+              </dd>
               <dt class="text-gray-400">账单笔数 / 金额(分)</dt>
               <dd>{{ currentTask.billTotalCount ?? '-' }} / {{ currentTask.billTotalAmount ?? '-' }}</dd>
               <dt class="text-gray-400">本地笔数 / 金额(分)</dt>
@@ -97,27 +113,38 @@
               <dd>{{ currentTask.diffCount ?? 0 }}</dd>
               <dt class="text-gray-400">耗时(ms)</dt>
               <dd>{{ currentTask.elapsedMs ?? '-' }}</dd>
+              <dt class="text-gray-400">创建时间</dt>
+              <dd class="tabular-nums">{{ formatDateTime(currentTask.createdAt) }}</dd>
+              <dt class="text-gray-400">更新时间</dt>
+              <dd class="tabular-nums">{{ formatDateTime(currentTask.updatedAt) }}</dd>
               <dt class="text-gray-400">错误信息</dt>
-              <dd class="break-all text-red-600">{{ currentTask.errorMsg || '-' }}</dd>
+              <dd class="break-all text-red-600 col-span-1">{{ currentTask.errorMsg || '-' }}</dd>
             </dl>
           </el-tab-pane>
           <el-tab-pane label="差异" name="diff">
             <div class="mb-3 flex flex-wrap gap-2 items-center">
               <el-select v-model="diffQuery.diffType" placeholder="差异类型" clearable style="width: 160px" size="small">
-                <el-option label="CHANNEL_ONLY" value="CHANNEL_ONLY" />
-                <el-option label="LOCAL_ONLY" value="LOCAL_ONLY" />
-                <el-option label="AMOUNT_MISMATCH" value="AMOUNT_MISMATCH" />
-                <el-option label="STATUS_MISMATCH" value="STATUS_MISMATCH" />
+                <el-option label="渠道单边" value="CHANNEL_ONLY" />
+                <el-option label="本地单边" value="LOCAL_ONLY" />
+                <el-option label="金额不符" value="AMOUNT_MISMATCH" />
+                <el-option label="状态不符" value="STATUS_MISMATCH" />
               </el-select>
               <el-select v-model="diffQuery.handleStatus" placeholder="处理状态" clearable style="width: 140px" size="small">
-                <el-option label="PENDING" value="PENDING" />
-                <el-option label="PROCESSED" value="PROCESSED" />
-                <el-option label="IGNORED" value="IGNORED" />
+                <el-option label="待处理" value="PENDING" />
+                <el-option label="已处理" value="PROCESSED" />
+                <el-option label="已忽略" value="IGNORED" />
               </el-select>
               <el-button size="small" type="primary" @click="loadDiffs">筛选</el-button>
             </div>
-            <el-table v-loading="diffLoading" :data="diffList" size="small" max-height="420">
-              <el-table-column prop="diffType" label="类型" width="130" />
+            <TableToolbar :total="diffTotal" />
+            <el-table v-loading="diffLoading" :data="diffList" stripe size="small" max-height="420" class="data-table">
+              <el-table-column prop="diffType" label="类型" width="130">
+                <template #default="{ row }">
+                  <el-tag size="small" type="warning" effect="plain">
+                    {{ labelOf(RECON_DIFF_LABEL, row.diffType) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="channelTradeNo" label="渠道单号" min-width="120" show-overflow-tooltip />
               <el-table-column prop="localOrderId" label="本地订单" width="120" show-overflow-tooltip />
               <el-table-column label="金额(分)" width="160">
@@ -125,7 +152,16 @@
                   <span class="tabular-nums">{{ row.channelAmount ?? '-' }} / {{ row.localAmount ?? '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="handleStatus" label="处理" width="100" />
+              <el-table-column prop="handleStatus" label="处理" width="100">
+                <template #default="{ row }">
+                  {{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="处理时间" prop="handledAt" width="172">
+                <template #default="{ row }">
+                  <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.handledAt) }}</span>
+                </template>
+              </el-table-column>
               <el-table-column label="操作" width="160" fixed="right">
                 <template #default="{ row }">
                   <el-button
@@ -140,7 +176,7 @@
                 </template>
               </el-table-column>
             </el-table>
-            <div class="flex justify-end mt-2">
+            <div class="pagination-bar">
               <el-pagination
                 v-model:current-page="diffQuery.page"
                 v-model:page-size="diffQuery.pageSize"
@@ -180,8 +216,8 @@
       <el-form :model="handleForm" label-width="88px">
         <el-form-item label="动作" required>
           <el-select v-model="handleForm.action" style="width: 100%">
-            <el-option label="PROCESSED" value="PROCESSED" />
-            <el-option label="IGNORED" value="IGNORED" />
+            <el-option label="已处理" value="PROCESSED" />
+            <el-option label="已忽略" value="IGNORED" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -200,6 +236,19 @@
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import request from '@/api/request'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
+import {
+  formatDate,
+  formatDateTime,
+  channelLabel,
+  labelOf,
+  tagTypeOf,
+  RECON_STATUS_LABEL,
+  RECON_STATUS_TAG,
+  RECON_DIFF_LABEL,
+  RECON_HANDLE_LABEL,
+} from '@/utils/format'
 import {
   getReconTasks,
   getReconTaskDetail,
@@ -252,12 +301,6 @@ const handleForm = reactive({
   action: 'PROCESSED',
   remark: '',
 })
-
-function statusTag(s: string) {
-  if (s === 'SUCCESS') return 'success'
-  if (s === 'FAIL') return 'danger'
-  return 'info'
-}
 
 async function loadTasks() {
   loading.value = true

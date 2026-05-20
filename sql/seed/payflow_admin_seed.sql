@@ -229,10 +229,10 @@ INSERT INTO sys_menus (
 (21, 20, 'channels', '渠道管理', 'MENU', '/admin/channels', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
 (24, 20, 'payment_methods', '支付方式', 'MENU', '/admin/payment-methods', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
 (25, 20, 'payment_accounts', '支付账号', 'MENU', '/admin/payment-accounts', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
-(23, 20, 'merchant_payments', '商户支付配置', 'MENU', '/admin/merchant-payments', NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
+-- 商户支付配置已并入「商户管理」→ 行内「支付配置」弹窗，不再单独挂菜单（原 id=23）
 -- 5 路由与费率
 (68, NULL, 'grp_routing', '路由与费率', 'MENU', NULL, NULL, 5, 1, 'ACTIVE', NOW(), NOW()),
-(22, 68, 'channel_routes', '支付路由', 'MENU', '/admin/channel-routes', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
+-- 支付路由已并入「商户管理」→ 行内「支付配置」，不再单独挂菜单（原 id=22）
 (103, 68, 'channel_routing_health', '路由健康度', 'MENU', '/admin/channel-routing/health', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
 (67, 68, 'routing_logs', '路由决策日志', 'MENU', '/admin/routing/logs', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
 (65, 68, 'fee_rate_config', '阶梯费率配置', 'MENU', '/admin/fee-rate/config', NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
@@ -255,7 +255,7 @@ INSERT INTO sys_menus (
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 1, id, NOW() FROM sys_menus;
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 2, id, NOW() FROM sys_menus WHERE id NOT IN (51, 52, 53, 54, 64);
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 3, id, NOW() FROM sys_menus WHERE id IN (1, 2, 3, 4, 101, 104, 10, 11, 12, 60, 61, 62, 63);
-INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 4, id, NOW() FROM sys_menus WHERE id IN (1, 2, 10, 11, 30, 31, 32, 64, 68, 22, 103, 67, 65, 66);
+INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 4, id, NOW() FROM sys_menus WHERE id IN (1, 2, 10, 11, 30, 31, 32, 64, 68, 103, 67, 65, 66);
 
 INSERT INTO sys_users (id, username, password, nickname, phone, email, status, created_at, updated_at) VALUES
 (1, 'sys_admin', @pwd, '系统管理员', '13800001111', 'sys_admin@demo.local', 'ACTIVE', NOW(), NOW()),

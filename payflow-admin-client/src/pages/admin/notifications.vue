@@ -1,7 +1,6 @@
 <template>
-  <div class="notifications-page">
-    <div class="content-card mb-4">
-      <h2 class="page-title">{{ t('notifications.title') }}</h2>
+  <div class="page-table-shell">
+    <div class="content-card">
       <p class="stat-line">
         {{ t('notifications.pendingRefunds') }}：
         <strong>{{ pendingRefunds }}</strong>
@@ -30,4 +29,3 @@ onMounted(async () => {
   }
 })
 </script>
-

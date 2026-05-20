@@ -54,14 +54,36 @@ export const getOrders = (params: OrderListQuery): Promise<OrderListResponse> =>
   }))
 }
 
-export const getOrderDetail = (orderId: string): Promise<Order> =>
-  request.get(`/admin/orders/${orderId}`)
+/** 订单详情接口返回结构（与 AdminOrderController#getOrder 一致） */
+interface OrderDetailPayload {
+  order?: Order
+  payments?: unknown[]
+}
+
+export const getOrderDetail = async (orderId: string): Promise<Order> => {
+  const data = (await request.get(
+    `/admin/orders/${encodeURIComponent(orderId)}`
+  )) as OrderDetailPayload
+  if (!data?.order) {
+    throw new Error('订单不存在')
+  }
+  return data.order
+}
 
 export const closeOrder = (orderId: string) =>
   request.post(`/admin/orders/${orderId}/close`)
 
-export const getOrderStats = (): Promise<OrderStats> =>
-  request.get('/admin/orders/stats')
+export const getOrderStats = (params?: { merchantId?: string }): Promise<OrderStats> =>
+  request.get('/admin/orders/stats', { params }).then((data: unknown) => {
+    const raw = data as { total?: number; statusCount?: Array<Record<string, unknown>> }
+    return {
+      total: Number(raw?.total ?? 0),
+      statusCount: (raw?.statusCount ?? []).map((row) => ({
+        status: String(row.status ?? ''),
+        cnt: Number(row.cnt ?? row.count ?? 0),
+      })),
+    }
+  })
 
 export const listOrdersByMerchant = (merchantId: string): Promise<Order[]> =>
   request.get(`/admin/orders/merchant/${encodeURIComponent(merchantId)}`)

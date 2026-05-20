@@ -31,11 +31,11 @@ UPDATE sys_menus SET parent_id = 1, menu_name = '支付漏斗', sort_order = 2 W
 UPDATE sys_menus SET parent_id = 1, sort_order = 4 WHERE id = 3;
 UPDATE sys_menus SET parent_id = 1, sort_order = 5 WHERE id = 4;
 
--- 渠道与账户（仅渠道/方式/账号/商户支付配置）
+-- 渠道与账户（渠道 / 支付方式 / 支付账号；商户支付配置已并入商户管理）
 UPDATE sys_menus SET parent_id = 20, sort_order = 1 WHERE id = 21;
 UPDATE sys_menus SET parent_id = 20, sort_order = 2 WHERE id = 24;
 UPDATE sys_menus SET parent_id = 20, sort_order = 3 WHERE id = 25;
-UPDATE sys_menus SET parent_id = 20, menu_name = '商户支付配置', sort_order = 4 WHERE id = 23;
+UPDATE sys_menus SET visible = 0, status = 'DISABLED' WHERE id = 23;
 
 -- 路由与费率
 UPDATE sys_menus SET parent_id = 68, sort_order = 1 WHERE id = 22;

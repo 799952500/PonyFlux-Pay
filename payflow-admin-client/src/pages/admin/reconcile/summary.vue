@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="账单日" required>
@@ -27,14 +27,14 @@
       </el-form>
     </div>
 
-    <div v-loading="loading" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+    <div v-loading="loading" class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="content-card !p-4">
         <p class="text-xs text-slate-500 m-0">支付收款（本地成功）</p>
-        <p class="text-xl font-semibold text-slate-800 m-1 tabular-nums">{{ fenYuan(summary?.totalLocalAmountFen) }} 元</p>
+        <p class="text-xl font-semibold text-slate-800 m-1 tabular-nums">{{ formatMoneyFen(summary?.totalLocalAmountFen) }} 元</p>
       </div>
       <div class="content-card !p-4">
         <p class="text-xs text-slate-500 m-0">渠道账单（对账文件）</p>
-        <p class="text-xl font-semibold text-slate-800 m-1 tabular-nums">{{ fenYuan(summary?.totalChannelBillAmountFen) }} 元</p>
+        <p class="text-xl font-semibold text-slate-800 m-1 tabular-nums">{{ formatMoneyFen(summary?.totalChannelBillAmountFen) }} 元</p>
       </div>
       <div class="content-card !p-4">
         <p class="text-xs text-slate-500 m-0">金额差额（本地 − 账单）</p>
@@ -42,7 +42,7 @@
           class="text-xl font-semibold m-1 tabular-nums"
           :class="deltaClass(summary?.totalAmountDeltaFen)"
         >
-          {{ fenYuan(summary?.totalAmountDeltaFen) }} 元
+          {{ formatMoneyFen(summary?.totalAmountDeltaFen) }} 元
         </p>
       </div>
       <div class="content-card !p-4">
@@ -53,24 +53,28 @@
     </div>
 
     <div class="content-card">
-      <h3 class="text-sm font-semibold text-slate-700 mt-0 mb-3">按支付账号汇总</h3>
-      <p class="text-xs text-slate-500 m-0 mb-2">
-        与对账任务一致按收款账户维度统计；历史支付未写入 account_code 时归入「__NO_ACCOUNT__」。
-      </p>
+      <TableToolbar
+        title="按支付账号汇总"
+        :total="(summary?.byAccount ?? []).length"
+        hint="与对账任务一致按收款账户维度统计；历史支付未写入 account_code 时归入「__NO_ACCOUNT__」。"
+      />
+
       <el-table :data="summary?.byAccount ?? []" stripe size="small" class="data-table">
         <el-table-column prop="accountCode" label="支付账号" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="channel" label="对账渠道" width="100" />
+        <el-table-column prop="channel" label="对账渠道" width="100">
+          <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
+        </el-table-column>
         <el-table-column label="本地笔数" prop="localSuccessCount" width="100" align="right" />
         <el-table-column label="本地金额(元)" width="120" align="right">
-          <template #default="{ row }">{{ fenYuan(row.localSuccessAmountFen) }}</template>
+          <template #default="{ row }">{{ formatMoneyFen(row.localSuccessAmountFen) }}</template>
         </el-table-column>
         <el-table-column label="账单笔数" prop="channelBillCount" width="100" align="right" />
         <el-table-column label="账单金额(元)" width="120" align="right">
-          <template #default="{ row }">{{ fenYuan(row.channelBillAmountFen) }}</template>
+          <template #default="{ row }">{{ formatMoneyFen(row.channelBillAmountFen) }}</template>
         </el-table-column>
         <el-table-column label="差额(元)" width="120" align="right">
           <template #default="{ row }">
-            <span :class="deltaClass(row.amountDeltaFen)">{{ fenYuan(row.amountDeltaFen) }}</span>
+            <span :class="deltaClass(row.amountDeltaFen)">{{ formatMoneyFen(row.amountDeltaFen) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
@@ -82,7 +86,7 @@
     </div>
 
     <el-drawer v-model="drawerVisible" title="产生差额的订单（对账差异）" direction="rtl" size="720px">
-      <el-form :inline="true" size="small" class="mb-3">
+      <el-form :inline="true" size="small" class="mb-3 px-4">
         <el-form-item label="处理状态">
           <el-select v-model="detailQuery.handleStatus" placeholder="全部" clearable style="width: 120px">
             <el-option label="待处理" value="PENDING" />
@@ -94,41 +98,58 @@
           <el-button type="primary" size="small" @click="loadAnomalies">筛选</el-button>
         </el-form-item>
       </el-form>
-      <el-table v-loading="detailLoading" :data="anomalyList" size="small" max-height="520">
-        <el-table-column prop="diffType" label="类型" width="130" />
-        <el-table-column prop="localOrderId" label="订单号" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="merchantId" label="商户" width="100" show-overflow-tooltip />
-        <el-table-column prop="channelTradeNo" label="渠道单号" min-width="120" show-overflow-tooltip />
-        <el-table-column label="金额(元)" width="120" align="right">
-          <template #default="{ row }">
-            <span class="tabular-nums">{{ fenYuan(row.channelAmount) }} / {{ fenYuan(row.localAmount) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="accountCode" label="支付账号" width="120" show-overflow-tooltip />
-        <el-table-column prop="handleStatus" label="处理" width="90" />
-        <el-table-column label="操作" width="80" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.localOrderId"
-              link
-              type="primary"
-              size="small"
-              @click="goOrder(row.localOrderId)"
-            >
-              订单
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="flex justify-end mt-3">
-        <el-pagination
-          v-model:current-page="detailQuery.page"
-          v-model:page-size="detailQuery.pageSize"
-          small
-          :total="anomalyTotal"
-          layout="total, prev, pager, next"
-          @current-change="loadAnomalies"
-        />
+      <div class="px-4">
+        <TableToolbar title="差额订单" :total="anomalyTotal" />
+        <el-table v-loading="detailLoading" :data="anomalyList" stripe size="small" max-height="520" class="data-table">
+          <el-table-column prop="diffType" label="类型" width="130">
+            <template #default="{ row }">
+              <el-tag size="small" type="warning" effect="plain">
+                {{ labelOf(RECON_DIFF_LABEL, row.diffType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="localOrderId" label="订单号" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="merchantId" label="商户" width="100" show-overflow-tooltip />
+          <el-table-column prop="channelTradeNo" label="渠道单号" min-width="120" show-overflow-tooltip />
+          <el-table-column label="金额(元)" width="120" align="right">
+            <template #default="{ row }">
+              <span class="tabular-nums">{{ formatMoneyFen(row.channelAmount) }} / {{ formatMoneyFen(row.localAmount) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="accountCode" label="支付账号" width="120" show-overflow-tooltip />
+          <el-table-column prop="handleStatus" label="处理" width="90">
+            <template #default="{ row }">{{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}</template>
+          </el-table-column>
+          <el-table-column label="账单日" prop="billDate" width="120">
+            <template #default="{ row }">
+              <span class="text-xs text-slate-600 tabular-nums">{{ formatDate(row.billDate) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.localOrderId"
+                :data-flip="`order-${row.localOrderId}`"
+                link
+                type="primary"
+                size="small"
+                @click="goOrder(row.localOrderId)"
+              >
+                订单
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pagination-bar">
+          <el-pagination
+            v-model:current-page="detailQuery.page"
+            v-model:page-size="detailQuery.pageSize"
+            small
+            :total="anomalyTotal"
+            layout="total, prev, pager, next"
+            @current-change="loadAnomalies"
+          />
+        </div>
       </div>
     </el-drawer>
   </div>
@@ -138,6 +159,15 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import {
+  formatDate,
+  formatMoneyFen,
+  channelLabel,
+  labelOf,
+  RECON_DIFF_LABEL,
+  RECON_HANDLE_LABEL,
+} from '@/utils/format'
 import {
   getReconSummary,
   getReconAnomalies,
@@ -173,11 +203,6 @@ const detailQuery = reactive({
   pageSize: 15,
   handleStatus: '',
 })
-
-function fenYuan(fen?: number | null) {
-  if (fen == null) return '—'
-  return (fen / 100).toFixed(2)
-}
 
 function deltaClass(fen?: number | null) {
   if (fen == null) return 'text-slate-800'

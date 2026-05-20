@@ -1,22 +1,27 @@
 <template>
-  <div>
-    <div class="flex items-center justify-between mb-5">
-      <h2 class="text-lg font-semibold text-[#0F172A]">阶梯费率配置</h2>
-      <el-button type="primary" size="small" @click="openCreate">
-        <el-icon class="mr-1"><Plus /></el-icon>新增规则
-      </el-button>
-    </div>
-
+  <div class="page-table-shell">
     <div class="content-card">
-      <el-table :data="rules" v-loading="loading" size="small" class="data-table">
+      <TableToolbar title="阶梯费率配置" :total="rules.length">
+        <template #actions>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增规则</el-button>
+        </template>
+      </TableToolbar>
+
+      <el-table :data="rules" v-loading="loading" stripe size="small" class="data-table">
         <el-table-column label="适用范围" width="140">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.scopeType === 'global' ? 'info' : 'warning'">
+            <el-tag size="small" :type="row.scopeType === 'global' ? 'info' : 'warning'" effect="plain">
               {{ row.scopeType === 'global' ? '全局默认' : row.scopeValue }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="渠道" prop="channelCode" width="90" />
+        <el-table-column label="渠道" prop="channelCode" width="110">
+          <template #default="{ row }">
+            <el-tag size="small" :type="channelTagType(row.channelCode)" effect="light">
+              {{ row.channelCode === 'ALL' ? '全部渠道' : channelLabel(row.channelCode) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="档位下限" width="110">
           <template #default="{ row }">
             ¥{{ ((Number(row.tierMin) || 0) / 100).toFixed(0) }}
@@ -27,20 +32,20 @@
             {{ row.tierMax ? `¥${(Number(row.tierMax) / 100).toFixed(0)}` : '无上限' }}
           </template>
         </el-table-column>
-        <el-table-column label="费率" width="90">
+        <el-table-column label="费率" width="90" align="right">
           <template #default="{ row }">
-            <span class="font-medium">{{ Number(row.feeRate).toFixed(4) }}</span>
+            <span class="font-medium tabular-nums">{{ formatRatePercent(row.feeRate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="计算模式" width="110">
+        <el-table-column label="计算模式" width="110" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.calcMode === 'segmented' ? 'success' : ''">
+            <el-tag size="small" :type="row.calcMode === 'segmented' ? 'success' : 'info'" effect="plain">
               {{ row.calcMode === 'segmented' ? '分段累计' : '全额匹配' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="优先级" prop="priority" width="80" />
-        <el-table-column label="状态" width="90">
+        <el-table-column label="优先级" prop="priority" width="80" align="center" />
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
             <el-switch
               :model-value="row.status === 'enabled'"
@@ -49,7 +54,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="140">
+        <el-table-column label="操作" min-width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -58,7 +63,6 @@
       </el-table>
     </div>
 
-    <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑费率规则' : '新增费率规则'" width="520px">
       <el-form :model="form" label-width="110px">
         <el-form-item label="适用范围">
@@ -100,8 +104,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button size="small" @click="dialogVisible = false">取消</el-button>
-        <el-button size="small" type="primary" @click="handleSubmit" :loading="submitting">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" class="btn-primary" :loading="submitting" @click="handleSubmit">
           {{ isEdit ? '更新' : '创建' }}
         </el-button>
       </template>
@@ -112,8 +116,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
 import { getFeeRates, createFeeRate, updateFeeRate, deleteFeeRate } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import { channelLabel, channelTagType, formatRatePercent } from '@/utils/format'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -215,4 +220,3 @@ async function handleDelete(row: any) {
 
 loadRules()
 </script>
-

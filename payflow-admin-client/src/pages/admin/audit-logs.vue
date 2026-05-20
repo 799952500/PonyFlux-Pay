@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="操作者">
@@ -34,21 +34,29 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="操作日志" :total="total" />
+
       <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
-        <el-table-column label="时间" prop="createdAt" width="170" />
+        <el-table-column label="时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作者" prop="username" width="120">
           <template #default="{ row }">
-            <span class="text-xs">{{ row.username || '—' }}</span>
+            <span class="text-sm">{{ row.username || '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="类型" prop="action" width="88" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="actionTagType(row.action)">{{ row.action }}</el-tag>
+            <el-tag size="small" :type="tagTypeOf(AUDIT_ACTION_TAG, row.action)" effect="plain">
+              {{ labelOf(AUDIT_ACTION_LABEL, row.action) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="请求路径" prop="resourcePath" min-width="220">
           <template #default="{ row }">
-            <span class="text-xs font-mono text-slate-700 break-all">{{ row.resourcePath }}</span>
+            <span class="cell-mono text-xs break-all">{{ row.resourcePath }}</span>
           </template>
         </el-table-column>
         <el-table-column label="摘要" prop="detail" min-width="260">
@@ -58,22 +66,18 @@
         </el-table-column>
         <el-table-column label="IP" prop="clientIp" width="130">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums">{{ row.clientIp || '—' }}</span>
+            <span class="cell-mono tabular-nums">{{ row.clientIp || '—' }}</span>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination-bar">
-        <el-pagination
-          v-model:current-page="queryForm.page"
-          v-model:page-size="queryForm.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadData"
+        @current-change="loadData"
+      />
     </div>
   </div>
 </template>
@@ -82,6 +86,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAuditLogs } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
+import {
+  AUDIT_ACTION_LABEL,
+  AUDIT_ACTION_TAG,
+  formatDateTime,
+  labelOf,
+  tagTypeOf,
+} from '@/utils/format'
 import type { AuditLogItem } from '@/types'
 
 const loading = ref(false)
@@ -94,13 +107,6 @@ const queryForm = reactive({
   username: '',
   action: '',
 })
-
-function actionTagType(action: string): 'success' | 'warning' | 'danger' | 'info' {
-  if (action === 'LOGIN') return 'success'
-  if (action === 'DELETE') return 'danger'
-  if (action === 'POST') return 'info'
-  return 'warning'
-}
 
 async function loadData() {
   loading.value = true
@@ -133,4 +139,3 @@ function handleReset() {
 
 onMounted(() => loadData())
 </script>
-

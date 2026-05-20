@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <!-- 顶部筛选 -->
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="所属渠道">
@@ -18,12 +17,12 @@
       </el-form>
     </div>
 
-    <!-- 表格区 -->
     <div class="content-card">
-      <div class="flex items-center justify-between px-5 pt-4 pb-2">
-        <h3 class="text-base font-semibold text-gray-700 m-0">支付账号列表</h3>
-        <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增账号</el-button>
-      </div>
+      <TableToolbar title="支付账号列表" :total="total">
+        <template #actions>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增账号</el-button>
+        </template>
+      </TableToolbar>
 
       <el-table v-loading="loading" :data="accountList" stripe size="small" class="data-table">
         <el-table-column label="账号编码" prop="accountCode" min-width="140">
@@ -50,7 +49,11 @@
         <el-table-column label="描述" prop="description" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ row.description ?? '—' }}</template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
@@ -59,17 +62,13 @@
         </el-table-column>
       </el-table>
 
-      <div class="pagination-bar">
-        <el-pagination
-          v-model:current-page="queryForm.page"
-          v-model:page-size="queryForm.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadAccounts"
-          @current-change="loadAccounts"
-        />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadAccounts"
+        @current-change="loadAccounts"
+      />
     </div>
 
     <!-- 新增/编辑弹窗 -->
@@ -129,6 +128,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getPaymentAccounts, createPaymentAccount, updatePaymentAccount, deletePaymentAccount, getChannels } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { formatDateTime } from '@/utils/format'
 import type { PaymentAccount, Channel } from '@/types'
 
 const loading = ref(false)

@@ -1,6 +1,7 @@
 package com.payflow.admin.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.cashier.Order;
@@ -93,17 +94,57 @@ public class OrderService {
     }
 
     /**
-     * 统计各状态订单数量
+     * 统计各状态订单数量（与列表查询共用商户范围筛选）
      */
-    public List<Map<String, Object>> countByStatus() {
-        return orderMapper.countByStatus();
+    public List<Map<String, Object>> countByStatus(String merchantId, List<String> merchantScopeIds) {
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            return List.of();
+        }
+        QueryWrapper<Order> wrapper = new QueryWrapper<>();
+        wrapper.select("status", "COUNT(*) AS cnt");
+        wrapper.groupBy("status");
+        applyMerchantScope(wrapper, merchantId, merchantScopeIds);
+        return orderMapper.selectMaps(wrapper);
     }
 
     /**
-     * 获取订单总数
+     * 获取订单总数（与列表查询共用商户范围筛选）
      */
-    public long count() {
-        return orderMapper.selectCount(null);
+    public long count(String merchantId, List<String> merchantScopeIds) {
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            return 0L;
+        }
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            if (merchantId != null && !merchantId.isEmpty()) {
+                if (!merchantScopeIds.contains(merchantId)) {
+                    return 0L;
+                }
+                wrapper.eq(Order::getMerchantId, merchantId);
+            } else {
+                wrapper.in(Order::getMerchantId, merchantScopeIds);
+            }
+        } else if (merchantId != null && !merchantId.isEmpty()) {
+            wrapper.eq(Order::getMerchantId, merchantId);
+        }
+        return orderMapper.selectCount(wrapper);
+    }
+
+    private static void applyMerchantScope(QueryWrapper<Order> wrapper, String merchantId,
+                                           List<String> merchantScopeIds) {
+        if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            if (merchantId != null && !merchantId.isEmpty()) {
+                if (!merchantScopeIds.contains(merchantId)) {
+                    wrapper.apply("1 = 0");
+                    return;
+                }
+                wrapper.eq("merchant_id", merchantId);
+            } else {
+                wrapper.in("merchant_id", merchantScopeIds);
+            }
+        } else if (merchantId != null && !merchantId.isEmpty()) {
+            wrapper.eq("merchant_id", merchantId);
+        }
     }
 
     /**

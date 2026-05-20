@@ -33,9 +33,9 @@ INSERT INTO cashier_channels (
 INSERT INTO cashier_channel_accounts (
   channel_id, account_code, account_name, channel_config, status, remark, created_at, updated_at
 ) VALUES
-(1, 'CASHIER_WX_001', '微信华东主账户', '{"env":"sandbox","region":"east"}', 'ENABLED', '演示', NOW(), NOW()),
-(2, 'CASHIER_ALI_001', '支付宝华东主账户', '{"env":"sandbox"}', 'ENABLED', '演示', NOW(), NOW()),
-(3, 'CASHIER_UNION_001', '银联华东主账户', '{"env":"sandbox"}', 'ENABLED', '演示', NOW(), NOW());
+(1, 'ACC-WX-001', '微信华东主账户', '{"env":"sandbox","region":"east"}', 'ENABLED', '演示', NOW(), NOW()),
+(2, 'ACC-ALI-001', '支付宝华东主账户', '{"env":"sandbox"}', 'ENABLED', '演示', NOW(), NOW()),
+(3, 'ACC-UNION-001', '银联华东主账户', '{"env":"sandbox"}', 'ENABLED', '演示', NOW(), NOW());
 
 INSERT INTO cashier_channel_merchant_routes (
   channel_account_id, merchant_id, enabled, priority, created_at, updated_at

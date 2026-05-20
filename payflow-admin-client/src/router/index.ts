@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAdminStore } from '@/stores/admin'
+import { installFlip } from '@/transitions/flipShared'
 import request from '@/api/request'
 
 const router = createRouter({
@@ -122,15 +123,16 @@ const router = createRouter({
         },
         {
           path: 'channel-routes',
-          name: 'ChannelRoutes',
-          component: () => import('@/pages/admin/channel-routes.vue'),
-          meta: { title: '支付路由', requiresAuth: true },
+          redirect: () => ({ path: '/admin/merchants' }),
         },
         {
           path: 'merchant-payments',
-          name: 'MerchantPayments',
-          component: () => import('@/pages/admin/merchant-payments.vue'),
-          meta: { title: '商户支付配置', requiresAuth: true },
+          redirect: (to) => ({
+            path: '/admin/merchants',
+            query: to.query.merchantId
+              ? { openPayment: String(to.query.merchantId) }
+              : {},
+          }),
         },
         {
           path: 'payment-methods',
@@ -259,5 +261,7 @@ router.beforeEach(async (to, _from, next) => {
 
   next()
 })
+
+installFlip(router)
 
 export default router

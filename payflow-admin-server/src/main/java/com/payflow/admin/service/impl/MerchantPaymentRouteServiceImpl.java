@@ -4,10 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.MerchantPaymentRoute;
 import com.payflow.admin.kit.ClientScopesKit;
 import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
+import com.payflow.admin.service.MerchantCashierRouteSyncService;
 import com.payflow.admin.service.MerchantPaymentRouteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -19,6 +22,7 @@ import java.util.List;
 public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteService {
 
     private final MerchantPaymentRouteMapper mapper;
+    private final MerchantCashierRouteSyncService cashierRouteSyncService;
 
     @Override
     public List<MerchantPaymentRoute> listAll() {
@@ -60,6 +64,7 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
         }
         route.setId(null);
         mapper.insert(route);
+        scheduleCashierSync(route.getMerchantId());
     }
 
     @Override
@@ -85,6 +90,7 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
             exist.setClientScopes(patch.getClientScopes());
         }
         mapper.updateById(exist);
+        scheduleCashierSync(exist.getMerchantId());
     }
 
     @Override
@@ -93,7 +99,13 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
         if (id == null) {
             throw new IllegalArgumentException("路由ID不能为空");
         }
+        MerchantPaymentRoute exist = mapper.selectById(id);
+        if (exist == null) {
+            throw new IllegalArgumentException("路由不存在: " + id);
+        }
+        String merchantId = exist.getMerchantId();
         mapper.deleteById(id);
+        scheduleCashierSync(merchantId);
     }
 
     @Override
@@ -105,6 +117,7 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
         }
         exist.setEnabled(Boolean.FALSE.equals(exist.getEnabled()));
         mapper.updateById(exist);
+        scheduleCashierSync(exist.getMerchantId());
     }
 
     @Override
@@ -112,17 +125,29 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     public void replaceRoutes(String merchantId, List<MerchantPaymentRoute> routes) {
         mapper.delete(new LambdaQueryWrapper<MerchantPaymentRoute>()
                 .eq(MerchantPaymentRoute::getMerchantId, merchantId));
-        if (routes == null || routes.isEmpty()) {
+        if (routes != null && !routes.isEmpty()) {
+            for (MerchantPaymentRoute route : routes) {
+                route.setId(null);
+                route.setMerchantId(merchantId);
+                if (route.getClientScopes() == null || route.getClientScopes().isBlank()) {
+                    route.setClientScopes(ClientScopesKit.DEFAULT_DB_VALUE);
+                }
+                mapper.insert(route);
+            }
+        }
+        scheduleCashierSync(merchantId);
+    }
+
+    private void scheduleCashierSync(String merchantId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            cashierRouteSyncService.syncAndNotify(merchantId);
             return;
         }
-        for (MerchantPaymentRoute route : routes) {
-            route.setId(null);
-            route.setMerchantId(merchantId);
-            if (route.getClientScopes() == null || route.getClientScopes().isBlank()) {
-                route.setClientScopes(ClientScopesKit.DEFAULT_DB_VALUE);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                cashierRouteSyncService.syncAndNotify(merchantId);
             }
-            mapper.insert(route);
-        }
+        });
     }
 }
-

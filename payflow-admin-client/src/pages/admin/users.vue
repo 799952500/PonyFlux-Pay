@@ -1,19 +1,16 @@
 <template>
-  <div>
-    <!-- 顶部操作栏 -->
-    <div class="filter-bar">
-      <div class="flex items-center justify-between">
-        <h3 class="text-base font-semibold text-gray-700 m-0">用户列表</h3>
-        <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增用户</el-button>
-      </div>
-    </div>
-
-    <!-- 表格区 -->
+  <div class="page-table-shell">
     <div class="content-card">
+      <TableToolbar title="用户列表" :total="userList.length">
+        <template #actions>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增用户</el-button>
+        </template>
+      </TableToolbar>
+
       <el-table v-loading="loading" :data="userList" stripe size="small" class="data-table">
         <el-table-column label="用户名" prop="username" min-width="140">
           <template #default="{ row }">
-            <span class="text-xs font-mono font-medium text-primary">{{ row.username }}</span>
+            <span class="cell-mono font-medium text-[#047857]">{{ row.username }}</span>
           </template>
         </el-table-column>
         <el-table-column label="昵称" prop="nickname" min-width="120">
@@ -32,12 +29,16 @@
         </el-table-column>
         <el-table-column label="状态" prop="status" width="100" align="center">
           <template #default="{ row }">
-            <el-tag size="small" :type="row.status === 'ACTIVE' ? 'success' : 'danger'" effect="plain">
-              {{ row.status === 'ACTIVE' ? '启用' : '禁用' }}
+            <el-tag size="small" :type="tagTypeOf(ENABLE_STATUS_TAG, row.status)" effect="plain">
+              {{ labelOf(ENABLE_STATUS_LABEL, row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openUserDetail(row)">详情</el-button>
@@ -109,12 +110,12 @@
           <dt class="text-gray-400">角色</dt><dd>{{ getRoleName(detailUser.roleId) }}</dd>
           <dt class="text-gray-400">状态</dt>
           <dd>
-            <el-tag size="small" :type="detailUser.status === 'ACTIVE' ? 'success' : 'danger'">
-              {{ detailUser.status === 'ACTIVE' ? '启用' : '禁用' }}
+            <el-tag size="small" :type="tagTypeOf(ENABLE_STATUS_TAG, detailUser.status)">
+              {{ labelOf(ENABLE_STATUS_LABEL, detailUser.status) }}
             </el-tag>
           </dd>
-          <dt class="text-gray-400">创建时间</dt><dd>{{ detailUser.createdAt }}</dd>
-          <dt class="text-gray-400">更新时间</dt><dd>{{ detailUser.updatedAt ?? '—' }}</dd>
+          <dt class="text-gray-400">创建时间</dt><dd>{{ formatDateTime(detailUser.createdAt) }}</dd>
+          <dt class="text-gray-400">更新时间</dt><dd>{{ formatDateTime(detailUser.updatedAt) }}</dd>
         </dl>
       </div>
     </el-drawer>
@@ -125,11 +126,16 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getUsers, createUser, updateUser, resetUserPassword, disableUser, getRoles, getUserById } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import {
+  ENABLE_STATUS_LABEL,
+  ENABLE_STATUS_TAG,
+  formatDateTime,
+  labelOf,
+  tagTypeOf,
+} from '@/utils/format'
 import type { SysRole } from '@/types'
 
-// ============================================================
-// 类型定义
-// ============================================================
 interface SysUser {
   id: number
   username: string
@@ -143,9 +149,6 @@ interface SysUser {
   updatedAt: string
 }
 
-// ============================================================
-// 状态
-// ============================================================
 const loading = ref(false)
 const userList = ref<SysUser[]>([])
 const roleList = ref<SysRole[]>([])
@@ -154,7 +157,6 @@ const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detailUser = ref<SysUser | null>(null)
 
-// 表单弹窗
 const formVisible = ref(false)
 const isEdit = ref(false)
 const submitting = ref(false)
@@ -176,7 +178,6 @@ const formRules: FormRules = {
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 }
 
-// 重置密码弹窗
 const resetPwdVisible = ref(false)
 const resetPwdLoading = ref(false)
 const resetPwdRef = ref<FormInstance>()
@@ -193,9 +194,6 @@ const resetPwdRules: FormRules = {
   ],
 }
 
-// ============================================================
-// 数据加载
-// ============================================================
 async function loadUsers() {
   loading.value = true
   try {
@@ -217,9 +215,6 @@ async function loadRoles() {
   }
 }
 
-// ============================================================
-// 工具方法
-// ============================================================
 function getRoleName(roleId: number): string {
   const role = roleList.value.find((r) => r.id === roleId)
   return role?.roleName ?? '—'
@@ -231,7 +226,6 @@ async function openUserDetail(row: SysUser) {
   detailUser.value = null
   try {
     const full = await getUserById(row.id)
-    // 列表含 roleId（关联表），详情接口实体可能不含，合并保留
     detailUser.value = { ...row, ...full, roleId: full.roleId ?? row.roleId }
   } catch {
     ElMessage.error('加载用户详情失败')
@@ -252,9 +246,6 @@ function resetForm() {
   })
 }
 
-// ============================================================
-// 事件处理
-// ============================================================
 function openCreate() {
   isEdit.value = false
   editId.value = null
@@ -349,12 +340,8 @@ async function handleResetPwdSubmit() {
   })
 }
 
-// ============================================================
-// 初始化
-// ============================================================
 onMounted(() => {
   loadUsers()
   loadRoles()
 })
 </script>
-

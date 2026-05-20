@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="商户号">
@@ -41,19 +41,29 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="安全审计" :total="total" />
+
       <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
-        <el-table-column label="时间" prop="createdAt" width="170" />
-        <el-table-column label="商户" prop="merchantId" width="120" />
+        <el-table-column label="时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="商户" prop="merchantId" width="120">
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.merchantId || '—' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="声称商户" prop="targetMerchantId" width="120">
           <template #default="{ row }">
-            <span class="text-xs">{{ row.targetMerchantId || '—' }}</span>
+            <span class="cell-mono">{{ row.targetMerchantId || '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="认证" prop="authMode" width="72" align="center" />
         <el-table-column label="方法" prop="httpMethod" width="72" align="center" />
         <el-table-column label="路径" prop="requestPath" min-width="200">
           <template #default="{ row }">
-            <span class="text-xs font-mono break-all">{{ row.requestPath }}</span>
+            <span class="cell-mono text-xs break-all">{{ row.requestPath }}</span>
           </template>
         </el-table-column>
         <el-table-column label="资源" width="140">
@@ -62,20 +72,20 @@
           </template>
         </el-table-column>
         <el-table-column label="原因" prop="reasonCode" width="72" align="center" />
-        <el-table-column label="IP" prop="clientIp" width="120" />
+        <el-table-column label="IP" prop="clientIp" width="120">
+          <template #default="{ row }">
+            <span class="cell-mono tabular-nums">{{ row.clientIp || '—' }}</span>
+          </template>
+        </el-table-column>
       </el-table>
 
-      <div class="pagination-bar">
-        <el-pagination
-          v-model:current-page="queryForm.page"
-          v-model:page-size="queryForm.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadData"
+        @current-change="loadData"
+      />
     </div>
   </div>
 </template>
@@ -84,6 +94,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getSecurityAuditList, type SecurityAuditItem } from '@/api/securityAudit'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const list = ref<SecurityAuditItem[]>([])

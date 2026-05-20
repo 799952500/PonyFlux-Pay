@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" @submit.prevent="runSearch">
         <el-form-item label="关键词">
@@ -21,17 +21,36 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="搜索结果" :total="hits.length" />
+
       <el-table v-loading="loading" :data="hits" stripe size="small" class="data-table" @row-click="openOrder">
         <el-table-column label="订单号" prop="orderId" min-width="170">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums text-[#047857] cursor-pointer">#{{ row.orderId }}</span>
+            <span
+              :data-flip="`order-${row.orderId}`"
+              class="text-xs tabular-nums text-[#047857] cursor-pointer"
+            >#{{ row.orderId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户" prop="merchantId" width="140" />
         <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="140" />
-        <el-table-column label="金额(分)" prop="amount" width="100" align="right" />
-        <el-table-column label="状态" prop="status" width="100" />
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
+        <el-table-column label="金额（元）" prop="amount" width="110" align="right">
+          <template #default="{ row }">
+            <span class="font-semibold tabular-nums">¥{{ formatMoneyFen(row.amount) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" prop="status" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="tagTypeOf(ORDER_STATUS_TAG, row.status)">
+              {{ labelOf(ORDER_STATUS_LABEL, row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
       </el-table>
       <el-empty v-if="!loading && searched && !hits.length" description="无匹配订单" class="py-10" />
     </div>
@@ -42,8 +61,17 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
 import { adminSearchOrders } from '@/api/admin'
 import type { AdminSearchOrderHit } from '@/types'
+import {
+  formatDateTime,
+  formatMoneyFen,
+  labelOf,
+  ORDER_STATUS_LABEL,
+  ORDER_STATUS_TAG,
+  tagTypeOf,
+} from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -89,4 +117,3 @@ onMounted(() => {
   if (keyword.value.trim()) runSearch()
 })
 </script>
-

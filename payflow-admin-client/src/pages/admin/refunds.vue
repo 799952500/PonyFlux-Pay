@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="关键词">
@@ -25,6 +25,8 @@
     </div>
 
     <div class="content-card">
+      <TableToolbar title="退款列表" :total="total" />
+
       <el-table v-loading="loading" :data="refundList" stripe size="small" class="data-table">
         <el-table-column label="退款单号" prop="refundId" min-width="170">
           <template #default="{ row }"><span class="text-xs tabular-nums font-medium text-gray-700">{{ row.refundId }}</span></template>
@@ -34,17 +36,25 @@
         </el-table-column>
         <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="150" />
         <el-table-column label="退款金额" prop="amount" width="120" align="right">
-          <template #default="{ row }"><span class="font-semibold text-danger">¥{{ (row.amount / 100).toFixed(2) }}</span></template>
+          <template #default="{ row }">
+            <span class="font-semibold text-danger tabular-nums">¥{{ formatMoneyFen(row.amount) }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="退款原因" prop="reason" min-width="160">
           <template #default="{ row }"><span class="truncate block max-w-[160px]" :title="row.reason">{{ row.reason || '—' }}</span></template>
         </el-table-column>
         <el-table-column label="状态" prop="status" width="100">
           <template #default="{ row }">
-            <el-tag size="small" :type="statusTypeMap[row.status]">{{ statusLabelMap[row.status] }}</el-tag>
+            <el-tag size="small" :type="tagTypeOf(REFUND_STATUS_TAG, row.status)">
+              {{ labelOf(REFUND_STATUS_LABEL, row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="申请时间" prop="createdAt" width="170" />
+        <el-table-column label="申请时间" prop="createdAt" width="172">
+          <template #default="{ row }">
+            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <template v-if="row.status === 'PENDING'">
@@ -56,9 +66,13 @@
         </el-table-column>
       </el-table>
 
-      <div class="pagination-bar">
-        <el-pagination v-model:current-page="queryForm.page" v-model:page-size="queryForm.pageSize" :total="total" :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper" @size-change="loadRefunds" @current-change="loadRefunds" />
-      </div>
+      <AdminPagination
+        v-model:current-page="queryForm.page"
+        v-model:page-size="queryForm.pageSize"
+        :total="total"
+        @size-change="loadRefunds"
+        @current-change="loadRefunds"
+      />
     </div>
   </div>
 </template>
@@ -66,17 +80,24 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { getRefunds, approveRefund, rejectRefund } from '@/api/admin'
 import type { RefundItem } from '@/types'
+import {
+  formatDateTime,
+  formatMoneyFen,
+  labelOf,
+  REFUND_STATUS_LABEL,
+  REFUND_STATUS_TAG,
+  tagTypeOf,
+} from '@/utils/format'
 
 const loading = ref(false)
 const refundList = ref<RefundItem[]>([])
 const total = ref(0)
 const dateRange = ref<[string, string] | null>(null)
 const queryForm = reactive({ page: 1, pageSize: 20, status: '', keyword: '' })
-
-const statusTypeMap: Record<string, string> = { PENDING: 'warning', APPROVED: 'primary', COMPLETED: 'success', REJECTED: 'danger' }
-const statusLabelMap: Record<string, string> = { PENDING: '申请中', APPROVED: '审批通过', COMPLETED: '已退款', REJECTED: '已拒绝' }
 
 async function loadRefunds() {
   loading.value = true
@@ -98,7 +119,7 @@ function handleReset() { Object.assign(queryForm, { page: 1, pageSize: 20, statu
 
 async function handleApprove(row: RefundItem) {
   try {
-    await ElMessageBox.confirm(`确认通过退款申请？退款金额 ¥${(row.amount / 100).toFixed(2)} 将原路退回。`, '审批确认', { confirmButtonText: '确认通过', cancelButtonText: '取消', type: 'warning' })
+    await ElMessageBox.confirm(`确认通过退款申请？退款金额 ¥${formatMoneyFen(row.amount)} 将原路退回。`, '审批确认', { confirmButtonText: '确认通过', cancelButtonText: '取消', type: 'warning' })
     await approveRefund(row.refundId)
     ElMessage.success('退款申请已审批通过')
     loadRefunds()

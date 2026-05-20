@@ -40,7 +40,7 @@ public interface OrderMapper extends BaseMapper<Order> {
     /**
      * 统计各状态订单数量
      */
-    @Select("SELECT status, COUNT(*) as count FROM cashier_orders GROUP BY status")
+    @Select("SELECT status, COUNT(*) AS cnt FROM cashier_orders GROUP BY status")
     List<java.util.Map<String, Object>> countByStatus();
 
     /**
