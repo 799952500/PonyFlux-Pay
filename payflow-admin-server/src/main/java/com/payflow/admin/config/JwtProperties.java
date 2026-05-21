@@ -30,7 +30,7 @@ public class JwtProperties {
             );
         }
         if (secret.length() < 32) {
-            log.warn("JWT 密钥长度不足 32 字符，建议使用更强的密钥以保证 HS256 安全性");
+            log.warn("JWT 密钥长度不足 32 字符，将使用 SHA-256 派生签名密钥；生产环境请设置 JWT_SECRET≥32 字符");
         }
     }
 }

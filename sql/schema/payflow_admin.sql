@@ -43,6 +43,9 @@ DROP TABLE IF EXISTS `admin_payment_accounts`;
 DROP TABLE IF EXISTS `admin_payment_methods`;
 DROP TABLE IF EXISTS `admin_merchants`;
 DROP TABLE IF EXISTS `admin_channels`;
+DROP TABLE IF EXISTS `admin_risk_rule_audit_log`;
+DROP TABLE IF EXISTS `admin_risk_hit_record`;
+DROP TABLE IF EXISTS `admin_risk_rule_merchant_scope`;
 DROP TABLE IF EXISTS `risk_rules`;
 DROP TABLE IF EXISTS `admin_system_configs`;
 DROP TABLE IF EXISTS `admin_audit_logs`;
@@ -219,16 +222,78 @@ CREATE TABLE `risk_rules` (
   `rule_name` VARCHAR(128) NOT NULL,
   `rule_type` VARCHAR(32) NOT NULL,
   `risk_expr` VARCHAR(1024) DEFAULT NULL COMMENT 'QLExpress 表达式',
-  `threshold` DECIMAL(18,2) DEFAULT NULL,
+  `threshold` DECIMAL(18,2) DEFAULT NULL COMMENT '兼容旧字段，后续使用 threshold_fen',
+  `threshold_fen` BIGINT DEFAULT NULL COMMENT '阈值，金额类单位为分',
   `unit` VARCHAR(32) DEFAULT NULL,
   `action` VARCHAR(32) DEFAULT NULL,
   `enabled` TINYINT(1) DEFAULT 1,
+  `priority` INT NOT NULL DEFAULT 100 COMMENT '优先级，数值越小越先评估',
+  `owner_type` VARCHAR(32) NOT NULL DEFAULT 'PLATFORM' COMMENT 'PLATFORM/MERCHANT',
+  `owner_merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '商户自建规则归属商户',
+  `scope_type` VARCHAR(32) NOT NULL DEFAULT 'ALL_MERCHANTS' COMMENT 'ALL_MERCHANTS/SELECTED_MERCHANTS/OWNER_MERCHANT_ONLY',
   `description` VARCHAR(512) DEFAULT NULL,
+  `created_by` VARCHAR(64) DEFAULT NULL,
+  `updated_by` VARCHAR(64) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_rule_code` (`rule_code`)
+  UNIQUE KEY `uk_rule_code` (`rule_code`),
+  KEY `idx_risk_rules_owner` (`owner_type`, `owner_merchant_id`),
+  KEY `idx_risk_rules_scope` (`scope_type`, `enabled`, `priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则';
+
+CREATE TABLE `admin_risk_rule_merchant_scope` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `rule_id` BIGINT NOT NULL,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_rule_merchant` (`rule_id`, `merchant_id`),
+  KEY `idx_scope_merchant` (`merchant_id`, `enabled`),
+  KEY `idx_scope_rule` (`rule_id`, `enabled`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则商户作用范围';
+
+CREATE TABLE `admin_risk_hit_record` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `trace_id` VARCHAR(128) DEFAULT NULL,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `merchant_name` VARCHAR(128) DEFAULT NULL,
+  `order_id` VARCHAR(64) DEFAULT NULL,
+  `merchant_order_no` VARCHAR(128) DEFAULT NULL,
+  `rule_id` BIGINT NOT NULL,
+  `rule_code` VARCHAR(64) NOT NULL,
+  `rule_name` VARCHAR(128) NOT NULL,
+  `owner_type` VARCHAR(32) NOT NULL,
+  `scope_type` VARCHAR(32) NOT NULL,
+  `action` VARCHAR(32) NOT NULL,
+  `decision` VARCHAR(32) NOT NULL,
+  `hit_reason` VARCHAR(512) DEFAULT NULL,
+  `request_summary` VARCHAR(1024) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_hit_merchant_created` (`merchant_id`, `created_at`),
+  KEY `idx_hit_rule_created` (`rule_id`, `created_at`),
+  KEY `idx_hit_decision_created` (`decision`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控命中记录';
+
+CREATE TABLE `admin_risk_rule_audit_log` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `rule_id` BIGINT NOT NULL,
+  `operator_id` VARCHAR(64) DEFAULT NULL,
+  `operator_name` VARCHAR(128) DEFAULT NULL,
+  `operator_type` VARCHAR(32) NOT NULL,
+  `merchant_id` VARCHAR(64) DEFAULT NULL,
+  `operation_type` VARCHAR(32) NOT NULL,
+  `before_summary` VARCHAR(1024) DEFAULT NULL,
+  `after_summary` VARCHAR(1024) DEFAULT NULL,
+  `client_ip` VARCHAR(64) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_rule_created` (`rule_id`, `created_at`),
+  KEY `idx_audit_operator_created` (`operator_type`, `created_at`),
+  KEY `idx_audit_merchant_created` (`merchant_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则变更审计';
 
 CREATE TABLE `sys_roles` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,

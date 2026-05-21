@@ -35,7 +35,7 @@
 | 6 | 编码规范 — 命名/格式/注释/成员顺序是否合规？ | [ ] PASS / [ ] VIOLATION | |
 | 7 | 数据库访问 — 禁止 SELECT *、禁止 ${}、分页设限？ | [ ] PASS / [ ] VIOLATION / [ ] N/A | |
 | 8 | 安全编码 — 日志脱敏/参数校验/防重放是否到位？ | [ ] PASS / [ ] VIOLATION | |
-| 9 | 测试规范 — DoD 五条件 + 80% 覆盖率是否满足？ | [ ] PASS / [ ] VIOLATION | |
+| 9 | 测试规范 — DoD 六条件、80% 覆盖率、按需 Playwright E2E 与后台日志闭环是否满足？ | [ ] PASS / [ ] VIOLATION | |
 
 **Gate Result**: [ALL PASS / VIOLATIONS FOUND — 必须在 Phase 0 前解决]
 

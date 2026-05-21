@@ -20,7 +20,10 @@ import com.payflow.admin.mapper.MerchantPaymentMethodMapper;
 import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
 import com.payflow.admin.mapper.PaymentAccountMapper;
 import com.payflow.admin.mapper.PaymentMethodMapper;
+import com.payflow.admin.mapper.RiskHitRecordMapper;
+import com.payflow.admin.mapper.RiskRuleAuditLogMapper;
 import com.payflow.admin.mapper.RiskRuleMapper;
+import com.payflow.admin.mapper.RiskRuleMerchantScopeMapper;
 import com.payflow.admin.mapper.SysRoleMapper;
 import com.payflow.admin.mapper.SysMenuMapper;
 import com.payflow.admin.mapper.SysRoleMenuMapper;
@@ -172,6 +175,34 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<RiskRuleMapper> riskRuleMapper(
             @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<RiskRuleMapper> factory = new MapperFactoryBean<>(RiskRuleMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<RiskRuleMerchantScopeMapper> riskRuleMerchantScopeMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<RiskRuleMerchantScopeMapper> factory =
+                new MapperFactoryBean<>(RiskRuleMerchantScopeMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<RiskRuleAuditLogMapper> riskRuleAuditLogMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<RiskRuleAuditLogMapper> factory = new MapperFactoryBean<>(RiskRuleAuditLogMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<RiskHitRecordMapper> riskHitRecordMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<RiskHitRecordMapper> factory = new MapperFactoryBean<>(RiskHitRecordMapper.class);
         factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }

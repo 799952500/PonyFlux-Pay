@@ -40,7 +40,11 @@
 | 兼容路径 `/merchants` | * | `/merchants` | [`MerchantController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantController.java)（若仍存在则仅兼容旧客户端） |
 | 商户支付方式 | * | `/admin/merchant-payment-methods` | [`MerchantPaymentMethodController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantPaymentMethodController.java) |
 | 商户支付路由 | * | `/admin/merchant-payment-routes` | [`MerchantPaymentRouteController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantPaymentRouteController.java) |
-| 风控 | GET/PUT | `/admin/risk/rules` | [`AdminRiskController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminRiskController.java) |
+| `getRiskRules` / `createRiskRule` / `updateRiskRule` / `updateRiskRuleStatus` | GET/POST/PUT | `/admin/risk/rules`、`/admin/risk/rules/{ruleId}`、`/admin/risk/rules/{ruleId}/status` | [`AdminRiskController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminRiskController.java) |
+| `getRiskRuleScopes` / `updateRiskRuleScopes` | GET/PUT | `/admin/risk/rules/{ruleId}/scopes` | 同上 |
+| `getRiskHitRecords` / `getRiskAuditLogs` | GET | `/admin/risk/hits`、`/admin/risk/audits` | 同上 |
+| `getMerchantRiskRules` / `createMerchantRiskRule` / `updateMerchantRiskRule` / `updateMerchantRiskRuleStatus` | GET/POST/PUT | `/merchant/risk/rules`、`/merchant/risk/rules/{ruleId}`、`/merchant/risk/rules/{ruleId}/status` | [`MerchantRiskController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantRiskController.java) |
+| `getMerchantRiskHitRecords` | GET | `/merchant/risk/hits` | 同上 |
 | 支付方式 | * | `/admin/payment-methods` | [`PaymentMethodController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentMethodController.java) |
 | 支付账号（旧路径） | * | `/admin/payment-accounts` | [`PaymentAccountController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentAccountController.java) |
 | 角色/菜单/用户 | * | `/admin/roles`、`/admin/menus`、`/admin/users` | [`SysRoleController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysRoleController.java)、[`SysMenuController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysMenuController.java)、[`SysUserController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysUserController.java) |

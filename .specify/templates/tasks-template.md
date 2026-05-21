@@ -137,6 +137,8 @@ description: "功能实施任务列表模板"
 - [ ] TXXX [P] 补充单元测试（如 spec 要求）
 - [ ] TXXX 安全加固（脱敏、加密、防注入检查）
 - [ ] TXXX 运行 quickstart.md 验证
+- [ ] TXXX 按需使用 Playwright/Playwright CLI 验证关键前端交互和跨服务流程
+- [ ] TXXX 监控相关后台服务日志，根据异常日志修复后重复验证至无阻断错误
 - [ ] TXXX 宪法合规检查 — 验证所有强制规则通过
 
 ---
@@ -198,15 +200,15 @@ Task: "创建 DTO payflow-xxx/.../dto/XxxDTO.java"
 1. 完成 Phase 1: Setup
 2. 完成 Phase 2: Foundational（CRITICAL — 阻断所有故事）
 3. 完成 Phase 3: User Story 1
-4. **STOP and VALIDATE**: 独立测试 User Story 1
-5. 验收通过后部署/演示
+4. **STOP and VALIDATE**: 独立测试 User Story 1，涉及 UI 或跨服务流程时按需执行 Playwright/Playwright CLI 验证并监控后台日志
+5. 验证发现阻断日志或异常时先修复根因并重复测试，全部通过后部署/演示
 
 ### Incremental Delivery
 
 1. Setup + Foundational → 基础就绪
-2. + User Story 1 → 独立测试 → 部署/演示（MVP！）
-3. + User Story 2 → 独立测试 → 部署/演示
-4. + User Story 3 → 独立测试 → 部署/演示
+2. + User Story 1 → 独立测试 + 按需 Playwright/日志验证 → 部署/演示（MVP！）
+3. + User Story 2 → 独立测试 + 按需 Playwright/日志验证 → 部署/演示
+4. + User Story 3 → 独立测试 + 按需 Playwright/日志验证 → 部署/演示
 5. 每个故事增加价值而不破坏已有故事
 
 ### Parallel Team Strategy

@@ -11,12 +11,14 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 风控规则。
+ *
+ * @author Lucas
+ */
 @Data
 @TableName("cashier_risk_rules")
 @Schema(name = "RiskRule", description = "风控规则")
-/**
- * @author Lucas
- */
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)
@@ -35,11 +37,21 @@ public class RiskRule {
 
     private BigDecimal threshold;
 
+    private Long thresholdFen;
+
     private String unit;
 
     private String action;
 
     private Boolean enabled;
+
+    private Integer priority;
+
+    private String ownerType;
+
+    private String ownerMerchantId;
+
+    private String scopeType;
 
     private String description;
 

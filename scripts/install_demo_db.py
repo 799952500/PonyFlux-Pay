@@ -28,6 +28,7 @@ SQL_FILES = [
     ROOT / "sql/seed/payflow_admin_seed.sql",
     ROOT / "sql/migrations/2026-05-20_hide-merchant-payments-menu.sql",
     ROOT / "sql/migrations/2026-05-20_hide-channel-routes-menu.sql",
+    ROOT / "sql/migrations/2026-05-20_merchant_risk_config.sql",
 ]
 
 

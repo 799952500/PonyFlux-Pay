@@ -11,6 +11,15 @@ import type {
   Merchant,
   PageResult,
   RiskRule,
+  RiskRuleAuditListResponse,
+  RiskRuleAuditQuery,
+  RiskHitRecordListResponse,
+  RiskHitRecordQuery,
+  RiskRuleListResponse,
+  RiskRuleQuery,
+  RiskRuleScopeResponse,
+  RiskRuleStatusRequest,
+  RiskRuleUpsertRequest,
   PaymentAccount,
   MerchantPaymentRoute,
   SysRole,
@@ -253,11 +262,44 @@ export const createMerchantPayment = (data: { merchantId: string; paymentMethodI
 // -------------------------------------------------------------------
 // 风控规则
 // -------------------------------------------------------------------
-export const getRiskRules = (): Promise<RiskRule[]> =>
-  request.get('/admin/risk/rules')
+export const getRiskRules = (params?: RiskRuleQuery): Promise<RiskRuleListResponse> =>
+  request.get('/admin/risk/rules', { params })
 
-export const updateRiskRule = (ruleId: string, data: Partial<RiskRule>): Promise<RiskRule> =>
+export const createRiskRule = (data: RiskRuleUpsertRequest): Promise<RiskRule> =>
+  request.post('/admin/risk/rules', data)
+
+export const updateRiskRule = (ruleId: string | number, data: RiskRuleUpsertRequest): Promise<RiskRule> =>
   request.put(`/admin/risk/rules/${ruleId}`, data)
+
+export const updateRiskRuleStatus = (ruleId: string | number, data: RiskRuleStatusRequest): Promise<RiskRule> =>
+  request.put(`/admin/risk/rules/${ruleId}/status`, data)
+
+export const getRiskRuleScopes = (ruleId: string | number): Promise<RiskRuleScopeResponse> =>
+  request.get(`/admin/risk/rules/${ruleId}/scopes`)
+
+export const updateRiskRuleScopes = (ruleId: string | number, scopeMerchantIds: string[]): Promise<RiskRuleScopeResponse> =>
+  request.put(`/admin/risk/rules/${ruleId}/scopes`, { scopeMerchantIds })
+
+export const getRiskHitRecords = (params?: RiskHitRecordQuery): Promise<RiskHitRecordListResponse> =>
+  request.get('/admin/risk/hits', { params })
+
+export const getRiskAuditLogs = (params?: RiskRuleAuditQuery): Promise<RiskRuleAuditListResponse> =>
+  request.get('/admin/risk/audits', { params })
+
+export const getMerchantRiskRules = (params?: RiskRuleQuery): Promise<RiskRuleListResponse> =>
+  request.get('/merchant/risk/rules', { params })
+
+export const createMerchantRiskRule = (data: RiskRuleUpsertRequest): Promise<RiskRule> =>
+  request.post('/merchant/risk/rules', data)
+
+export const updateMerchantRiskRule = (ruleId: string | number, data: RiskRuleUpsertRequest): Promise<RiskRule> =>
+  request.put(`/merchant/risk/rules/${ruleId}`, data)
+
+export const updateMerchantRiskRuleStatus = (ruleId: string | number, data: RiskRuleStatusRequest): Promise<RiskRule> =>
+  request.put(`/merchant/risk/rules/${ruleId}/status`, data)
+
+export const getMerchantRiskHitRecords = (params?: RiskHitRecordQuery): Promise<RiskHitRecordListResponse> =>
+  request.get('/merchant/risk/hits', { params })
 
 // -------------------------------------------------------------------
 // 支付方式

@@ -4,14 +4,13 @@ import com.payflow.admin.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import com.payflow.admin.util.JwtSigningKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Date;
@@ -39,7 +38,7 @@ public class CaptchaService {
     private final SecureRandom random = new SecureRandom();
 
     private SecretKey signingKey() {
-        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        return JwtSigningKeys.hmacSha256(jwtProperties.getSecret());
     }
 
     /**

@@ -238,16 +238,152 @@ export interface MerchantPaymentRoute {
 // ============================================================
 // 管理后台 - 风控规则
 // ============================================================
+export type RiskRuleType = 'AMOUNT_SINGLE' | 'AMOUNT_DAILY' | 'IP_LIMIT' | 'MOBILE_LIMIT' | 'CUSTOM'
+export type RiskRuleOwnerType = 'PLATFORM' | 'MERCHANT'
+export type RiskRuleScopeType = 'ALL_MERCHANTS' | 'SELECTED_MERCHANTS' | 'OWNER_MERCHANT_ONLY'
+export type RiskRuleAction = 'REJECT' | 'REVIEW' | 'WARN'
+export type RiskDecision = 'REJECTED' | 'REVIEW_REQUIRED' | 'WARN_ONLY'
+
 export interface RiskRule {
-  ruleId: string
+  id: number | string
+  ruleId?: string
+  ruleCode: string
   ruleName: string
-  ruleType: 'AMOUNT_SINGLE' | 'AMOUNT_DAILY' | 'IP_LIMIT' | 'MOBILE_LIMIT' | 'CUSTOM'
-  threshold: number
+  ruleType: RiskRuleType
+  riskExpr?: string | null
+  threshold?: number
+  thresholdFen?: number
   unit: string
+  action: RiskRuleAction
   enabled: boolean
-  description: string
+  priority: number
+  ownerType: RiskRuleOwnerType
+  ownerMerchantId?: string | null
+  ownerMerchantName?: string | null
+  scopeType: RiskRuleScopeType
+  scopeMerchantCount?: number
+  description?: string
   createdAt: string
   updatedAt: string
+}
+
+export interface RiskRuleQuery {
+  page?: number
+  pageSize?: number
+  merchantId?: string
+  ownerType?: RiskRuleOwnerType
+  scopeType?: RiskRuleScopeType
+  ruleType?: RiskRuleType
+  enabled?: boolean
+  keyword?: string
+}
+
+export interface RiskRuleListResponse {
+  list: RiskRule[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface RiskRuleUpsertRequest {
+  ruleCode: string
+  ruleName: string
+  ruleType: RiskRuleType
+  riskExpr?: string | null
+  thresholdFen?: number
+  unit: string
+  action: RiskRuleAction
+  enabled: boolean
+  priority: number
+  ownerType?: RiskRuleOwnerType
+  scopeType?: RiskRuleScopeType
+  scopeMerchantIds?: string[]
+  description?: string
+}
+
+export interface RiskRuleStatusRequest {
+  enabled: boolean
+}
+
+export interface RiskRuleScopeMerchant {
+  merchantId: string
+  merchantName?: string
+  enabled: boolean
+}
+
+export interface RiskRuleScopeResponse {
+  ruleId: string | number
+  scopeType: RiskRuleScopeType
+  merchants: RiskRuleScopeMerchant[]
+}
+
+export interface RiskHitRecord {
+  id: string | number
+  traceId?: string
+  merchantId: string
+  merchantName?: string
+  orderId?: string | null
+  merchantOrderNo?: string
+  ruleId: string | number
+  ruleCode: string
+  ruleName: string
+  ownerType: RiskRuleOwnerType
+  scopeType: RiskRuleScopeType
+  action: RiskRuleAction
+  decision: RiskDecision
+  hitReason?: string
+  requestSummary?: string
+  createdAt: string
+}
+
+export interface RiskHitRecordQuery {
+  page?: number
+  pageSize?: number
+  merchantId?: string
+  ruleId?: string | number
+  ownerType?: RiskRuleOwnerType
+  decision?: RiskDecision
+  startTime?: string
+  endTime?: string
+}
+
+export interface RiskHitRecordListResponse {
+  list: RiskHitRecord[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface RiskRuleAuditLog {
+  id: string | number
+  ruleId: string | number
+  operatorId?: string
+  operatorName?: string
+  operatorType: 'ADMIN' | 'MERCHANT' | 'SYSTEM'
+  merchantId?: string
+  operationType: 'CREATE' | 'UPDATE' | 'ENABLE' | 'DISABLE' | 'SCOPE_CHANGE' | 'DELETE'
+  beforeSummary?: string
+  afterSummary?: string
+  clientIp?: string
+  createdAt: string
+}
+
+export interface RiskRuleAuditQuery {
+  page?: number
+  pageSize?: number
+  ruleId?: string | number
+  operatorType?: 'ADMIN' | 'MERCHANT' | 'SYSTEM'
+  merchantId?: string
+  operationType?: RiskRuleAuditLog['operationType']
+  startTime?: string
+  endTime?: string
+}
+
+export interface RiskRuleAuditListResponse {
+  list: RiskRuleAuditLog[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 // ============================================================

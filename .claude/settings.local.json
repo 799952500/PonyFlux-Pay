@@ -43,7 +43,15 @@
       "Bash(mvn -B test -pl payflow-cashier-server -pl payflow-admin-server)",
       "Bash(ls:*)",
       "Bash(npm run:*)",
-      "Bash(mvn -B -pl payflow-admin-server -DskipTests=false test -Dtest=FeeRateServiceTest)"
+      "Bash(mvn -B -pl payflow-admin-server -DskipTests=false test -Dtest=FeeRateServiceTest)",
+      "Bash(.specify/extensions/git/scripts/bash/create-new-feature.sh:*)",
+      "Bash(mkdir -p \"specs/007-merchant-risk-config/checklists\")",
+      "Bash(cp \".specify/templates/spec-template.md\" \"specs/007-merchant-risk-config/spec.md\")",
+      "Bash(powershell.exe:*)",
+      "Bash(.specify/extensions/git/scripts/powershell/initialize-repo.ps1:*)",
+      "Bash(mvn:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)"
     ]
   }
 }

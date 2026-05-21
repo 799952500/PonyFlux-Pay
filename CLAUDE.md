@@ -27,10 +27,11 @@ mvn -B -pl payflow-admin-server spring-boot:run
 mvn -B -pl payflow-cashier-server spring-boot:run
 mvn -B -pl payflow-recon-server spring-boot:run
 
-# Frontend (admin-client & cashier-client)
-cd payflow-admin-client && npm ci && npm run dev    # dev on :3001
-cd payflow-cashier-client && npm ci && npm run dev  # dev on :5173
-cd payflow-admin-client && npm run build            # production build
+# Frontend E2E validation (local Playwright/Playwright CLI already available)
+# After UI/payment/admin-flow changes: run Playwright as appropriate, monitor backend logs,
+# fix issues from logs, then repeat validation until key flows pass without blocking backend errors
+cd payflow-admin-client && npx playwright test
+cd payflow-cashier-client && npx playwright test
 
 # Reset demo database (schema + seed)
 python scripts/install_demo_db.py
@@ -132,5 +133,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/006-merchant-isolation/plan.md
+at specs/007-merchant-risk-config/plan.md
 <!-- SPECKIT END -->

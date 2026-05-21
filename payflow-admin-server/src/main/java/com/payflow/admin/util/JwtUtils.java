@@ -4,12 +4,10 @@ import com.payflow.admin.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +23,7 @@ public class JwtUtils {
     private final JwtProperties jwtProperties;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        return JwtSigningKeys.hmacSha256(jwtProperties.getSecret());
     }
 
     public String generateToken(String username, String role, String dataMerchantIds) {

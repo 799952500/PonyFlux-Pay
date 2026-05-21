@@ -3,29 +3,25 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: 1.1.0 → 2.0.0 (MAJOR — 新增 8 个章节，从 5 个核心原则扩展为 13 个章节的完整编码规范体系)
+  Version change: 2.0.0 → 2.1.0 (MINOR — 新增 Playwright 端到端验证与后台日志闭环要求)
 
   Added sections:
-    - 编码规范（命名/格式/注释/类成员顺序/POJO）
-    - 集合与并发处理
-    - 数据库访问规范
-    - 安全编码规范
-    - 异常与日志规范
-    - 测试规范（含 Definition of Done）
-    - 自动化执行
-    - 前端规范
+    - 测试规范：端到端验证与日志闭环
 
   Modified principles:
-    - 原则 I-V 全部增强：增加正例/反例代码片段、违规案例和修复方案
-    - 开发工作流：增加测试门禁步骤
-    - 治理：增加 Code Review Checklist 和自动化映射表
+    - Definition of Done：增加按需 Playwright/Playwright CLI 验证与后台日志无阻断错误要求
+    - 前端测试：明确关键前端交互和跨服务流程需按需执行 Playwright 验证
+    - 开发工作流：测试门禁加入 E2E 验证、日志监控、日志驱动修复和复测闭环
+    - Code Review Checklist：增加 Playwright 验证与后台日志检查项
 
   Templates requiring updates:
-    - .specify/templates/spec-template.md ⚠ 需更新（增加 Constitution Compliance 段落）
-    - .specify/templates/plan-template.md ⚠ 需更新（Constitution Check 具象化）
-    - .specify/templates/tasks-template.md ⚠ 需更新（模块边界分组）
-    - .specify/templates/checklist-template.md ⚠ 需更新（检查类别对齐）
-    - .specify/templates/constitution-template.md ⚠ 需更新（章节结构同步）
+    - .specify/templates/spec-template.md ✅ updated
+    - .specify/templates/plan-template.md ✅ updated
+    - .specify/templates/tasks-template.md ✅ updated
+    - .specify/templates/commands/*.md ⚠ n/a（目录不存在）
+    - CLAUDE.md ✅ updated
+
+  Follow-up TODOs: none
 -->
 
 ## 核心原则
@@ -607,13 +603,14 @@ log.error("支付渠道异常 orderNo={}", orderNo, exception);
 
 ### Definition of Done [强制]
 
-一个功能/任务只有在以下 **5 项条件全部满足** 时才能标记为"已完成"：
+一个功能/任务只有在以下 **6 项条件全部满足** 时才能标记为"已完成"：
 
 1. ✅ 代码通过 Code Review
 2. ✅ 单元测试全部通过
 3. ✅ 集成测试全部通过
-4. ✅ 相关文档已更新（`docs/CONTRACT_MATRIX.md`、CLAUDE.md、迁移 SQL）
-5. ✅ 宪法合规检查通过（Constitution Check 门禁）
+4. ✅ 涉及前端交互、支付链路、管理后台页面或跨服务流程时，已按需使用 Playwright/Playwright CLI 完成端到端验证，并确认相关后台日志无阻断错误
+5. ✅ 相关文档已更新（`docs/CONTRACT_MATRIX.md`、CLAUDE.md、迁移 SQL）
+6. ✅ 宪法合规检查通过（Constitution Check 门禁）
 
 任何一项不满足，功能不得合并、不得部署、不得标记为完成。
 
@@ -679,6 +676,17 @@ void shouldReturnSuccessWhenPayWithValidParams() {
 - 使用 Vitest + Vue Test Utils
 - API Mock 使用 MSW（Mock Service Worker）
 - 关键用户流程必须有测试（收银台下单、管理后台配置保存）
+
+### 端到端验证与日志闭环 [强制]
+
+涉及前端交互、支付链路、管理后台页面或跨服务流程的变更，在开发完成后必须根据影响范围使用 Playwright/Playwright CLI 验证关键用户路径。验证期间必须同时监控相关后台服务日志（`payflow-admin-server`、`payflow-cashier-server`、`payflow-recon-server`）。
+
+**规则**：
+- Playwright 验证必须覆盖本次变更直接影响的用户路径，不要求覆盖无关页面。
+- 日志中出现 ERROR、异常堆栈、SQL 错误、权限错误、接口契约错误或支付链路阻断时，不得标记完成。
+- 必须先根据日志定位并修复根因，再重新运行相关测试和 Playwright 验证。
+- 验证闭环必须持续到关键场景通过且后台日志无阻断错误。
+- 如变更不涉及 UI 或跨服务运行路径，可在 Code Review 中说明无需 Playwright 验证的理由。
 
 ---
 
@@ -843,6 +851,8 @@ interface PaymentOrder {
 
 ```
 编码完成 → Code Review → 单元测试通过 → 集成测试通过
+    → 按需 Playwright/Playwright CLI 端到端验证 + 后台日志监控
+    → 根据日志修复并重复验证至无阻断错误
     → JaCoCo 覆盖率 ≥ 80% → 宪法合规检查 → 文档更新确认
     → 合并到主分支
 ```
@@ -900,8 +910,11 @@ interface PaymentOrder {
 
 **测试合规（测试规范）**
 - [ ] 新增业务逻辑有对应单元测试
+- [ ] 涉及前端交互或跨服务流程时，已按需执行 Playwright/Playwright CLI 验证
+- [ ] 已监控相关后台服务日志，且无阻断错误、异常堆栈、SQL 错误、权限错误或接口契约错误
+- [ ] 日志发现的问题已修复并复测通过
 - [ ] JaCoCo 覆盖率 ≥ 80%
-- [ ] Definition of Done 五项条件全部满足
+- [ ] Definition of Done 六项条件全部满足
 
 #### 自动化规则映射表
 
@@ -924,4 +937,4 @@ interface PaymentOrder {
 - [推荐]级别规则违反需在 Code Review 中提供书面豁免理由。
 - `CLAUDE.md` 文件在运行时开发指导上优先于本宪法。两者如有冲突，必须通过修订其中一份来解决。
 
-**版本**: 2.0.0 | **批准日期**: 2026-05-10 | **最后修订**: 2026-05-13
+**版本**: 2.1.0 | **批准日期**: 2026-05-10 | **最后修订**: 2026-05-21

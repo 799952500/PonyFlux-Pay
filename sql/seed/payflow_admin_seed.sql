@@ -76,11 +76,23 @@ INSERT INTO admin_channel_routes (
 (4, 'M100001', 3, 4, 1, 40, '星云零售 → 银联', NOW(), NOW());
 
 INSERT INTO risk_rules (
-  id, rule_code, rule_name, rule_type, threshold, unit, action, enabled, description, created_at, updated_at
+  id, rule_code, rule_name, rule_type, risk_expr, threshold, threshold_fen, unit, action, enabled,
+  priority, owner_type, owner_merchant_id, scope_type, description, created_by, updated_by, created_at, updated_at
 ) VALUES
-(1, 'RISK_AMT_SINGLE', '单笔限额', 'AMOUNT_SINGLE', 500000.00, 'CNY_FEN', 'REJECT', 1, '单笔超过 5000 元拒绝', NOW(), NOW()),
-(2, 'RISK_AMT_DAILY', '单日累计限额', 'AMOUNT_DAILY', 5000000.00, 'CNY_FEN', 'REVIEW', 1, '单日累计超过 5 万元人工复核', NOW(), NOW()),
-(3, 'RISK_IP_LIMIT', '同 IP 频次', 'IP_LIMIT', 50.00, 'TIMES_PER_HOUR', 'REJECT', 1, '单 IP 每小时 50 笔', NOW(), NOW());
+(1, 'RISK_AMT_SINGLE_GLOBAL', '平台全商户单笔限额', 'AMOUNT_SINGLE', NULL, 500000.00, 500000, 'CNY_FEN', 'REJECT', 1, 10, 'PLATFORM', NULL, 'ALL_MERCHANTS', '平台全局：单笔超过 5000 元拒绝', 'admin', 'admin', NOW(), NOW()),
+(2, 'RISK_AMT_SINGLE_SELECTED', '平台定向单笔限额', 'AMOUNT_SINGLE', NULL, 300000.00, 300000, 'CNY_FEN', 'REJECT', 1, 20, 'PLATFORM', NULL, 'SELECTED_MERCHANTS', '仅指定商户单笔超过 3000 元拒绝', 'admin', 'admin', NOW(), NOW()),
+(3, 'RISK_M100001_SINGLE_LIMIT', '星云零售自建单笔限额', 'AMOUNT_SINGLE', NULL, 100000.00, 100000, 'CNY_FEN', 'REJECT', 1, 100, 'MERCHANT', 'M100001', 'OWNER_MERCHANT_ONLY', '商户自建：单笔超过 1000 元拒绝', 'M100001', 'M100001', NOW(), NOW());
+
+INSERT INTO admin_risk_rule_merchant_scope (id, rule_id, merchant_id, enabled, created_at) VALUES
+(1, 2, 'M100001', 1, NOW()),
+(2, 2, 'M100002', 1, NOW());
+
+INSERT INTO admin_risk_rule_audit_log (
+  id, rule_id, operator_id, operator_name, operator_type, merchant_id, operation_type, before_summary, after_summary, client_ip, created_at
+) VALUES
+(1, 1, '1', '超级管理员', 'ADMIN', NULL, 'CREATE', NULL, '创建平台全商户单笔限额规则', '127.0.0.1', NOW()),
+(2, 2, '1', '超级管理员', 'ADMIN', NULL, 'SCOPE_CHANGE', NULL, '指定商户：M100001,M100002', '127.0.0.1', NOW()),
+(3, 3, 'M100001', '星云零售旗舰店', 'MERCHANT', 'M100001', 'CREATE', NULL, '创建商户自建单笔限额规则', '127.0.0.1', NOW());
 
 INSERT INTO admin_system_configs (
   id, config_key, config_value, value_type, category, description, sort_order, status, created_at, updated_at

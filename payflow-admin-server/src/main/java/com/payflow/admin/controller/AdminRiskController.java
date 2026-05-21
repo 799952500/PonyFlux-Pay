@@ -1,23 +1,33 @@
 package com.payflow.admin.controller;
 
-import com.payflow.admin.dto.UpdateRiskRuleRequest;
+import com.payflow.admin.dto.RiskRuleQueryRequest;
+import com.payflow.admin.dto.RiskRuleStatusRequest;
+import com.payflow.admin.dto.RiskRuleUpsertRequest;
+import com.payflow.admin.service.RiskHitRecordQueryService;
+import com.payflow.admin.service.RiskRuleAdminService;
+import com.payflow.admin.service.RiskRuleAuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.payflow.admin.entity.RiskRule;
-import com.payflow.admin.mapper.RiskRuleMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 风控规则管理 Controller
-  * @author Lucas
+ * 风控规则管理 Controller。
+ *
+ * @author Lucas
  */
 @Tag(name = "风控规则")
 @RestController
@@ -25,76 +35,80 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminRiskController {
 
-    private final RiskRuleMapper riskRuleMapper;
+    private final RiskRuleAdminService riskRuleAdminService;
+    private final RiskHitRecordQueryService riskHitRecordQueryService;
+    private final RiskRuleAuditService riskRuleAuditService;
 
-    /**
-     * 查询所有风控规则列表
-     *
-     * @return 风控规则列表，按启用状态降序排列
-     */
     @Operation(summary = "查询风控规则列表")
     @GetMapping("/rules")
-    public ResponseEntity<Map<String, Object>> listRules() {
-        List<RiskRule> rules = riskRuleMapper.selectList(new LambdaQueryWrapper<RiskRule>()
-                .orderByDesc(RiskRule::getEnabled)
-                .orderByAsc(RiskRule::getId));
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("code", 0);
-        response.put("message", "success");
-        response.put("data", rules);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> listRules(@Valid RiskRuleQueryRequest request) {
+        return ok(riskRuleAdminService.pageRules(request));
     }
 
-    /**
-     * 更新指定风控规则
-     *
-     * @param ruleId 规则ID
-     * @param body   待更新字段映射
-     * @return 更新后的规则对象
-     */
+    @Operation(summary = "创建平台风控规则")
+    @PostMapping("/rules")
+    public ResponseEntity<Map<String, Object>> createRule(@Valid @RequestBody RiskRuleUpsertRequest request) {
+        return ok(riskRuleAdminService.createRule(request));
+    }
+
     @Operation(summary = "更新风控规则")
     @PutMapping("/rules/{ruleId}")
     public ResponseEntity<Map<String, Object>> updateRule(@PathVariable Long ruleId,
-                                                          @Valid @RequestBody UpdateRiskRuleRequest body) {
-        RiskRule exist = riskRuleMapper.selectById(ruleId);
-        if (exist == null) {
-            return ResponseEntity.ok(Map.of(
-                    "code", 404,
-                    "message", "规则不存在",
-                    "data", (Object) null
-            ));
-        }
+                                                          @Valid @RequestBody RiskRuleUpsertRequest request) {
+        return ok(riskRuleAdminService.updateRule(ruleId, request));
+    }
 
-        if (body.getEnabled() != null) {
-            exist.setEnabled(body.getEnabled());
-        }
-        if (body.getThreshold() != null) {
-            exist.setThreshold(body.getThreshold());
-        }
-        if (body.getUnit() != null) {
-            exist.setUnit(body.getUnit());
-        }
-        if (body.getDescription() != null) {
-            exist.setDescription(body.getDescription());
-        }
-        if (body.getRuleName() != null) {
-            exist.setRuleName(body.getRuleName());
-        }
-        if (body.getAction() != null) {
-            exist.setAction(body.getAction());
-        }
-        if (body.getRuleType() != null) {
-            exist.setRuleType(body.getRuleType());
-        }
+    @Operation(summary = "启用或停用风控规则")
+    @PutMapping("/rules/{ruleId}/status")
+    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable Long ruleId,
+                                                            @Valid @RequestBody RiskRuleStatusRequest request) {
+        return ok(riskRuleAdminService.updateStatus(ruleId, request));
+    }
 
-        riskRuleMapper.updateById(exist);
+    @Operation(summary = "查询平台定向规则商户范围")
+    @GetMapping("/rules/{ruleId}/scopes")
+    public ResponseEntity<Map<String, Object>> getScopes(@PathVariable Long ruleId) {
+        return ok(riskRuleAdminService.getScopes(ruleId));
+    }
 
+    @Operation(summary = "替换平台定向规则商户范围")
+    @PutMapping("/rules/{ruleId}/scopes")
+    public ResponseEntity<Map<String, Object>> replaceScopes(@PathVariable Long ruleId,
+                                                             @RequestBody Map<String, List<String>> request) {
+        return ok(riskRuleAdminService.replaceScopes(ruleId, request.getOrDefault("scopeMerchantIds", List.of())));
+    }
+
+    @Operation(summary = "查询风控命中记录")
+    @GetMapping("/hits")
+    public ResponseEntity<Map<String, Object>> listHits(@RequestParam(defaultValue = "1") Integer page,
+                                                        @RequestParam(defaultValue = "20") Integer pageSize,
+                                                        @RequestParam(required = false) String merchantId,
+                                                        @RequestParam(required = false) Long ruleId,
+                                                        @RequestParam(required = false) String ownerType,
+                                                        @RequestParam(required = false) String decision,
+                                                        @RequestParam(required = false) String startTime,
+                                                        @RequestParam(required = false) String endTime) {
+        return ok(riskHitRecordQueryService.pageAdminHits(page, pageSize, merchantId, ruleId, ownerType, decision, startTime, endTime));
+    }
+
+    @Operation(summary = "查询风控规则审计")
+    @GetMapping("/audits")
+    public ResponseEntity<Map<String, Object>> listAudits(@RequestParam(defaultValue = "1") Integer page,
+                                                          @RequestParam(defaultValue = "20") Integer pageSize,
+                                                          @RequestParam(required = false) Long ruleId,
+                                                          @RequestParam(required = false) String operatorType,
+                                                          @RequestParam(required = false) String merchantId,
+                                                          @RequestParam(required = false) String operationType,
+                                                          @RequestParam(required = false) String startTime,
+                                                          @RequestParam(required = false) String endTime) {
+        return ok(riskRuleAuditService.pageAudits(page, pageSize, ruleId, operatorType, merchantId, operationType, startTime, endTime));
+    }
+
+    private ResponseEntity<Map<String, Object>> ok(Object data) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("code", 0);
         response.put("message", "success");
-        response.put("data", exist);
+        response.put("data", data);
         return ResponseEntity.ok(response);
     }
 }

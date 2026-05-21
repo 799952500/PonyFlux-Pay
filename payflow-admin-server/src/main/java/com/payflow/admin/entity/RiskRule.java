@@ -14,20 +14,23 @@ import lombok.ToString;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 风控规则。
+ *
+ * @author Lucas
+ */
 @Data
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
 @TableName("risk_rules")
-/**
- * @author Lucas
- */
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)
     @EqualsAndHashCode.Include
-    @ToString.Include    private Long id;
+    @ToString.Include
+    private Long id;
 
     private String ruleCode;
 
@@ -35,7 +38,11 @@ public class RiskRule {
 
     private String ruleType;
 
+    private String riskExpr;
+
     private BigDecimal threshold;
+
+    private Long thresholdFen;
 
     private String unit;
 
@@ -43,7 +50,19 @@ public class RiskRule {
 
     private Boolean enabled;
 
+    private Integer priority;
+
+    private String ownerType;
+
+    private String ownerMerchantId;
+
+    private String scopeType;
+
     private String description;
+
+    private String createdBy;
+
+    private String updatedBy;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
