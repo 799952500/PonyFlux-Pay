@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="content-card">
       <TableToolbar title="角色列表" :total="roleList.length">
@@ -7,7 +7,7 @@
         </template>
       </TableToolbar>
 
-      <el-table v-loading="loading" :data="roleList" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="roleList" stripe size="small" class="data-table">
         <el-table-column label="角色编码" prop="roleCode" min-width="140">
           <template #default="{ row }">
             <span class="cell-mono font-medium text-[#047857]">{{ row.roleCode }}</span>
@@ -28,12 +28,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" min-width="220" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-button link type="success" size="small" @click="openPermission(row)">分配权限</el-button>
@@ -95,6 +95,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import type { ElTree } from 'element-plus'
 import { getRoles, createRole, updateRole, deleteRole, getRoleMenus, assignRoleMenus, getMenuTree } from '@/api/admin'
+import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import {
   ENABLE_STATUS_LABEL,
@@ -200,19 +201,13 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row: SysRole) {
-  try {
-    await ElMessageBox.confirm(`确认删除角色「${row.roleName}」吗？`, '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    await deleteRole(row.id)
-    ElMessage.success('角色已删除')
-    loadRoles()
-  } catch (e: any) {
-    if (e === 'cancel' || e?.toString?.().includes('cancel')) return
-    ElMessage.error(e?.message || '删除角色失败')
-  }
+  await confirmDeleteWithGuard({
+    resourceType: 'SYS_ROLE',
+    resourceId: row.id,
+    displayName: row.roleName,
+    deleteFn: () => deleteRole(row.id),
+    onSuccess: loadRoles,
+  })
 }
 
 function collectLeafIds(menus: SysMenu[]): number[] {

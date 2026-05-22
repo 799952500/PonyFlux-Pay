@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -76,6 +77,7 @@ public class ReconCompareService {
             if (pay == null) {
                 reconDiffMapper.insert(ReconDiff.builder()
                         .taskId(taskId)
+                        .merchantId(null)
                         .diffType(DIFF_CHANNEL_ONLY)
                         .channelTradeNo(txn)
                         .localOrderId(null)
@@ -93,6 +95,7 @@ public class ReconCompareService {
             if (chAmt != null && locAmt != null && !chAmt.equals(locAmt)) {
                 reconDiffMapper.insert(ReconDiff.builder()
                         .taskId(taskId)
+                        .merchantId(merchantIdOf(pay))
                         .diffType(DIFF_AMOUNT_MISMATCH)
                         .channelTradeNo(txn)
                         .localOrderId(pay.getOrderId())
@@ -108,6 +111,7 @@ public class ReconCompareService {
             if (statusMismatch(bill.getChannelStatus(), pay.getStatus())) {
                 reconDiffMapper.insert(ReconDiff.builder()
                         .taskId(taskId)
+                        .merchantId(merchantIdOf(pay))
                         .diffType(DIFF_STATUS_MISMATCH)
                         .channelTradeNo(txn)
                         .localOrderId(pay.getOrderId())
@@ -129,6 +133,7 @@ public class ReconCompareService {
             CashierReconPaymentRow pay = e.getValue();
             reconDiffMapper.insert(ReconDiff.builder()
                     .taskId(taskId)
+                    .merchantId(merchantIdOf(pay))
                     .diffType(DIFF_LOCAL_ONLY)
                     .channelTradeNo(txn)
                     .localOrderId(pay.getOrderId())
@@ -143,6 +148,13 @@ public class ReconCompareService {
 
         log.info("对账比对完成: taskId={}, diffCount={}", taskId, diffCount);
         return diffCount;
+    }
+
+    private static String merchantIdOf(CashierReconPaymentRow pay) {
+        if (pay == null || !StringUtils.hasText(pay.getMerchantId())) {
+            return null;
+        }
+        return pay.getMerchantId();
     }
 
     private static boolean statusMismatch(String channelStatus, String localStatus) {

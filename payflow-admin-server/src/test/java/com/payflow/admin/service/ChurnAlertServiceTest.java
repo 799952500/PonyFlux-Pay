@@ -3,6 +3,7 @@ package com.payflow.admin.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.ChurnAlert;
 import com.payflow.admin.mapper.ChurnAlertMapper;
+import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.cashier.OrderMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,12 +33,14 @@ class ChurnAlertServiceTest {
     private ChurnAlertMapper churnAlertMapper;
     @Mock
     private OrderMapper orderMapper;
+    @Mock
+    private MerchantMapper merchantMapper;
 
     private ChurnAlertService service;
 
     @BeforeEach
     void setUp() {
-        service = new ChurnAlertService(churnAlertMapper, orderMapper);
+        service = new ChurnAlertService(churnAlertMapper, merchantMapper, orderMapper);
     }
 
     @Test

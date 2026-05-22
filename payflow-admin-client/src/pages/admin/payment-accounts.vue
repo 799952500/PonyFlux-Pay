@@ -1,5 +1,14 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
+    <el-alert
+      v-if="merchantFilterLocked"
+      type="info"
+      :closable="false"
+      show-icon
+      class="mb-4"
+      title="商户数据范围"
+      description="当前仅展示与您授权商户关联的支付账号，由服务端按路由绑定关系自动过滤。"
+    />
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
         <el-form-item label="所属渠道">
@@ -24,7 +33,7 @@
         </template>
       </TableToolbar>
 
-      <el-table v-loading="loading" :data="accountList" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="accountList" stripe size="small" class="data-table">
         <el-table-column label="账号编码" prop="accountCode" min-width="140">
           <template #default="{ row }">
             <span class="text-xs font-mono font-medium text-primary">{{ row.accountCode }}</span>
@@ -49,12 +58,12 @@
         <el-table-column label="描述" prop="description" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">{{ row.description ?? '—' }}</template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" min-width="140" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -74,6 +83,9 @@
     <!-- 新增/编辑弹窗 -->
     <el-dialog v-model="formVisible" :title="isEdit ? '编辑支付账号' : '新增支付账号'" width="600px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+        <el-form-item v-if="merchantFilterLocked" label="归属商户">
+          <el-input :model-value="form.merchantId" disabled />
+        </el-form-item>
         <el-form-item label="所属渠道" prop="channelId">
           <el-select v-model="form.channelId" placeholder="请选择渠道" style="width: 100%">
             <el-option v-for="ch in channelList" :key="ch.id" :label="ch.channelName" :value="ch.id" />
@@ -128,11 +140,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getPaymentAccounts, createPaymentAccount, updatePaymentAccount, deletePaymentAccount, getChannels } from '@/api/admin'
+import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { formatDateTime } from '@/utils/format'
 import type { PaymentAccount, Channel } from '@/types'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 
+const { merchantFilterLocked, defaultMerchantId, applyMerchantIdForCreate } = useMerchantScope()
 const loading = ref(false)
 const accountList = ref<PaymentAccount[]>([])
 const total = ref(0)
@@ -153,6 +168,7 @@ const formRef = ref<FormInstance>()
 const editId = ref<number | null>(null)
 
 const form = reactive({
+  merchantId: '' as string,
   channelId: '' as string | number,
   accountCode: '',
   accountName: '',
@@ -207,6 +223,7 @@ function handleReset() {
 
 function resetForm() {
   Object.assign(form, {
+    merchantId: defaultMerchantId.value ?? '',
     channelId: '',
     accountCode: '',
     accountName: '',
@@ -257,7 +274,7 @@ async function handleSubmit() {
     if (!valid) return
     submitting.value = true
     try {
-      const data: any = {
+      const data: Record<string, unknown> = {
         channelId: form.channelId,
         accountCode: form.accountCode,
         accountName: form.accountName,
@@ -271,6 +288,9 @@ async function handleSubmit() {
         enabled: form.enabled,
         priority: form.priority,
         description: form.description || undefined,
+      }
+      if (!isEdit.value) {
+        applyMerchantIdForCreate(data)
       }
       if (isEdit.value && editId.value !== null) {
         await updatePaymentAccount(editId.value, data)
@@ -291,20 +311,13 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row: PaymentAccount) {
-  try {
-    await ElMessageBox.confirm(`确认删除支付账号「${row.accountName}」吗？`, '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    await deletePaymentAccount(row.id)
-    ElMessage.success('支付账号已删除')
-    loadAccounts()
-  } catch (e: any) {
-    if (e === 'cancel' || e?.toString?.().includes('cancel')) return
-    const msg = e?.message || '删除支付账号失败'
-    ElMessage.error(msg)
-  }
+  await confirmDeleteWithGuard({
+    resourceType: 'PAYMENT_ACCOUNT',
+    resourceId: row.id,
+    displayName: row.accountName,
+    deleteFn: () => deletePaymentAccount(row.id),
+    onSuccess: loadAccounts,
+  })
 }
 
 async function handleToggleEnabled(row: PaymentAccount) {

@@ -1,8 +1,10 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SystemConfig;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SystemConfigService;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +34,11 @@ public class SystemConfigController {
      */
     @Operation(summary = "查询配置列表")
     @GetMapping
-    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) String category) {
-        List<SystemConfig> list = systemConfigService.listByCategory(category);
+    public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
+            @RequestParam(required = false) String category) {
+        boolean platformAdmin = AdminRequestContext.merchantScope(request) == null;
+        List<Map<String, Object>> list = systemConfigService.listViewByCategory(category, platformAdmin);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", list));
     }
 

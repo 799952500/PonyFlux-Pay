@@ -43,8 +43,8 @@
     <div class="content-card">
       <TableToolbar title="安全审计" :total="total" />
 
-      <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
-        <el-table-column label="时间" prop="createdAt" width="172">
+      <el-table table-layout="auto" v-loading="loading" :data="list" stripe size="small" class="data-table">
+        <el-table-column label="时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>

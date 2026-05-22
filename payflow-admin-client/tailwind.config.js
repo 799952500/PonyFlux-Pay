@@ -4,11 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#047857',
-        secondary: '#065f46',
-        accent: '#0d9488',
+        primary: 'var(--pf-primary)',
+        'primary-hover': 'var(--pf-primary-hover)',
+        'primary-soft': 'var(--pf-primary-soft)',
+        secondary: 'var(--pf-primary-hover)',
+        accent: 'var(--pf-primary)',
         danger: '#EF4444',
-        success: '#10B981',
+        success: 'var(--pf-primary)',
         warning: '#F59E0B',
         info: '#6B7280',
       },

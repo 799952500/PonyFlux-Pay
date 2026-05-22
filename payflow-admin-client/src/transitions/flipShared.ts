@@ -7,6 +7,18 @@ interface FlipSource {
 
 const sourceRects = new Map<string, FlipSource>()
 
+/** 取消未完成的 FLIP 动画，避免路由切换后节点卡在模糊/错位状态 */
+export function cancelFlipAnimations(): void {
+  document.querySelectorAll<HTMLElement>('[data-flip].flip-animating, .flip-animating').forEach((el) => {
+    el.getAnimations?.().forEach((anim) => anim.cancel())
+    el.classList.remove('flip-animating')
+    el.style.removeProperty('transform-origin')
+    el.style.removeProperty('transform')
+    el.style.removeProperty('opacity')
+  })
+  sourceRects.clear()
+}
+
 /** 捕获当前页面上所有 data-flip 节点的位置 */
 export function captureFlipSources(): void {
   sourceRects.clear()
@@ -86,6 +98,7 @@ export function runFlipAnimations(): void {
 /** 在 Vue Router 上安装 FLIP 钩子 */
 export function installFlip(router: Router): void {
   router.beforeEach((_to, from, next) => {
+    cancelFlipAnimations()
     if (from.matched.length > 0) {
       captureFlipSources()
     }

@@ -6,6 +6,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import com.payflow.admin.util.JwtSigningKeys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -15,7 +16,9 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 登录算术验证码：题目 operands 放在服务端签名的 JWT 中，校验时严格比较数值；
@@ -23,6 +26,7 @@ import java.util.UUID;
  *
  * @author Lucas
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CaptchaService {
@@ -36,6 +40,8 @@ public class CaptchaService {
     private final JwtProperties jwtProperties;
     private final StringRedisTemplate stringRedisTemplate;
     private final SecureRandom random = new SecureRandom();
+    /** Redis 不可用时进程内一次性消费记录 */
+    private final Set<String> localConsumedJti = ConcurrentHashMap.newKeySet();
 
     private SecretKey signingKey() {
         return JwtSigningKeys.hmacSha256(jwtProperties.getSecret());
@@ -98,9 +104,7 @@ public class CaptchaService {
         long ttlSec = exp != null
                 ? Math.max(1L, (exp.getTime() - System.currentTimeMillis()) / 1000L)
                 : CAPTCHA_TTL.toSeconds();
-        String lockKey = KEY_ONCE_PREFIX + jti;
-        Boolean first = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(ttlSec));
-        if (!Boolean.TRUE.equals(first)) {
+        if (!markCaptchaConsumedOnce(jti, ttlSec)) {
             throw new IllegalArgumentException("验证码已失效，请刷新");
         }
         int expected = a + b;
@@ -112,6 +116,17 @@ public class CaptchaService {
         }
         if (parsed != expected) {
             throw new IllegalArgumentException("验证码错误");
+        }
+    }
+
+    private boolean markCaptchaConsumedOnce(String jti, long ttlSec) {
+        try {
+            String lockKey = KEY_ONCE_PREFIX + jti;
+            Boolean first = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(ttlSec));
+            return Boolean.TRUE.equals(first);
+        } catch (Exception e) {
+            log.warn("Redis 验证码防重放失败，使用内存降级: {}", e.getMessage());
+            return localConsumedJti.add(jti);
         }
     }
 }

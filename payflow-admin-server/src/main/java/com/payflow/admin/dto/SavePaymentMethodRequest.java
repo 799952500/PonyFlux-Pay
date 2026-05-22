@@ -1,6 +1,5 @@
 package com.payflow.admin.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -14,7 +13,7 @@ import java.util.List;
 @Data
 public class SavePaymentMethodRequest {
 
-    @NotBlank(message = "商户号不能为空")
+    /** 商户管理员可不传，由服务端按登录授权范围回填 */
     private String merchantId;
 
     @NotNull(message = "支付方式ID列表不能为null")

@@ -1,8 +1,10 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.ChannelRoute;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelRouteService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -52,15 +54,39 @@ public class AdminChannelRouteController {
     @Operation(summary = "分页查询支付路由列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
             @RequestParam(required = false) String merchantId,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize) {
 
+        List<String> scope = AdminRequestContext.merchantScope(request);
+        String resolvedMerchant = AdminRequestContext.resolveMerchantFilter(merchantId, scope);
+        if ("__NO_ACCESS__".equals(resolvedMerchant)) {
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("list", List.of());
+            empty.put("total", 0);
+            empty.put("page", page);
+            empty.put("pageSize", pageSize);
+            return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", empty));
+        }
+
         List<Map<String, Object>> all = service.listWithDetails();
 
         List<Map<String, Object>> filtered = all.stream()
-                .filter(m -> merchantId == null || merchantId.isBlank()
-                        || merchantId.equals(m.get("merchant_id")))
+                .filter(m -> {
+                    Object mid = m.get("merchant_id");
+                    if (mid == null) {
+                        mid = m.get("merchantId");
+                    }
+                    String rowMerchant = mid != null ? mid.toString() : "";
+                    if (resolvedMerchant != null) {
+                        return resolvedMerchant.equals(rowMerchant);
+                    }
+                    if (scope != null && !scope.isEmpty()) {
+                        return scope.contains(rowMerchant);
+                    }
+                    return merchantId == null || merchantId.isBlank() || merchantId.equals(rowMerchant);
+                })
                 .collect(java.util.stream.Collectors.toList());
 
         int total = filtered.size();
@@ -93,7 +119,11 @@ public class AdminChannelRouteController {
      */
     @Operation(summary = "创建支付路由")
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(@RequestBody ChannelRoute route) {
+    public ResponseEntity<Map<String, Object>> create(
+            HttpServletRequest request,
+            @RequestBody ChannelRoute route) {
+        String merchantId = AdminRequestContext.resolveMerchantIdForWrite(request, route.getMerchantId());
+        route.setMerchantId(merchantId);
         ChannelRoute created = service.create(route);
         if (refreshPublisher != null) {
             refreshPublisher.publish("channel_route:create");

@@ -2,6 +2,7 @@ package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.SystemConfig;
+import com.payflow.admin.kit.GlobalResourceKit;
 import com.payflow.admin.mapper.SystemConfigMapper;
 import com.payflow.admin.service.SystemConfigService;
 import jakarta.annotation.PostConstruct;
@@ -11,7 +12,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -127,6 +130,27 @@ public class SystemConfigServiceImpl implements SystemConfigService {
                 .eq(category != null, SystemConfig::getCategory, category)
                 .orderByAsc(SystemConfig::getSortOrder);
         return systemConfigMapper.selectList(q);
+    }
+
+    @Override
+    public List<Map<String, Object>> listViewByCategory(String category, boolean platformAdmin) {
+        List<Map<String, Object>> views = new ArrayList<>();
+        for (SystemConfig cfg : listByCategory(category)) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", cfg.getId());
+            row.put("configKey", cfg.getConfigKey());
+            row.put("configValue", GlobalResourceKit.maskConfigValue(cfg.getConfigKey(), cfg.getConfigValue(), platformAdmin));
+            row.put("valueType", cfg.getValueType());
+            row.put("category", cfg.getCategory());
+            row.put("description", cfg.getDescription());
+            row.put("sortOrder", cfg.getSortOrder());
+            row.put("status", cfg.getStatus());
+            row.put("classification", GlobalResourceKit.CLASSIFICATION_GLOBAL);
+            row.put("sensitive", GlobalResourceKit.isSensitiveConfigKey(cfg.getConfigKey()));
+            row.put("editable", platformAdmin);
+            views.add(row);
+        }
+        return views;
     }
 
     @Override

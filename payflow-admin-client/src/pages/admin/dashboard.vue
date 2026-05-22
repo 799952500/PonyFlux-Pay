@@ -1,28 +1,36 @@
 <template>
   <div>
+    <el-alert
+      v-if="merchantFilterLocked"
+      class="mb-4"
+      type="info"
+      :closable="false"
+      show-icon
+      title="当前仪表盘统计仅包含您授权范围内的商户数据"
+    />
     <el-row :gutter="16" class="mb-5">
       <el-col v-for="kpi in kpiCards" :key="kpi.label" :xs="12" :sm="12" :md="6">
         <div class="content-card">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-[#64748B] text-xs font-medium">{{ kpi.label }}</span>
+            <span class="dashboard-kpi-label">{{ kpi.label }}</span>
             <span class="text-lg">{{ kpi.icon }}</span>
           </div>
-          <p class="text-2xl font-bold text-[#0F172A] tabular-nums mb-1">
+          <p class="dashboard-kpi-value tabular-nums mb-1">
             {{ kpi.value }}
           </p>
-          <p v-if="kpi.sub" class="text-xs text-[#64748B]">
+          <p v-if="kpi.sub" class="dashboard-kpi-sub">
             {{ kpi.sub }} {{ kpi.subVal }}
             <span
               v-if="kpi.trend !== undefined && kpi.trend !== null"
               class="ml-1 font-medium"
-              :class="Number(kpi.trend) > 0 ? 'text-[#047857]' : 'text-[#EF4444]'"
+              :class="Number(kpi.trend) > 0 ? 'dashboard-trend-up' : 'dashboard-trend-down'"
             >
               {{ Number(kpi.trend) >= 0 ? '↑' : '↓' }}{{ Math.abs(Number(kpi.trend)) }}%
             </span>
             <span
               v-if="kpi.yoyTrend !== undefined && kpi.yoyTrend !== null"
               class="ml-1 font-medium text-xs"
-              :class="Number(kpi.yoyTrend) > 0 ? 'text-[#047857]' : 'text-[#EF4444]'"
+              :class="Number(kpi.yoyTrend) > 0 ? 'dashboard-trend-up' : 'dashboard-trend-down'"
             >
               同比{{ Number(kpi.yoyTrend) >= 0 ? '↑' : '↓' }}{{ Math.abs(Number(kpi.yoyTrend)) }}%
             </span>
@@ -35,7 +43,7 @@
       <el-col :xs="24" :md="16">
         <div class="content-card">
           <div class="flex items-center justify-between mb-4">
-            <p class="text-[#0F172A] font-semibold text-sm">交易趋势</p>
+            <p class="dashboard-section-title">交易趋势</p>
             <el-radio-group v-model="trendRange" size="small">
               <el-radio-button value="7d">近7天</el-radio-button>
               <el-radio-button value="30d">近30天</el-radio-button>
@@ -47,7 +55,7 @@
 
       <el-col :xs="24" :md="8">
         <div class="content-card h-full">
-          <p class="text-[#0F172A] font-semibold text-sm mb-4">渠道占比</p>
+          <p class="dashboard-section-title mb-4">渠道占比</p>
           <div ref="pieChartRef" class="w-full h-[260px]" />
         </div>
       </el-col>
@@ -64,66 +72,78 @@
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
           <span class="inline-block w-2 h-2 rounded-full bg-[#EF4444] animate-pulse" />
-          <p class="text-[#0F172A] font-semibold text-sm">流失预警</p>
+          <p class="dashboard-section-title">流失预警</p>
           <el-tag size="small" type="danger">{{ churnAlerts.length }}条待处理</el-tag>
         </div>
         <el-button link type="primary" size="small" @click="$router.push('/admin/dashboard/churn-alerts')">
           查看全部 →
         </el-button>
       </div>
-      <el-table :data="churnAlerts.slice(0, 5)" size="small" class="data-table">
-        <el-table-column label="商户ID" prop="merchantId" width="100" />
-        <el-table-column label="预警等级" width="100">
+      <el-table :data="churnAlerts.slice(0, 5)" size="small" stripe table-layout="auto" class="data-table">
+        <el-table-column label="商户ID" prop="merchantId" min-width="96" show-overflow-tooltip />
+        <el-table-column label="预警等级" min-width="88">
           <template #default="{ row }">
             <el-tag size="small" :type="row.alertLevel === 'red' ? 'danger' : 'warning'">
               {{ row.alertLevel === 'red' ? '红色' : row.alertLevel === 'orange' ? '橙色' : '黄色' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="下降幅度" width="100">
+        <el-table-column label="下降幅度" min-width="88">
           <template #default="{ row }">
-            <span class="font-medium text-[#EF4444]">↓{{ row.declinePct }}%</span>
+            <span class="font-medium dashboard-trend-down">↓{{ row.declinePct }}%</span>
           </template>
         </el-table-column>
-        <el-table-column label="连续天数" prop="consecutiveDays" width="90" />
-        <el-table-column label="创建时间" prop="createTime" width="170" />
+        <el-table-column label="连续天数" prop="consecutiveDays" min-width="80" align="center" />
+        <el-table-column label="创建时间" prop="createTime" min-width="152" class-name="col-datetime" />
       </el-table>
     </div>
 
     <div class="content-card">
       <div class="flex items-center justify-between p-5 pb-3">
-        <p class="text-[#0F172A] font-semibold text-sm">最新交易</p>
+        <p class="dashboard-section-title">最新交易</p>
         <el-button link type="primary" size="small" @click="$router.push('/admin/orders')">
           查看全部 →
         </el-button>
       </div>
-      <el-table :data="recentOrders" size="small" v-loading="loading" class="data-table">
-        <el-table-column label="订单号" prop="orderId" min-width="160">
+      <el-table
+        :data="recentOrders"
+        size="small"
+        stripe
+        v-loading="loading"
+        table-layout="auto"
+        class="data-table"
+        @row-click="openRecentOrder"
+      >
+        <el-table-column label="订单号" prop="orderId" min-width="168" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs tabular-nums">#{{ row.orderId }}</span>
+            <span class="text-xs tabular-nums cell-ellipsis pf-link cursor-pointer">#{{ row.orderId }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="140" />
-        <el-table-column label="金额" prop="amount" width="110">
+        <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="font-medium">¥{{ ((Number(row.amount) || 0) / 100).toFixed(2) }}</span>
+            <span class="cell-ellipsis">{{ row.merchantOrderNo || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="渠道" prop="channel" width="90">
+        <el-table-column label="金额" prop="amount" min-width="88" align="right" class-name="col-amount">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.channel }}</el-tag>
+            <span class="cell-amount">¥{{ ((Number(row.amount) || 0) / 100).toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" prop="status" width="90">
+        <el-table-column label="渠道" prop="channel" min-width="108">
           <template #default="{ row }">
-            <el-tag size="small" :type="orderStatusTagType(row.status)">
+            <el-tag size="small" class="table-tag-compact">{{ row.channel }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" prop="status" min-width="80" align="center">
+          <template #default="{ row }">
+            <el-tag size="small" :type="orderStatusTagType(row.status)" class="table-tag-compact">
               {{ orderStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="170" />
+        <el-table-column label="创建时间" prop="createdAt" min-width="152" class-name="col-datetime" />
       </el-table>
-      <p v-if="!loading && recentOrders.length === 0" class="px-5 pb-5 text-sm text-[#64748B]">暂无订单数据</p>
+      <p v-if="!loading && recentOrders.length === 0" class="px-5 pb-5 dashboard-kpi-sub">暂无订单数据</p>
     </div>
   </div>
 </template>
@@ -143,7 +163,16 @@ import { CanvasRenderer } from 'echarts/renderers'
 import type { Order, OrderStatus } from '@/types'
 import type { ChannelDistItem, TrendDataItem } from '@/types'
 import { getDashboardStats, getChurnAlerts } from '@/api/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
+import { useThemeStore } from '@/stores/theme'
+import { storeToRefs } from 'pinia'
+import { getChartTheme } from '@/utils/chartTheme'
 import MerchantRanking from '@/components/dashboard/MerchantRanking.vue'
+import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
+
+const { merchantFilterLocked } = useMerchantScope()
+const { open: openOrderDetail } = useOrderDetailOverlay()
+const { themeKey } = storeToRefs(useThemeStore())
 
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 
@@ -232,9 +261,15 @@ function ensurePieChart() {
 function renderTrend(rows: TrendDataItem[]) {
   const chart = ensureTrendChart()
   if (!chart) return
+  const theme = getChartTheme()
   const dates = rows.map((d) => formatTrendDate(d.date))
   chart.setOption({
-    tooltip: { trigger: 'axis' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: theme.tooltipBg,
+      borderColor: theme.tooltipBorder,
+      textStyle: { color: theme.tooltipText },
+    },
     legend: { show: false },
     grid: { top: 10, right: 10, bottom: 30, left: 10, containLabel: true },
     xAxis: {
@@ -243,7 +278,7 @@ function renderTrend(rows: TrendDataItem[]) {
       boundaryGap: false,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: '#9ca3af', fontSize: 11 },
+      axisLabel: { color: theme.axis, fontSize: 11 },
     },
     yAxis: [
       { type: 'value', show: false },
@@ -256,11 +291,11 @@ function renderTrend(rows: TrendDataItem[]) {
         smooth: true,
         symbol: 'circle',
         symbolSize: 6,
-        lineStyle: { color: '#047857', width: 2 },
-        itemStyle: { color: '#047857' },
+        lineStyle: { color: theme.linePrimary, width: 2 },
+        itemStyle: { color: theme.linePrimary },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(5,150,105,0.2)' },
+            { offset: 0, color: theme.areaGradientStart },
             { offset: 1, color: 'rgba(5,150,105,0)' },
           ]),
         },
@@ -271,7 +306,7 @@ function renderTrend(rows: TrendDataItem[]) {
         type: 'line',
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: '#0d9488', width: 1.5 },
+        lineStyle: { color: theme.lineSecondary, width: 1.5 },
         yAxisIndex: 1,
         data: rows.map((d) => Number(d.revenue) || 0),
       },
@@ -279,19 +314,24 @@ function renderTrend(rows: TrendDataItem[]) {
   })
 }
 
-const pieColors = ['#065f46', '#0d9488', '#F59E0B', '#6366f1', '#94a3b8']
-
 function renderPie(dist: ChannelDistItem[]) {
   const chart = ensurePieChart()
   if (!chart) return
+  const theme = getChartTheme()
   const filtered = (dist ?? []).filter((item) => Number(item.value) > 0)
   const data = filtered.map((item, index) => ({
     name: String(item.name || item.channel || '其他'),
     value: item.value,
-    itemStyle: { color: pieColors[index % pieColors.length] },
+    itemStyle: { color: theme.pieColors[index % theme.pieColors.length] },
   }))
   chart.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}<br/>订单数 {c} 笔 ({d}%)' },
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}<br/>订单数 {c} 笔 ({d}%)',
+      backgroundColor: theme.tooltipBg,
+      borderColor: theme.tooltipBorder,
+      textStyle: { color: theme.tooltipText },
+    },
     legend: {
       type: 'scroll',
       orient: 'horizontal',
@@ -300,9 +340,9 @@ function renderPie(dist: ChannelDistItem[]) {
       width: '92%',
       itemGap: 14,
       pageButtonItemGap: 6,
-      textStyle: { color: '#64748b', fontSize: 11 },
-      pageIconColor: '#047857',
-      pageTextStyle: { color: '#64748b' },
+      textStyle: { color: theme.textMuted, fontSize: 11 },
+      pageIconColor: theme.linePrimary,
+      pageTextStyle: { color: theme.textMuted },
     },
     series: [
       {
@@ -319,6 +359,10 @@ function renderPie(dist: ChannelDistItem[]) {
 }
 
 /** 兼容后端 camelCase / snake_case，避免表格空白 */
+function openRecentOrder(row: Partial<Order>) {
+  if (row.orderId) openOrderDetail(row.orderId)
+}
+
 function normalizeRecentOrderRow(raw: Record<string, unknown>): Partial<Order> {
   return {
     orderId: String(raw.orderId ?? raw.order_id ?? ''),
@@ -393,6 +437,16 @@ onMounted(() => {
 
 watch(trendRange, () => {
   loadDashboard()
+})
+
+watch(themeKey, () => {
+  if (trendChart) {
+    const days = trendRange.value === '30d' ? 30 : 7
+    getDashboardStats(days).then((data) => {
+      renderTrend(data.trendData ?? [])
+      renderPie(data.channelDistribution ?? [])
+    }).catch(() => { /* ignore */ })
+  }
 })
 
 onUnmounted(() => {

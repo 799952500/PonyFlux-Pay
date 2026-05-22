@@ -22,6 +22,7 @@ public class ReconTaskEntity {
     private String taskId;
     private String channel;
     private String accountCode;
+    private String merchantId;
     private LocalDate billDate;
     private String billType;
     private String status;

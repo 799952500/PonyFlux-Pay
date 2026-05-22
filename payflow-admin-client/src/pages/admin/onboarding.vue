@@ -3,7 +3,7 @@
     <div class="content-card">
       <TableToolbar title="商户进件审核" :total="list.length" />
 
-      <el-table :data="list" stripe size="small" class="data-table" v-loading="loading">
+      <el-table table-layout="auto" :data="list" stripe size="small" class="data-table" v-loading="loading">
         <el-table-column prop="applicationNo" label="申请单号" min-width="160">
           <template #default="{ row }">
             <span class="cell-mono font-medium">{{ row.applicationNo }}</span>

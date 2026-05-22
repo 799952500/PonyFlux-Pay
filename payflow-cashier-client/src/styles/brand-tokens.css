@@ -1,0 +1,19 @@
+/* 与管理端 mint 主题同源的品牌变量（收银台） */
+:root {
+  --pf-primary: #2aa89a;
+  --pf-primary-hover: #0d9488;
+  --pf-primary-soft: #e8f6f3;
+  --pf-amount: #5eead4;
+  --pf-text-primary: #f8fafc;
+  --pf-text-secondary: rgba(226, 232, 240, 0.78);
+  --pf-card-border: rgba(255, 255, 255, 0.12);
+  --brand-primary: var(--pf-primary-hover);
+  --brand-primary-dark: #065f46;
+  --brand-primary-soft: var(--pf-primary-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pf-amount: #fbbf24;
+  }
+}

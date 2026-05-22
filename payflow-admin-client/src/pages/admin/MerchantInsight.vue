@@ -1,12 +1,12 @@
 <template>
-  <div>
-    <el-page-header class="mb-5" @back="$router.back()">
+  <div class="merchant-insight-root">
+    <el-page-header v-if="!embedded" class="mb-5" @back="$router.back()">
       <template #content>
         <span
-          :data-flip="`merchant-${merchantId}`"
+          :data-flip="`merchant-${resolvedMerchantId}`"
           class="text-[#0F172A] font-semibold"
         >
-          商户洞察 — {{ merchantId }}
+          商户洞察 — {{ resolvedMerchantId }}
         </span>
       </template>
     </el-page-header>
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import * as echarts from 'echarts/core'
 import { LineChart, PieChart } from 'echarts/charts'
@@ -95,8 +95,21 @@ import { getMerchantInsight } from '@/api/admin'
 
 echarts.use([LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
+const props = withDefaults(
+  defineProps<{
+    merchantId?: string
+    /** 嵌入抽屉时不显示页头 */
+    embedded?: boolean
+    /** 抽屉打开时用于触发图表 resize */
+    active?: boolean
+  }>(),
+  { embedded: false, active: true },
+)
+
 const route = useRoute()
-const merchantId = String(route.params.merchantId ?? '')
+const resolvedMerchantId = computed(
+  () => props.merchantId?.trim() || String(route.params.merchantId ?? ''),
+)
 const insight = ref<any>(null)
 const trendChartRef = ref<HTMLDivElement | null>(null)
 const pieChartRef = ref<HTMLDivElement | null>(null)
@@ -122,6 +135,8 @@ function formatTime(s: string): string {
 }
 
 async function loadInsight() {
+  const merchantId = resolvedMerchantId.value
+  if (!merchantId) return
   try {
     const data = await getMerchantInsight(merchantId)
     insight.value = data
@@ -191,8 +206,21 @@ async function loadInsight() {
 
 let resizeObserver: ResizeObserver | null = null
 
+watch(
+  () => [resolvedMerchantId.value, props.active] as const,
+  ([id, active]) => {
+    if (active !== false && id) {
+      loadInsight()
+      nextTick(() => {
+        trendChart?.resize()
+        pieChart?.resize()
+      })
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
-  loadInsight()
   resizeObserver = new ResizeObserver(() => {
     trendChart?.resize()
     pieChart?.resize()

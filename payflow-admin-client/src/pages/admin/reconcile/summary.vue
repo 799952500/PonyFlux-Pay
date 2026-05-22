@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
@@ -59,7 +59,7 @@
         hint="与对账任务一致按收款账户维度统计；历史支付未写入 account_code 时归入「__NO_ACCOUNT__」。"
       />
 
-      <el-table :data="summary?.byAccount ?? []" stripe size="small" class="data-table">
+      <el-table table-layout="auto" :data="summary?.byAccount ?? []" stripe size="small" class="data-table">
         <el-table-column prop="accountCode" label="支付账号" min-width="140" show-overflow-tooltip />
         <el-table-column prop="channel" label="对账渠道" width="100">
           <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
@@ -77,7 +77,7 @@
             <span :class="deltaClass(row.amountDeltaFen)">{{ formatMoneyFen(row.amountDeltaFen) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" min-width="120" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="openDetailForAccount(row)">差额明细</el-button>
           </template>
@@ -100,7 +100,7 @@
       </el-form>
       <div class="px-4">
         <TableToolbar title="差额订单" :total="anomalyTotal" />
-        <el-table v-loading="detailLoading" :data="anomalyList" stripe size="small" max-height="520" class="data-table">
+        <el-table table-layout="auto" v-loading="detailLoading" :data="anomalyList" stripe size="small" max-height="520" class="data-table">
           <el-table-column prop="diffType" label="类型" width="130">
             <template #default="{ row }">
               <el-tag size="small" type="warning" effect="plain">
@@ -125,7 +125,7 @@
               <span class="text-xs text-slate-600 tabular-nums">{{ formatDate(row.billDate) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80" fixed="right">
+          <el-table-column label="操作" min-width="80" class-name="col-actions" fixed="right">
             <template #default="{ row }">
               <el-button
                 v-if="row.localOrderId"
@@ -157,7 +157,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import {
@@ -175,7 +175,7 @@ import {
   type ReconAnomalyItem,
 } from '@/api/admin'
 
-const router = useRouter()
+const { open: openOrderDetail } = useOrderDetailOverlay()
 const loading = ref(false)
 const summary = ref<ReconSummaryData | null>(null)
 
@@ -270,7 +270,7 @@ async function loadAnomalies() {
 }
 
 function goOrder(orderId: string) {
-  router.push({ path: `/admin/orders/${encodeURIComponent(orderId)}` })
+  openOrderDetail(orderId)
 }
 
 load()

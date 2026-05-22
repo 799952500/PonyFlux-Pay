@@ -10,6 +10,8 @@ import com.payflow.admin.mapper.SysRoleMapper;
 import com.payflow.admin.mapper.SysRoleMenuMapper;
 import com.payflow.admin.mapper.SysUserRoleMapper;
 import com.payflow.admin.service.SysRoleService;
+import com.payflow.admin.service.guard.ResourceDeleteGuardService;
+import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysMenuMapper sysMenuMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
+    private final ResourceDeleteGuardService resourceDeleteGuardService;
 
     @Override
     public List<SysRole> list() {
@@ -55,11 +58,9 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Override
     @Transactional
     public void delete(Long id) {
+        resourceDeleteGuardService.assertDeletable(ResourceType.SYS_ROLE, id);
         sysRoleMenuMapper.delete(
                 new LambdaQueryWrapper<SysRoleMenu>().eq(SysRoleMenu::getRoleId, id)
-        );
-        sysUserRoleMapper.delete(
-                new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getRoleId, id)
         );
         sysRoleMapper.deleteById(id);
     }

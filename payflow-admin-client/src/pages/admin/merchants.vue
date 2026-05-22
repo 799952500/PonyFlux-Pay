@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
@@ -18,7 +18,7 @@
     <div class="content-card">
       <TableToolbar title="商户列表" :total="total" />
 
-      <el-table v-loading="loading" :data="merchantList" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="merchantList" stripe size="small" class="data-table">
         <el-table-column label="商户号" prop="merchantId" min-width="150">
           <template #default="{ row }">
             <span
@@ -52,12 +52,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" min-width="280" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
             <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付配置</el-button>
@@ -185,7 +185,7 @@
           </div>
           <el-button type="primary" class="btn-primary" size="small" @click="addRoute">新增路由</el-button>
         </div>
-        <el-table :data="merchantRoutes" stripe size="small" class="data-table" max-height="420">
+        <el-table table-layout="auto" :data="merchantRoutes" stripe size="small" class="data-table" max-height="420">
           <el-table-column label="支付方式" min-width="220">
             <template #default="{ row }">
               <el-select v-model="row.paymentMethodId" placeholder="请选择支付方式" filterable style="width: 100%" @change="handleRouteMethodChange(row)">
@@ -229,7 +229,7 @@
               <el-switch v-model="row.enabled" />
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" min-width="100" class-name="col-actions" fixed="right">
             <template #default="{ $index }">
               <el-button link type="danger" size="small" @click="removeRoute($index)">删除</el-button>
             </template>
@@ -245,12 +245,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useMerchantInsightOverlay } from '@/composables/useMerchantInsightOverlay'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { getMerchants, getPaymentMethods, getPaymentAccounts, getMerchantPaymentRoutes, replaceMerchantPaymentRoutes, updateMerchant } from '@/api/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 import type { Merchant, PaymentMethod, PaymentAccount, MerchantPaymentRoute } from '@/types'
 import {
   formatDateTime,
@@ -265,6 +267,8 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const { open: openMerchantInsight } = useMerchantInsightOverlay()
+const { resolveMerchantIdForCreate } = useMerchantScope()
 
 const loading = ref(false)
 const detailLoading = ref(false)
@@ -336,7 +340,7 @@ function goMerchantOrders(merchant: Merchant) {
 }
 
 function goMerchantInsight(merchant: Merchant) {
-  router.push(`/admin/dashboard/merchant/${encodeURIComponent(merchant.merchantId)}`)
+  openMerchantInsight(merchant.merchantId)
 }
 
 function openEdit(merchant: Merchant) {
@@ -475,7 +479,9 @@ async function savePaymentRoutes() {
       return
     }
 
-    await replaceMerchantPaymentRoutes(currentMerchant.value.merchantId, routes)
+    const merchantId =
+      resolveMerchantIdForCreate(currentMerchant.value.merchantId) ?? currentMerchant.value.merchantId
+    await replaceMerchantPaymentRoutes(merchantId, routes)
     ElMessage.success('支付方式配置已保存')
     paymentConfigVisible.value = false
   } catch (e) {
@@ -498,7 +504,22 @@ async function tryOpenPaymentFromQuery() {
   }
 }
 
-onMounted(() => { loadMerchants() })
+function tryOpenInsightFromQuery() {
+  const raw = route.query.insight
+  const id = typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] : ''
+  if (!id?.trim()) return
+  openMerchantInsight(id.trim())
+  const q = { ...route.query }
+  delete q.insight
+  router.replace({ path: '/admin/merchants', query: q })
+}
+
+onMounted(() => {
+  loadMerchants()
+  tryOpenInsightFromQuery()
+})
+
+watch(() => route.query.insight, () => tryOpenInsightFromQuery())
 </script>
 
 <style scoped>

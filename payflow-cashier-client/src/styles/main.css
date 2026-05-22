@@ -1,10 +1,12 @@
+@import './brand-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* 品牌色 — 与管理端统一的深绿沉稳 */
 :root {
-  --el-color-primary: #047857;
+  --el-color-primary: var(--brand-primary, #047857);
   --el-color-primary-light-3: #059669;
   --el-color-primary-light-5: #0d9488;
   --el-color-primary-light-7: #14b8a6;

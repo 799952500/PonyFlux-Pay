@@ -27,9 +27,44 @@ import type {
   Channel,
   ChannelRoute,
   AuditLogItem,
+  DataIsolationCheckItem,
   OrderStats,
   AdminSearchOrderHit,
 } from '@/types'
+
+// -------------------------------------------------------------------
+// 删除前依赖预检
+// -------------------------------------------------------------------
+export type ResourceDependencyType =
+  | 'CHANNEL'
+  | 'PAYMENT_METHOD'
+  | 'PAYMENT_ACCOUNT'
+  | 'MERCHANT_PAYMENT_METHOD'
+  | 'MERCHANT'
+  | 'SYS_MENU'
+  | 'SYS_ROLE'
+
+export interface ResourceRefItem {
+  refType: string
+  refId?: string
+  merchantId?: string
+  label: string
+  resolveHint?: string
+}
+
+export interface ResourceDeleteCheckResult {
+  blocked: boolean
+  summary: string
+  refs: ResourceRefItem[]
+}
+
+export const getResourceDependencies = (
+  resourceType: ResourceDependencyType,
+  resourceId: string | number
+): Promise<ResourceDeleteCheckResult> =>
+  request.get('/admin/resource-dependencies', {
+    params: { resourceType, resourceId: String(resourceId) },
+  })
 
 // -------------------------------------------------------------------
 // Dashboard
@@ -307,7 +342,12 @@ export const getMerchantRiskHitRecords = (params?: RiskHitRecordQuery): Promise<
 export const getPaymentMethods = (params: {
   page: number
   pageSize: number
+  channelId?: number
+  channelType?: string
+  channel?: string
   keyword?: string
+  name?: string
+  status?: string
 }): Promise<PageResult<any>> =>
   request.get('/admin/payment-methods', { params })
 
@@ -410,6 +450,7 @@ export const getAuditLogs = (params: {
   action?: string
   startDate?: string
   endDate?: string
+  merchantId?: string
 }): Promise<PageResult<AuditLogItem>> =>
   request.get('/admin/audit-logs', { params })
 
@@ -753,3 +794,30 @@ export const getRoutingLogs = (params: {
 
 export const exportRoutingLogs = (params: { startTime?: string; endTime?: string }): Promise<any[]> =>
   request.get('/admin/routing-logs/export', { params }).then((d: any) => d?.data ?? d ?? [])
+
+// -------------------------------------------------------------------
+// 数据隔离治理
+// -------------------------------------------------------------------
+export const getDataIsolationChecks = (params: {
+  page?: number
+  size?: number
+  classification?: string
+  riskLevel?: string
+  remediationStatus?: string
+  merchantId?: string
+}): Promise<PageResult<DataIsolationCheckItem>> =>
+  request.get('/admin/data-isolation/checks', { params }).then((data: any) => ({
+    list: data?.data?.list ?? data?.list ?? [],
+    total: Number(data?.data?.total ?? data?.total ?? 0),
+    page: Number(data?.data?.page ?? params.page ?? 1),
+    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+  }))
+
+export const scanDataIsolation = (): Promise<{ updatedCount: number }> =>
+  request.post('/admin/data-isolation/checks/scan').then((d: any) => d?.data ?? d ?? { updatedCount: 0 })
+
+export const updateDataIsolationRemediation = (
+  checkId: string,
+  body: { remediationStatus: string; note?: string }
+): Promise<void> =>
+  request.put(`/admin/data-isolation/checks/${encodeURIComponent(checkId)}/remediation`, body).then(() => undefined)

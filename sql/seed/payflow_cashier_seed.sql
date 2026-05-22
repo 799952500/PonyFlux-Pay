@@ -118,7 +118,10 @@ INSERT INTO cashier_refunds (
  DATE_SUB(NOW(), INTERVAL 8 DAY), DATE_SUB(NOW(), INTERVAL 8 DAY)),
 ('REF-20260512-001', 'PAY-20260515-001', 'ORD-20260515-0008', 'ALIPAY', 5600,
  '部分菜品退单', 'REFUNDED', '2026051222007766', 'MRN-240512-001',
- DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY));
+ DATE_SUB(NOW(), INTERVAL 6 DAY), DATE_SUB(NOW(), INTERVAL 6 DAY)),
+('REF-20260513-001', 'PAY-20260513-001', 'ORD-20260513-0010', 'WECHAT_PAY', 9900,
+ '课程改签差价退回', 'REFUNDED', '2026051322001133', 'MRN-240513-001',
+ DATE_SUB(NOW(), INTERVAL 4 DAY), DATE_SUB(NOW(), INTERVAL 4 DAY));
 
 INSERT INTO cashier_security_audit (
   merchant_id, target_merchant_id, auth_mode, http_method, request_path,
@@ -133,4 +136,8 @@ INSERT INTO cashier_security_audit (
 ('M100001', 'M100001', 'HMAC', 'GET', '/api/v1/cashier/orders/not-exist',
  'ORDER', 'ORD-NO-SUCH', '10.12.0.20', 'DENIED', '5103', '资源不存在', DATE_SUB(NOW(), INTERVAL 2 DAY)),
 ('M100002', 'M100001', 'JWT', 'POST', '/api/v1/cashier/refunds',
- 'REFUND', NULL, '10.12.0.22', 'DENIED', '5101', 'merchantId 与认证主体不一致', DATE_SUB(NOW(), INTERVAL 30 MINUTE));
+ 'REFUND', NULL, '10.12.0.22', 'DENIED', '5101', 'merchantId 与认证主体不一致', DATE_SUB(NOW(), INTERVAL 30 MINUTE)),
+('M100001', 'M100002', 'JWT', 'GET', '/api/v1/cashier/refunds/REF-20260517-001',
+ 'REFUND', 'REF-20260517-001', '10.12.0.23', 'DENIED', '5102', '资源不属于当前商户', DATE_SUB(NOW(), INTERVAL 25 MINUTE)),
+('M100002', 'M100001', 'HMAC', 'POST', '/api/v1/cashier/payments',
+ 'PAYMENT', 'PAY-20260518-001', '203.0.113.9', 'DENIED', '5102', '支付记录不属于当前商户', DATE_SUB(NOW(), INTERVAL 15 MINUTE));

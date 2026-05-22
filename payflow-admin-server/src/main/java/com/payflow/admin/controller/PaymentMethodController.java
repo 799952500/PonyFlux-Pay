@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentMethod;
+import com.payflow.admin.kit.GlobalResourceKit;
 import com.payflow.admin.service.PaymentMethodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,17 +31,29 @@ public class PaymentMethodController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> listAll(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
-        List<PaymentMethod> list = paymentMethodService.listAll();
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Long channelId,
+            @RequestParam(required = false) String channelType,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String status) {
+        int resolvedSize = pageSize != null ? pageSize : (size != null ? size : 20);
+        String resolvedChannelType = org.springframework.util.StringUtils.hasText(channelType)
+                ? channelType
+                : channel;
+        String resolvedKeyword = org.springframework.util.StringUtils.hasText(keyword)
+                ? keyword
+                : name;
+        Map<String, Object> data = paymentMethodService.page(
+                page, resolvedSize, channelId, resolvedChannelType, resolvedKeyword, status);
+        data.put("classification", GlobalResourceKit.CLASSIFICATION_GLOBAL);
+        data.put("merchantScoped", false);
         return ResponseEntity.ok(Map.of(
             "code", 0,
             "message", "success",
-            "data", Map.of(
-                "list", list,
-                "total", list.size(),
-                "page", page,
-                "pageSize", size
-            )
+            "data", data
         ));
     }
 
@@ -111,8 +124,11 @@ public class PaymentMethodController {
      * @return 无
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         paymentMethodService.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", Map.of()));
     }
 }

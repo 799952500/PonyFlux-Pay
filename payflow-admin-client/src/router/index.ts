@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useAdminStore } from '@/stores/admin'
 import { installFlip } from '@/transitions/flipShared'
 import request from '@/api/request'
+import { isPlatformAdmin, isPlatformOnlyRoute } from '@/utils/adminAccess'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,33 +35,34 @@ const router = createRouter({
         },
         {
           path: 'dashboard/merchant/:merchantId',
-          name: 'MerchantInsight',
-          component: () => import('@/pages/admin/MerchantInsight.vue'),
-          meta: { title: '商户洞察', requiresAuth: true },
+          redirect: (to) => ({
+            path: '/admin/merchants',
+            query: { insight: String(to.params.merchantId ?? '') },
+          }),
         },
         {
           path: 'dashboard/churn-alerts',
           name: 'ChurnAlerts',
           component: () => import('@/pages/admin/ChurnAlerts.vue'),
-          meta: { title: '流失预警', requiresAuth: true },
+          meta: { title: '流失预警', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'insights/funnel',
           name: 'InsightsFunnel',
           component: () => import('@/pages/admin/insights-funnel.vue'),
-          meta: { title: '支付漏斗', requiresAuth: true },
+          meta: { title: '支付漏斗', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'onboarding',
           name: 'Onboarding',
           component: () => import('@/pages/admin/onboarding.vue'),
-          meta: { title: '商户进件', requiresAuth: true },
+          meta: { title: '商户进件', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'channel-routing/health',
           name: 'ChannelRoutingHealth',
           component: () => import('@/pages/admin/channel-routing-health.vue'),
-          meta: { title: '路由健康度', requiresAuth: true },
+          meta: { title: '路由健康度', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'notifications',
@@ -71,7 +74,7 @@ const router = createRouter({
           path: 'search',
           name: 'AdminSearch',
           component: () => import('@/pages/admin/search.vue'),
-          meta: { title: '全局搜索', requiresAuth: true },
+          meta: { title: '全局搜索', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'orders',
@@ -81,9 +84,10 @@ const router = createRouter({
         },
         {
           path: 'orders/:orderId',
-          name: 'OrderDetail',
-          component: () => import('@/pages/admin/orders/detail.vue'),
-          meta: { title: '订单详情', requiresAuth: true },
+          redirect: (to) => ({
+            path: '/admin/orders',
+            query: { orderId: String(to.params.orderId ?? '') },
+          }),
         },
         {
           path: 'refunds',
@@ -119,7 +123,7 @@ const router = createRouter({
           path: 'channels',
           name: 'Channels',
           component: () => import('@/pages/admin/channels.vue'),
-          meta: { title: '渠道管理', requiresAuth: true },
+          meta: { title: '渠道管理', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'channel-routes',
@@ -138,7 +142,7 @@ const router = createRouter({
           path: 'payment-methods',
           name: 'PaymentMethods',
           component: () => import('@/pages/admin/payment-methods.vue'),
-          meta: { title: '支付方式', requiresAuth: true },
+          meta: { title: '支付方式', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'payment-accounts',
@@ -159,64 +163,76 @@ const router = createRouter({
           meta: { title: '商户管理', requiresAuth: true },
         },
         {
+          path: 'preferences',
+          name: 'Preferences',
+          component: () => import('@/pages/admin/preferences.vue'),
+          meta: { title: '外观与显示', requiresAuth: true },
+        },
+        {
           path: 'settings',
           name: 'Settings',
           component: () => import('@/pages/admin/settings.vue'),
-          meta: { title: '系统设置', requiresAuth: true },
+          meta: { title: '系统设置', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'roles',
           name: 'Roles',
           component: () => import('@/pages/admin/roles.vue'),
-          meta: { title: '角色管理', requiresAuth: true },
+          meta: { title: '角色管理', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'menus',
           name: 'Menus',
           component: () => import('@/pages/admin/menus.vue'),
-          meta: { title: '菜单管理', requiresAuth: true },
+          meta: { title: '菜单管理', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'users',
           name: 'Users',
           component: () => import('@/pages/admin/users.vue'),
-          meta: { title: '用户管理', requiresAuth: true },
+          meta: { title: '用户管理', requiresAuth: true, platformOnly: true },
+        },
+        {
+          path: 'data-isolation',
+          name: 'DataIsolation',
+          component: () => import('@/pages/admin/data-isolation.vue'),
+          meta: { title: '数据隔离治理', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'audit-logs',
           name: 'AuditLogs',
           component: () => import('@/pages/admin/audit-logs.vue'),
-          meta: { title: '操作日志', requiresAuth: true },
+          meta: { title: '操作日志', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'security-audit',
           name: 'SecurityAudit',
           component: () => import('@/pages/admin/security-audit.vue'),
-          meta: { title: '安全审计', requiresAuth: true },
+          meta: { title: '安全审计', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'fee-rate/config',
           name: 'FeeRateConfig',
           component: () => import('@/pages/admin/FeeRateConfig.vue'),
-          meta: { title: '阶梯费率配置', requiresAuth: true },
+          meta: { title: '阶梯费率配置', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'fee-rate/audit-log',
           name: 'FeeRateAuditLog',
           component: () => import('@/pages/admin/FeeRateAuditLog.vue'),
-          meta: { title: '费率变更审计', requiresAuth: true },
+          meta: { title: '费率变更审计', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'routing/logs',
           name: 'RoutingLogs',
           component: () => import('@/pages/admin/RoutingLogs.vue'),
-          meta: { title: '路由决策日志', requiresAuth: true },
+          meta: { title: '路由决策日志', requiresAuth: true, platformOnly: true },
         },
         {
           path: 'dicts',
           name: 'Dicts',
           component: () => import('@/pages/admin/dicts.vue'),
-          meta: { title: '数据字典', requiresAuth: true },
+          meta: { title: '数据字典', requiresAuth: true, platformOnly: true },
         },
       ],
     },
@@ -257,6 +273,17 @@ router.beforeEach(async (to, _from, next) => {
     store.clearAuth()
     next()
     return
+  }
+
+  if (to.meta?.requiresAuth && to.path.startsWith('/admin')) {
+    const store = useAdminStore()
+    const platform =
+      store.user?.platformAdmin === true || store.user?.role === 'SUPER_ADMIN'
+    if (!platform && (to.meta.platformOnly === true || isPlatformOnlyRoute(to.path))) {
+      ElMessage.warning('当前账号无权访问该功能')
+      next(_from.path && _from.path.startsWith('/admin') ? _from.path : '/admin/dashboard')
+      return
+    }
   }
 
   next()

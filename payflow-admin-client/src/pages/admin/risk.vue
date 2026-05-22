@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <el-tabs v-model="activeTab" class="risk-tabs">
       <el-tab-pane label="风控规则" name="rules" />
@@ -18,20 +18,20 @@
               @keyup.enter="handleSearch"
             />
           </el-form-item>
-          <el-form-item label="规则来源">
+          <el-form-item v-if="isPlatformAdmin" label="规则来源">
             <el-select v-model="queryForm.ownerType" placeholder="全部" clearable style="width: 130px">
               <el-option label="平台规则" value="PLATFORM" />
               <el-option label="商户自建" value="MERCHANT" />
             </el-select>
           </el-form-item>
-          <el-form-item label="作用范围">
+          <el-form-item v-if="isPlatformAdmin" label="作用范围">
             <el-select v-model="queryForm.scopeType" placeholder="全部" clearable style="width: 150px">
               <el-option label="全部商户" value="ALL_MERCHANTS" />
               <el-option label="指定商户" value="SELECTED_MERCHANTS" />
               <el-option label="仅归属商户" value="OWNER_MERCHANT_ONLY" />
             </el-select>
           </el-form-item>
-          <el-form-item label="商户">
+          <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" label="商户">
             <el-select
               v-model="queryForm.merchantId"
               placeholder="全部商户"
@@ -66,46 +66,66 @@
       </div>
 
       <div class="content-card">
-        <TableToolbar title="风控规则（全平台）" :total="total">
+        <TableToolbar :title="rulesToolbarTitle" :total="total">
           <template #actions>
-            <el-tooltip v-if="!canManagePlatform" content="仅风控/管理员角色可新增平台规则" placement="top">
-              <span>
-                <el-button type="primary" class="btn-primary" icon="Plus" disabled>新增平台规则</el-button>
-              </span>
-            </el-tooltip>
-            <el-button v-else type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增平台规则</el-button>
+            <el-button
+              v-if="isPlatformAdmin"
+              type="primary"
+              class="btn-primary"
+              icon="Plus"
+              @click="openCreate"
+            >
+              新增平台规则
+            </el-button>
+            <el-button
+              v-else-if="canManageMerchantRules"
+              type="primary"
+              class="btn-primary"
+              icon="Plus"
+              @click="openCreate"
+            >
+              新增商户规则
+            </el-button>
           </template>
         </TableToolbar>
 
-        <p class="text-xs text-gray-500 mb-3 px-1">
-          平台规则可作用于全部商户或指定商户；商户自建规则仅对归属商户生效，管理员可查看与启停，不可修改规则内容。
+        <p class="page-hint-text mb-3 px-1">
+          <template v-if="isPlatformAdmin">
+            平台规则可作用于全部商户或指定商户；商户自建规则仅对归属商户生效，可查看与启停，不可修改规则内容。
+          </template>
+          <template v-else>
+            您可查看对本商户生效的平台规则，并维护本商户自建规则（仅作用于当前登录商户）。
+          </template>
         </p>
 
-        <el-table v-loading="loading" :data="ruleList" stripe size="small" class="data-table">
-          <el-table-column label="规则名称" min-width="160">
+        <div class="risk-rules-table-wrap scrollbar-light">
+        <el-table table-layout="auto" v-loading="loading" :data="ruleList" stripe size="small" class="data-table risk-rules-table">
+          <el-table-column label="规则名称" min-width="200" show-overflow-tooltip>
             <template #default="{ row }">
-              <div class="font-medium text-gray-800">{{ row.ruleName }}</div>
-              <div class="text-xs text-gray-400 font-mono">{{ row.ruleCode }}</div>
+              <div class="rule-name-cell">
+                <div class="rule-name-cell__title" :title="row.ruleName">{{ row.ruleName }}</div>
+                <div class="rule-name-cell__code" :title="row.ruleCode">{{ row.ruleCode }}</div>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column label="类型" width="110">
+          <el-table-column label="类型" width="100">
             <template #default="{ row }">
               <el-tag size="small" :type="(ruleTypeTag[row.ruleType] as any) ?? 'info'" effect="plain">
                 {{ ruleTypeLabel[row.ruleType] ?? row.ruleType }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="规则来源" width="120">
+          <el-table-column label="规则来源" width="100">
             <template #default="{ row }">
               <el-tag size="small" :type="row.ownerType === 'PLATFORM' ? 'primary' : 'warning'" effect="light">
                 {{ row.ownerType === 'PLATFORM' ? '平台' : '商户自建' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="归属 / 作用范围" min-width="180">
+          <el-table-column label="归属 / 作用范围" min-width="160" show-overflow-tooltip>
             <template #default="{ row }">
               <div v-if="row.ownerType === 'MERCHANT'" class="text-sm">
-                <span class="text-gray-600">{{ row.ownerMerchantName || row.ownerMerchantId }}</span>
+                <span class="text-sm" style="color: var(--pf-text-secondary)">{{ row.ownerMerchantName || row.ownerMerchantId }}</span>
                 <el-tag size="small" type="info" effect="plain" class="ml-1">仅本商户</el-tag>
               </div>
               <div v-else class="text-sm">
@@ -115,7 +135,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="阈值" width="130">
+          <el-table-column label="阈值" width="120">
             <template #default="{ row }">
               <span class="text-sm tabular-nums font-medium">{{ formatThreshold(row) }}</span>
             </template>
@@ -127,8 +147,8 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="优先级" prop="priority" width="72" align="center" />
-          <el-table-column label="状态" width="80" align="center">
+          <el-table-column label="优先级" prop="priority" width="68" align="center" />
+          <el-table-column label="状态" width="76" align="center">
             <template #default="{ row }">
               <el-switch
                 :model-value="row.enabled"
@@ -138,15 +158,15 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="更新时间" width="168">
+          <el-table-column label="更新时间" min-width="156" show-overflow-tooltip>
             <template #default="{ row }">
-              <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.updatedAt) }}</span>
+              <span class="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatDateTime(row.updatedAt) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="140" fixed="right">
+          <el-table-column label="操作" min-width="120" class-name="col-actions" fixed="right">
             <template #default="{ row }">
               <el-button
-                v-if="row.ownerType === 'PLATFORM' && canManagePlatform"
+                v-if="canEditRule(row)"
                 link
                 type="primary"
                 size="small"
@@ -156,6 +176,7 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
 
         <AdminPagination
           v-model:current-page="queryForm.page"
@@ -195,22 +216,26 @@
       </div>
       <div class="content-card">
         <TableToolbar title="风控命中记录" :total="hitTotal" />
-        <el-table v-loading="hitLoading" :data="hitList" stripe size="small" class="data-table">
+        <el-table table-layout="auto" v-loading="hitLoading" :data="hitList" stripe size="small" class="data-table">
           <el-table-column label="时间" prop="createdAt" width="168">
             <template #default="{ row }">
               <span class="text-xs tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="商户" min-width="140">
+          <el-table-column label="商户" min-width="140" show-overflow-tooltip>
             <template #default="{ row }">
-              <div class="text-sm">{{ row.merchantName || row.merchantId }}</div>
-              <div class="text-xs text-gray-400">{{ row.merchantId }}</div>
+              <div class="table-cell-stack">
+                <div class="table-cell-stack__primary">{{ row.merchantName || row.merchantId }}</div>
+                <div class="table-cell-stack__secondary">{{ row.merchantId }}</div>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column label="规则" min-width="140">
+          <el-table-column label="规则" min-width="140" show-overflow-tooltip>
             <template #default="{ row }">
-              <div class="text-sm">{{ row.ruleName }}</div>
-              <div class="text-xs text-gray-400">{{ row.ruleCode }}</div>
+              <div class="rule-name-cell">
+                <div class="rule-name-cell__title">{{ row.ruleName }}</div>
+                <div class="rule-name-cell__code">{{ row.ruleCode }}</div>
+              </div>
             </template>
           </el-table-column>
           <el-table-column label="来源" width="88">
@@ -240,7 +265,7 @@
     <!-- 平台规则编辑 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogMode === 'add' ? '新增平台风控规则' : '编辑平台风控规则'"
+      :title="dialogTitle"
       width="640px"
       destroy-on-close
     >
@@ -256,13 +281,17 @@
             <el-option v-for="(label, key) in ruleTypeLabel" :key="key" :label="label" :value="key" />
           </el-select>
         </el-form-item>
-        <el-form-item label="作用范围" prop="scopeType">
+        <el-form-item v-if="isPlatformAdmin" label="作用范围" prop="scopeType">
           <el-radio-group v-model="formData.scopeType">
             <el-radio value="ALL_MERCHANTS">全部商户</el-radio>
             <el-radio value="SELECTED_MERCHANTS">指定商户</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="formData.scopeType === 'SELECTED_MERCHANTS'" label="适用商户" prop="scopeMerchantIds">
+        <el-form-item v-else label="归属商户">
+          <el-input :model-value="formOwnerMerchantId" disabled />
+          <p class="page-hint-text mt-1">商户管理员仅能为当前授权商户创建规则</p>
+        </el-form-item>
+        <el-form-item v-if="isPlatformAdmin && formData.scopeType === 'SELECTED_MERCHANTS'" label="适用商户" prop="scopeMerchantIds">
           <el-select
             v-model="formData.scopeMerchantIds"
             multiple
@@ -292,7 +321,7 @@
         </el-form-item>
         <el-form-item label="优先级" prop="priority">
           <el-input-number v-model="formData.priority" :min="0" :max="9999" style="width: 100%" />
-          <p class="text-xs text-gray-400 mt-1">数值越小越先评估</p>
+          <p class="page-hint-text mt-1">数值越小越先评估</p>
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="formData.description" type="textarea" :rows="2" />
@@ -345,7 +374,7 @@ import {
   updateRiskRule,
   updateRiskRuleStatus,
 } from '@/api/admin'
-import { useAdminStore } from '@/stores/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 import type {
   RiskHitRecord,
   RiskRule,
@@ -355,17 +384,45 @@ import type {
   RiskRuleUpsertRequest,
 } from '@/types'
 
-const adminStore = useAdminStore()
+const {
+  isPlatformAdmin,
+  merchantFilterLocked,
+  authorizedMerchantIds,
+  defaultMerchantId,
+  filterMerchantOptions,
+  applyDefaultMerchantFilter,
+  resolveMerchantIdForCreate,
+  isMerchantAllowed,
+} = useMerchantScope()
 const activeTab = ref<'rules' | 'hits'>('rules')
 
-const canManagePlatform = computed(() => {
-  const role = adminStore.user?.role ?? ''
-  return role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'RISK'
+const rulesToolbarTitle = computed(() =>
+  isPlatformAdmin.value ? '风控规则（全平台）' : '风控规则（本商户）'
+)
+
+const canManageMerchantRules = computed(
+  () => !isPlatformAdmin.value && !!defaultMerchantId.value
+)
+
+const dialogTitle = computed(() => {
+  if (dialogMode.value === 'add') {
+    return isPlatformAdmin.value ? '新增平台风控规则' : '新增商户风控规则'
+  }
+  return isPlatformAdmin.value ? '编辑平台风控规则' : '编辑商户风控规则'
 })
 
+const formOwnerMerchantId = computed(() => defaultMerchantId.value ?? '—')
+
+function canEditRule(row: RiskRule) {
+  if (isPlatformAdmin.value) {
+    return row.ownerType === 'PLATFORM'
+  }
+  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId)
+}
+
 function canToggle(row: RiskRule) {
-  if (row.ownerType === 'PLATFORM') return canManagePlatform.value
-  return canManagePlatform.value
+  if (isPlatformAdmin.value) return true
+  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId)
 }
 
 const loading = ref(false)
@@ -461,7 +518,8 @@ const thresholdInputLabel = computed(() => {
 
 async function loadMerchants() {
   try {
-    merchantOptions.value = await getMerchantsSimple()
+    merchantOptions.value = filterMerchantOptions(await getMerchantsSimple())
+    applyDefaultMerchantFilter(queryForm)
   } catch {
     merchantOptions.value = []
   }
@@ -564,10 +622,21 @@ const formRules: FormRules = {
   ruleCode: [{ required: true, message: '请输入规则编码', trigger: 'blur' }],
   ruleName: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
   ruleType: [{ required: true, message: '请选择规则类型', trigger: 'change' }],
-  scopeType: [{ required: true, message: '请选择作用范围', trigger: 'change' }],
+  scopeType: [{
+    validator: (_r, _v, cb) => {
+      if (!isPlatformAdmin.value) {
+        cb()
+        return
+      }
+      if (!formData.scopeType) {
+        cb(new Error('请选择作用范围'))
+      } else cb()
+    },
+    trigger: 'change',
+  }],
   scopeMerchantIds: [{
     validator: (_r, _v, cb) => {
-      if (formData.scopeType === 'SELECTED_MERCHANTS' && formData.scopeMerchantIds.length === 0) {
+      if (isPlatformAdmin.value && formData.scopeType === 'SELECTED_MERCHANTS' && formData.scopeMerchantIds.length === 0) {
         cb(new Error('请至少选择一个商户'))
       } else cb()
     },
@@ -594,7 +663,7 @@ function toThresholdFen(): number {
 }
 
 function buildUpsertPayload(): RiskRuleUpsertRequest {
-  return {
+  const base: RiskRuleUpsertRequest = {
     ruleCode: formData.ruleCode,
     ruleName: formData.ruleName,
     ruleType: formData.ruleType,
@@ -603,10 +672,23 @@ function buildUpsertPayload(): RiskRuleUpsertRequest {
     action: formData.action,
     enabled: formData.enabled,
     priority: formData.priority,
-    ownerType: 'PLATFORM',
-    scopeType: formData.scopeType,
-    scopeMerchantIds: formData.scopeType === 'SELECTED_MERCHANTS' ? formData.scopeMerchantIds : [],
     description: formData.description,
+  }
+  if (isPlatformAdmin.value) {
+    return {
+      ...base,
+      ownerType: 'PLATFORM',
+      scopeType: formData.scopeType,
+      scopeMerchantIds: formData.scopeType === 'SELECTED_MERCHANTS' ? formData.scopeMerchantIds : [],
+    }
+  }
+  const ownerMerchantId = resolveMerchantIdForCreate()
+  return {
+    ...base,
+    ownerType: 'MERCHANT',
+    ownerMerchantId,
+    scopeType: 'OWNER_MERCHANT_ONLY',
+    scopeMerchantIds: [],
   }
 }
 
@@ -615,7 +697,7 @@ function resetForm() {
     ruleCode: `RISK_${Date.now()}`,
     ruleName: '',
     ruleType: 'AMOUNT_SINGLE' as RiskRuleType,
-    scopeType: 'ALL_MERCHANTS' as RiskRuleScopeType,
+    scopeType: (isPlatformAdmin.value ? 'ALL_MERCHANTS' : 'OWNER_MERCHANT_ONLY') as RiskRuleScopeType,
     scopeMerchantIds: [] as string[],
     thresholdDisplay: 5000,
     unit: 'CNY_FEN',
@@ -634,12 +716,19 @@ function openCreate() {
 }
 
 async function openEdit(row: RiskRule) {
+  if (!canEditRule(row)) {
+    openView(row)
+    return
+  }
   dialogMode.value = 'edit'
   editingId.value = row.id
   formData.ruleCode = row.ruleCode
   formData.ruleName = row.ruleName
   formData.ruleType = row.ruleType
-  formData.scopeType = row.scopeType === 'OWNER_MERCHANT_ONLY' ? 'ALL_MERCHANTS' : row.scopeType
+  formData.scopeType =
+    row.scopeType === 'OWNER_MERCHANT_ONLY'
+      ? 'OWNER_MERCHANT_ONLY'
+      : row.scopeType
   formData.unit = row.unit
   formData.action = row.action
   formData.priority = row.priority
@@ -679,7 +768,7 @@ async function handleSubmit() {
       const payload = buildUpsertPayload()
       if (dialogMode.value === 'add') {
         await createRiskRule(payload)
-        ElMessage.success('平台规则已创建')
+        ElMessage.success(isPlatformAdmin.value ? '平台规则已创建' : '商户规则已创建')
       } else if (editingId.value != null) {
         await updateRiskRule(editingId.value, payload)
         ElMessage.success('规则已保存')
@@ -731,6 +820,7 @@ watch(activeTab, (tab) => {
 
 onMounted(async () => {
   await loadMerchants()
+  applyDefaultMerchantFilter(hitQuery)
   await loadRules()
 })
 </script>
@@ -742,4 +832,17 @@ onMounted(async () => {
 .risk-tabs :deep(.el-tabs__header) {
   margin-bottom: 0;
 }
+
+.risk-rules-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px 4px;
+}
+
+.risk-rules-table {
+  min-width: 1180px;
+}
+
+/* 规则名称双行样式见全局 style.css：.rule-name-cell */
 </style>

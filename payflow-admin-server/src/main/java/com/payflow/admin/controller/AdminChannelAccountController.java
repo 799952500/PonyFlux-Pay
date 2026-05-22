@@ -1,8 +1,11 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentAccount;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
+import com.payflow.admin.service.ChannelRouteService;
 import com.payflow.admin.service.PaymentAccountService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class AdminChannelAccountController {
 
     private final PaymentAccountService service;
+    private final ChannelRouteService channelRouteService;
 
     /** 可选依赖：Redis 未启用时为 null */
     @Autowired(required = false)
@@ -44,12 +48,13 @@ public class AdminChannelAccountController {
     @Operation(summary = "分页查询支付账号列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) Long channelId,
             @RequestParam(required = false) String keyword) {
 
-        List<PaymentAccount> all = service.listAll();
+        List<PaymentAccount> all = service.listAll(AdminRequestContext.merchantScope(request));
         List<PaymentAccount> filtered = all.stream()
                 .filter(a -> channelId == null || (a.getChannelId() != null && a.getChannelId().equals(channelId)))
                 .filter(a -> keyword == null || keyword.isBlank()
@@ -98,8 +103,15 @@ public class AdminChannelAccountController {
      */
     @Operation(summary = "创建支付账号")
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createAccount(@RequestBody PaymentAccount account) {
+    public ResponseEntity<Map<String, Object>> createAccount(
+            HttpServletRequest request,
+            @RequestBody PaymentAccount account) {
+        String merchantId = AdminRequestContext.resolveMerchantIdForWrite(request, account.getMerchantId());
+        account.setMerchantId(null);
         PaymentAccount created = service.create(account);
+        if (merchantId != null && created.getChannelId() != null && created.getId() != null) {
+            channelRouteService.ensureMerchantAccountLink(merchantId, created.getChannelId(), created.getId());
+        }
         if (refreshPublisher != null) {
             refreshPublisher.publish("payment_account:create");
         }
@@ -120,9 +132,19 @@ public class AdminChannelAccountController {
     @Operation(summary = "更新支付账号")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateAccount(
+            HttpServletRequest request,
             @PathVariable Long id,
             @RequestBody PaymentAccount account) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
+        if (service.getById(id, scope) == null) {
+            return ResponseEntity.ok(Map.of(
+                    "code", 1,
+                    "message", "支付账号不存在",
+                    "data", Map.of()
+            ));
+        }
         account.setId(id);
+        account.setMerchantId(null);
         PaymentAccount updated = service.update(account);
         if (updated == null) {
             return ResponseEntity.ok(Map.of(
@@ -149,8 +171,8 @@ public class AdminChannelAccountController {
      */
     @Operation(summary = "启用/禁用支付账号")
     @PutMapping("/{id}/toggle")
-    public ResponseEntity<Map<String, Object>> toggleStatus(@PathVariable Long id) {
-        PaymentAccount account = service.getById(id);
+    public ResponseEntity<Map<String, Object>> toggleStatus(HttpServletRequest request, @PathVariable Long id) {
+        PaymentAccount account = service.getById(id, AdminRequestContext.merchantScope(request));
         if (account == null) {
             return ResponseEntity.ok(Map.of(
                     "code", 1,
@@ -179,24 +201,22 @@ public class AdminChannelAccountController {
      */
     @Operation(summary = "删除支付账号")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteAccount(@PathVariable Long id) {
-        try {
-            service.delete(id);
-            if (refreshPublisher != null) {
-                refreshPublisher.publish("payment_account:delete");
-            }
-            return ResponseEntity.ok(Map.of(
-                    "code", 0,
-                    "message", "success",
-                    "data", Map.of()
-            ));
-        } catch (IllegalStateException e) {
+    public ResponseEntity<Map<String, Object>> deleteAccount(HttpServletRequest request, @PathVariable Long id) {
+        if (service.getById(id, AdminRequestContext.merchantScope(request)) == null) {
             return ResponseEntity.ok(Map.of(
                     "code", 1,
-                    "message", e.getMessage(),
+                    "message", "支付账号不存在",
                     "data", Map.of()
             ));
         }
+        service.delete(id);
+        if (refreshPublisher != null) {
+            refreshPublisher.publish("payment_account:delete");
+        }
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", Map.of()));
     }
 
     /**

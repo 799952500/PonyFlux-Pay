@@ -6,6 +6,7 @@ import com.payflow.admin.entity.recon.ReconDiffEntity;
 import com.payflow.admin.entity.recon.ReconHandlerAuditEntity;
 import com.payflow.admin.entity.recon.ReconMerchantTaskEntity;
 import com.payflow.admin.entity.recon.ReconTaskEntity;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
 import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
 import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
@@ -61,6 +62,7 @@ public class AdminReconController {
     @Operation(summary = "查询对账结果")
     @GetMapping("/order-results")
     public ResponseEntity<Map<String, Object>> orderResults(
+            HttpServletRequest request,
             @RequestParam LocalDate billDate,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String merchantId,
@@ -69,7 +71,8 @@ public class AdminReconController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "20") long size) {
         Map<String, Object> data = adminReconQueryService.pageOrderResults(
-                billDate, channel, merchantId, orderKeyword, onlyAbnormal, page, size);
+                billDate, channel, merchantId, orderKeyword, onlyAbnormal, page, size,
+                AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 
@@ -79,13 +82,15 @@ public class AdminReconController {
     @Operation(summary = "对账日汇总")
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> reconSummary(
+            HttpServletRequest request,
             @RequestParam LocalDate billDate,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String accountCode) {
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
-                "data", adminReconQueryService.buildSummary(billDate, channel, accountCode)));
+                "data", adminReconQueryService.buildSummary(billDate, channel, accountCode,
+                        AdminRequestContext.merchantScope(request))));
     }
 
     /**
@@ -94,6 +99,7 @@ public class AdminReconController {
     @Operation(summary = "异常差异明细分页")
     @GetMapping("/anomalies")
     public ResponseEntity<Map<String, Object>> anomalies(
+            HttpServletRequest request,
             @RequestParam LocalDate billDate,
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String accountCode,
@@ -101,7 +107,8 @@ public class AdminReconController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "20") long size) {
         Map<String, Object> data = adminReconQueryService.pageAnomalies(
-                billDate, channel, accountCode, handleStatus, page, size);
+                billDate, channel, accountCode, handleStatus, page, size,
+                AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 

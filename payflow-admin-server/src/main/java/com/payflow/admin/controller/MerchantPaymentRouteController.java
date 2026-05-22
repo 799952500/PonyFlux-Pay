@@ -4,8 +4,10 @@ import com.payflow.admin.dto.PaymentRouteRequest;
 import com.payflow.admin.entity.MerchantPaymentRoute;
 import com.payflow.admin.entity.PaymentAccount;
 import com.payflow.admin.entity.PaymentMethod;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.kit.ClientScopesKit;
 import com.payflow.admin.service.MerchantPaymentRouteService;
+import jakarta.servlet.http.HttpServletRequest;
 import com.payflow.admin.service.PaymentAccountService;
 import com.payflow.admin.service.PaymentMethodService;
 import jakarta.validation.Valid;
@@ -38,19 +40,21 @@ public class MerchantPaymentRouteController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> listByMerchantId(
+            HttpServletRequest request,
             @RequestParam(required = false) String merchantId) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
         List<MerchantPaymentRoute> routes;
         if (merchantId != null && !merchantId.isEmpty()) {
-            routes = routeService.listByMerchantId(merchantId);
+            routes = routeService.listByMerchantId(merchantId, scope);
         } else {
-            routes = routeService.listAll();
+            routes = routeService.listAll(scope);
         }
 
         Map<Long, PaymentMethod> methodMap = paymentMethodService.listAll().stream()
                 .collect(Collectors.toMap(PaymentMethod::getId, Function.identity(),
                         (a, b) -> a));
 
-        Map<Long, PaymentAccount> accountMap = paymentAccountService.listAll().stream()
+        Map<Long, PaymentAccount> accountMap = paymentAccountService.listAll(scope).stream()
                 .collect(Collectors.toMap(PaymentAccount::getId, Function.identity(),
                         (a, b) -> a));
 
@@ -69,15 +73,21 @@ public class MerchantPaymentRouteController {
      * 新增单条路由（不替换整商户配置）。
      */
     @PostMapping("/item")
-    public ResponseEntity<Map<String, Object>> createOne(@Valid @RequestBody PaymentRouteRequest body) {
+    public ResponseEntity<Map<String, Object>> createOne(
+            HttpServletRequest request,
+            @Valid @RequestBody PaymentRouteRequest body) {
+        String merchantId = AdminRequestContext.resolveMerchantIdForWrite(request, body.getMerchantId());
+        if (merchantId == null || merchantId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("code", 400, "message", "商户号不能为空"));
+        }
         MerchantPaymentRoute route = new MerchantPaymentRoute();
-        route.setMerchantId(body.getMerchantId());
+        route.setMerchantId(merchantId);
         route.setPaymentMethodId(body.getPaymentMethodId());
         route.setPaymentAccountId(body.getPaymentAccountId());
         route.setEnabled(body.getEnabled() != null ? body.getEnabled() : Boolean.TRUE);
         route.setPriority(body.getPriority() != null ? body.getPriority() : 0);
         route.setClientScopes(ClientScopesKit.normalizeToDb(body.getClientScopes()));
-        assertAccountMatchesMethod(route.getPaymentMethodId(), route.getPaymentAccountId());
+        assertAccountMatchesMethod(route.getPaymentMethodId(), route.getPaymentAccountId(), scope(request));
         routeService.createRoute(route);
         return ResponseEntity.ok(Map.of(
                 "code", 0,
@@ -87,8 +97,11 @@ public class MerchantPaymentRouteController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
-                                                      @Valid @RequestBody PaymentRouteRequest body) {
+    public ResponseEntity<Map<String, Object>> update(
+            HttpServletRequest request,
+            @PathVariable Long id,
+            @Valid @RequestBody PaymentRouteRequest body) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
         MerchantPaymentRoute patch = new MerchantPaymentRoute();
         if (body.getPaymentMethodId() != null) {
             patch.setPaymentMethodId(body.getPaymentMethodId());
@@ -107,24 +120,27 @@ public class MerchantPaymentRouteController {
         Long methodId = patch.getPaymentMethodId();
         Long accountId = patch.getPaymentAccountId();
         if (methodId != null && accountId != null) {
-            assertAccountMatchesMethod(methodId, accountId);
+            assertAccountMatchesMethod(methodId, accountId, scope);
         } else if (methodId != null || accountId != null) {
-            MerchantPaymentRoute exist = routeService.getById(id);
+            MerchantPaymentRoute exist = routeService.getById(id, scope);
             if (exist == null) {
                 return ResponseEntity.status(404).body(Map.of("code", 404, "message", "记录不存在"));
             }
             long mid = methodId != null ? methodId : exist.getPaymentMethodId();
             long aid = accountId != null ? accountId : exist.getPaymentAccountId();
-            assertAccountMatchesMethod(mid, aid);
+            assertAccountMatchesMethod(mid, aid, scope);
         }
-        routeService.updateRoute(id, patch);
+        routeService.updateRoute(id, patch, scope);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success"));
     }
 
     @PutMapping("/{id}/toggle")
-    public ResponseEntity<Map<String, Object>> toggle(@PathVariable Long id) {
-        routeService.toggleRoute(id);
-        MerchantPaymentRoute updated = routeService.getById(id);
+    public ResponseEntity<Map<String, Object>> toggle(
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
+        routeService.toggleRoute(id, scope);
+        MerchantPaymentRoute updated = routeService.getById(id, scope);
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -133,8 +149,10 @@ public class MerchantPaymentRouteController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        routeService.deleteRoute(id);
+    public ResponseEntity<Map<String, Object>> delete(
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        routeService.deleteRoute(id, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success"));
     }
 
@@ -143,8 +161,11 @@ public class MerchantPaymentRouteController {
      */
     @PostMapping("/replace")
     public ResponseEntity<Map<String, Object>> replace(
+            HttpServletRequest httpRequest,
             @RequestBody Map<String, Object> request) {
-        String merchantId = (String) request.get("merchantId");
+        String merchantId = AdminRequestContext.resolveMerchantIdForWrite(
+                httpRequest, (String) request.get("merchantId"));
+        List<String> scope = AdminRequestContext.merchantScope(httpRequest);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> routesRaw = (List<Map<String, Object>>) request.get("routes");
 
@@ -164,13 +185,13 @@ public class MerchantPaymentRouteController {
                         r.setEnabled(enabled == null ? Boolean.TRUE : (Boolean) enabled);
                         r.setPriority(priority == null ? 0 : ((Number) priority).intValue());
                         r.setClientScopes(ClientScopesKit.normalizeToDb(m.get("clientScopes")));
-                        assertAccountMatchesMethod(r.getPaymentMethodId(), r.getPaymentAccountId());
+                        assertAccountMatchesMethod(r.getPaymentMethodId(), r.getPaymentAccountId(), scope);
                         return r;
                     })
                     .collect(Collectors.toList());
         }
 
-        routeService.replaceRoutes(merchantId, routes);
+        routeService.replaceRoutes(merchantId, routes, scope);
 
         return ResponseEntity.ok(Map.of(
                 "code", 0,
@@ -220,12 +241,16 @@ public class MerchantPaymentRouteController {
         return m;
     }
 
-    private void assertAccountMatchesMethod(Long paymentMethodId, Long paymentAccountId) {
+    private static List<String> scope(HttpServletRequest request) {
+        return AdminRequestContext.merchantScope(request);
+    }
+
+    private void assertAccountMatchesMethod(Long paymentMethodId, Long paymentAccountId, List<String> merchantScopeIds) {
         if (paymentMethodId == null || paymentAccountId == null) {
             throw new IllegalArgumentException("支付方式与支付账号不能为空");
         }
         PaymentMethod method = paymentMethodService.getById(paymentMethodId);
-        PaymentAccount account = paymentAccountService.getById(paymentAccountId);
+        PaymentAccount account = paymentAccountService.getById(paymentAccountId, merchantScopeIds);
         if (method == null) {
             throw new IllegalArgumentException("支付方式不存在: " + paymentMethodId);
         }

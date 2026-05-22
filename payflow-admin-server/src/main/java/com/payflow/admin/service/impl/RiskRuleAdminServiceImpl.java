@@ -8,6 +8,8 @@ import com.payflow.admin.dto.RiskRuleUpsertRequest;
 import com.payflow.admin.dto.RiskRuleVO;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.entity.RiskRule;
+import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.common.exception.BizException;
 import com.payflow.admin.entity.RiskRuleMerchantScope;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.RiskRuleMapper;
@@ -36,7 +38,10 @@ import java.util.Optional;
 public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
 
     private static final String OWNER_PLATFORM = "PLATFORM";
+    private static final String OWNER_MERCHANT = "MERCHANT";
     private static final String SCOPE_SELECTED = "SELECTED_MERCHANTS";
+    private static final String SCOPE_OWNER_ONLY = "OWNER_MERCHANT_ONLY";
+    private static final int CROSS_MERCHANT_DENIED = 6101;
 
     private final RiskRuleMapper riskRuleMapper;
     private final RiskRuleMerchantScopeMapper scopeMapper;
@@ -46,8 +51,25 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
 
     @Override
     public Map<String, Object> pageRules(RiskRuleQueryRequest request) {
+        return pageRules(request, null);
+    }
+
+    @Override
+    public Map<String, Object> pageRules(RiskRuleQueryRequest request, List<String> merchantScopeIds) {
         int page = request.getPage() == null ? 1 : request.getPage();
         int pageSize = Math.min(request.getPageSize() == null ? 20 : request.getPageSize(), 100);
+        String scopedMerchantId = AdminRequestContext.resolveMerchantFilter(request.getMerchantId(), merchantScopeIds);
+        if ("__NO_ACCESS__".equals(scopedMerchantId)) {
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("list", List.of());
+            empty.put("total", 0L);
+            empty.put("page", page);
+            empty.put("pageSize", pageSize);
+            return empty;
+        }
+        if (StringUtils.hasText(scopedMerchantId)) {
+            request.setMerchantId(scopedMerchantId);
+        }
 
         LambdaQueryWrapper<RiskRule> wrapper = new LambdaQueryWrapper<RiskRule>()
                 .eq(StringUtils.hasText(request.getOwnerType()), RiskRule::getOwnerType, request.getOwnerType())
@@ -66,9 +88,13 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
                 .orderByDesc(RiskRule::getUpdatedAt);
 
         Page<RiskRule> result = riskRuleMapper.selectPage(Page.of(page, pageSize), wrapper);
+        List<RiskRuleVO> visible = result.getRecords().stream()
+                .filter(rule -> isRuleVisible(rule, merchantScopeIds))
+                .map(this::toVO)
+                .toList();
         Map<String, Object> data = new HashMap<>();
-        data.put("list", result.getRecords().stream().map(this::toVO).toList());
-        data.put("total", result.getTotal());
+        data.put("list", visible);
+        data.put("total", merchantScopeIds == null ? result.getTotal() : visible.size());
         data.put("page", page);
         data.put("pageSize", pageSize);
         return data;
@@ -77,10 +103,23 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public RiskRuleVO createRule(RiskRuleUpsertRequest request) {
+        return createRule(request, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RiskRuleVO createRule(RiskRuleUpsertRequest request, List<String> merchantScopeIds) {
         RiskRule rule = new RiskRule();
-        applyRequest(rule, request);
-        riskRuleMapper.insert(rule);
-        replaceScopeRecords(rule.getId(), request.getScopeMerchantIds());
+        if (merchantScopeIds == null) {
+            applyPlatformRequest(rule, request);
+            riskRuleMapper.insert(rule);
+            replaceScopeRecords(rule.getId(), request.getScopeMerchantIds());
+        } else {
+            String merchantId = AdminRequestContext.resolveMerchantIdForWrite(
+                    merchantScopeIds, request.getOwnerMerchantId());
+            applyMerchantRequest(rule, request, merchantId);
+            riskRuleMapper.insert(rule);
+        }
         auditService.record(rule, "CREATE", null, summary(rule), "ADMIN", null, "admin", null, null);
         publishRefresh("risk_rule_create");
         return toVO(rule);
@@ -89,14 +128,28 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public RiskRuleVO updateRule(Long ruleId, RiskRuleUpsertRequest request) {
+        return updateRule(ruleId, request, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public RiskRuleVO updateRule(Long ruleId, RiskRuleUpsertRequest request, List<String> merchantScopeIds) {
         RiskRule rule = requireRule(ruleId);
-        if (!OWNER_PLATFORM.equals(rule.getOwnerType())) {
-            throw new IllegalArgumentException("商户自建规则仅可查看，请由商户在其侧维护");
-        }
         String before = summary(rule);
-        applyRequest(rule, request);
-        riskRuleMapper.updateById(rule);
-        replaceScopeRecords(ruleId, request.getScopeMerchantIds());
+        if (merchantScopeIds == null) {
+            if (!OWNER_PLATFORM.equals(rule.getOwnerType())) {
+                throw new IllegalArgumentException("商户自建规则仅可查看，请由商户在其侧维护");
+            }
+            applyPlatformRequest(rule, request);
+            riskRuleMapper.updateById(rule);
+            replaceScopeRecords(ruleId, request.getScopeMerchantIds());
+        } else {
+            assertMerchantRuleWritable(rule, merchantScopeIds);
+            String merchantId = AdminRequestContext.resolveMerchantIdForWrite(
+                    merchantScopeIds, request.getOwnerMerchantId());
+            applyMerchantRequest(rule, request, merchantId);
+            riskRuleMapper.updateById(rule);
+        }
         auditService.record(rule, "UPDATE", before, summary(rule), "ADMIN", null, "admin", null, null);
         publishRefresh("risk_rule_update");
         return toVO(rule);
@@ -104,7 +157,18 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
 
     @Override
     public RiskRuleVO updateStatus(Long ruleId, RiskRuleStatusRequest request) {
+        return updateStatus(ruleId, request, null);
+    }
+
+    @Override
+    public RiskRuleVO updateStatus(Long ruleId, RiskRuleStatusRequest request, List<String> merchantScopeIds) {
         RiskRule rule = requireRule(ruleId);
+        if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            if (OWNER_PLATFORM.equals(rule.getOwnerType())) {
+                throw new BizException(CROSS_MERCHANT_DENIED, "无权修改平台规则状态");
+            }
+            assertMerchantRuleWritable(rule, merchantScopeIds);
+        }
         String before = summary(rule);
         rule.setEnabled(request.getEnabled());
         riskRuleMapper.updateById(rule);
@@ -139,15 +203,33 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
         return getScopes(ruleId);
     }
 
-    private void applyRequest(RiskRule rule, RiskRuleUpsertRequest request) {
+    private void applyPlatformRequest(RiskRule rule, RiskRuleUpsertRequest request) {
         String ownerType = StringUtils.hasText(request.getOwnerType()) ? request.getOwnerType() : OWNER_PLATFORM;
         String scopeType = StringUtils.hasText(request.getScopeType()) ? request.getScopeType() : "ALL_MERCHANTS";
         if (!OWNER_PLATFORM.equals(ownerType)) {
-            throw new IllegalArgumentException("管理员接口只能维护平台规则");
+            throw new IllegalArgumentException("平台管理员接口只能维护平台规则");
         }
         if (SCOPE_SELECTED.equals(scopeType) && (request.getScopeMerchantIds() == null || request.getScopeMerchantIds().isEmpty())) {
             throw new IllegalArgumentException("平台定向规则必须选择商户范围");
         }
+        fillRuleFields(rule, request);
+        rule.setOwnerType(OWNER_PLATFORM);
+        rule.setOwnerMerchantId(null);
+        rule.setScopeType(scopeType);
+    }
+
+    private void applyMerchantRequest(RiskRule rule, RiskRuleUpsertRequest request, String merchantId) {
+        if (OWNER_PLATFORM.equals(request.getOwnerType()) || "ALL_MERCHANTS".equals(request.getScopeType())
+                || SCOPE_SELECTED.equals(request.getScopeType())) {
+            throw new BizException(CROSS_MERCHANT_DENIED, "商户管理员只能维护本商户风控规则");
+        }
+        fillRuleFields(rule, request);
+        rule.setOwnerType(OWNER_MERCHANT);
+        rule.setOwnerMerchantId(merchantId);
+        rule.setScopeType(SCOPE_OWNER_ONLY);
+    }
+
+    private void fillRuleFields(RiskRule rule, RiskRuleUpsertRequest request) {
         rule.setRuleCode(request.getRuleCode());
         rule.setRuleName(request.getRuleName());
         rule.setRuleType(request.getRuleType());
@@ -158,10 +240,35 @@ public class RiskRuleAdminServiceImpl implements RiskRuleAdminService {
         rule.setAction(request.getAction());
         rule.setEnabled(request.getEnabled());
         rule.setPriority(request.getPriority());
-        rule.setOwnerType(ownerType);
-        rule.setOwnerMerchantId(null);
-        rule.setScopeType(scopeType);
         rule.setDescription(request.getDescription());
+    }
+
+    private void assertMerchantRuleWritable(RiskRule rule, List<String> merchantScopeIds) {
+        if (!OWNER_MERCHANT.equals(rule.getOwnerType())) {
+            throw new BizException(CROSS_MERCHANT_DENIED, "无权修改平台规则");
+        }
+        AdminRequestContext.assertMerchantAllowed(rule.getOwnerMerchantId(), merchantScopeIds);
+    }
+
+    private boolean isRuleVisible(RiskRule rule, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null || merchantScopeIds.isEmpty()) {
+            return true;
+        }
+        if ("ALL_MERCHANTS".equals(rule.getScopeType())) {
+            return true;
+        }
+        if (StringUtils.hasText(rule.getOwnerMerchantId())
+                && merchantScopeIds.contains(rule.getOwnerMerchantId())) {
+            return true;
+        }
+        if (!SCOPE_SELECTED.equals(rule.getScopeType()) || rule.getId() == null) {
+            return false;
+        }
+        Long count = scopeMapper.selectCount(new LambdaQueryWrapper<RiskRuleMerchantScope>()
+                .eq(RiskRuleMerchantScope::getRuleId, rule.getId())
+                .eq(RiskRuleMerchantScope::getEnabled, true)
+                .in(RiskRuleMerchantScope::getMerchantId, merchantScopeIds));
+        return count != null && count > 0;
     }
 
     private RiskRule requireRule(Long ruleId) {

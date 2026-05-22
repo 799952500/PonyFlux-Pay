@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.service.MerchantService;
+import com.payflow.admin.service.guard.ResourceDeleteGuardService;
+import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.List;
 public class MerchantServiceImpl implements MerchantService {
 
     private final MerchantMapper merchantMapper;
+    private final ResourceDeleteGuardService resourceDeleteGuardService;
 
     @Override
     public List<Merchant> listAll() {
@@ -26,7 +29,18 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Override
     public IPage<Merchant> page(int page, int pageSize, String keyword, String status) {
+        return page(page, pageSize, keyword, status, null);
+    }
+
+    @Override
+    public IPage<Merchant> page(int page, int pageSize, String keyword, String status, List<String> merchantScopeIds) {
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            return new Page<>(page, pageSize, 0);
+        }
         LambdaQueryWrapper<Merchant> wrapper = new LambdaQueryWrapper<>();
+        if (merchantScopeIds != null) {
+            wrapper.in(Merchant::getMerchantId, merchantScopeIds);
+        }
         if (status != null && !status.isBlank()) {
             wrapper.eq(Merchant::getStatus, status);
         }
@@ -65,6 +79,7 @@ public class MerchantServiceImpl implements MerchantService {
     public void delete(Long id) {
         Merchant merchant = merchantMapper.selectById(id);
         if (merchant != null) {
+            resourceDeleteGuardService.assertDeletable(ResourceType.MERCHANT, merchant.getMerchantId());
             merchant.setStatus("DELETED");
             merchantMapper.updateById(merchant);
         }

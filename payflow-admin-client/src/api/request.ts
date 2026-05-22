@@ -66,9 +66,13 @@ request.interceptors.response.use(
       router.push('/login')
       return Promise.reject(error)
     }
-    const message = error.response?.data?.message ?? error.message ?? '网络错误'
+    const body = error.response?.data
+    const message = body?.message ?? error.message ?? '网络错误'
+    if (body?.code === 6006) {
+      return Promise.reject(body)
+    }
     ElMessage.error(message)
-    return Promise.reject(error)
+    return Promise.reject(body ?? error)
   }
 )
 

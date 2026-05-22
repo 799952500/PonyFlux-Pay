@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface MerchantPaymentMethodService {
     List<MerchantPaymentMethod> listAll();
+    List<MerchantPaymentMethod> listAll(List<String> merchantScopeIds);
     List<MerchantPaymentMethod> listByMerchantId(String merchantId);
     List<MerchantPaymentMethod> listByPaymentMethodId(Long paymentMethodId);
     void create(MerchantPaymentMethod mpm);
@@ -16,4 +17,5 @@ public interface MerchantPaymentMethodService {
     void deleteByMerchantAndMethod(String merchantId, Long paymentMethodId);
     void deleteByMerchant(String merchantId);
     MerchantPaymentMethod getById(Long id);
+    MerchantPaymentMethod getById(Long id, List<String> merchantScopeIds);
 }

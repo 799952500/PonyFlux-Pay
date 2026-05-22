@@ -3,6 +3,7 @@ package com.payflow.admin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.RiskHitRecord;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.RiskHitRecordMapper;
 import com.payflow.admin.service.RiskHitRecordQueryService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,19 +25,35 @@ public class RiskHitRecordQueryServiceImpl implements RiskHitRecordQueryService 
 
     @Override
     public Map<String, Object> pageAdminHits(Integer page, Integer pageSize, String merchantId, Long ruleId, String ownerType, String decision, String startTime, String endTime) {
-        return pageHits(page, pageSize, merchantId, ruleId, ownerType, decision, startTime, endTime);
+        return pageAdminHits(page, pageSize, merchantId, ruleId, ownerType, decision, startTime, endTime, null);
+    }
+
+    @Override
+    public Map<String, Object> pageAdminHits(Integer page, Integer pageSize, String merchantId, Long ruleId, String ownerType, String decision, String startTime, String endTime, List<String> merchantScopeIds) {
+        String scopedMerchantId = AdminRequestContext.resolveMerchantFilter(merchantId, merchantScopeIds);
+        if ("__NO_ACCESS__".equals(scopedMerchantId)) {
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("list", List.of());
+            empty.put("total", 0L);
+            empty.put("page", page == null ? 1 : page);
+            empty.put("pageSize", Math.min(pageSize == null ? 20 : pageSize, 100));
+            return empty;
+        }
+        return pageHits(page, pageSize, scopedMerchantId, ruleId, ownerType, decision, startTime, endTime, merchantScopeIds);
     }
 
     @Override
     public Map<String, Object> pageMerchantHits(String currentMerchantId, Integer page, Integer pageSize, Long ruleId, String decision, String startTime, String endTime) {
-        return pageHits(page, pageSize, currentMerchantId, ruleId, null, decision, startTime, endTime);
+        return pageHits(page, pageSize, currentMerchantId, ruleId, null, decision, startTime, endTime, null);
     }
 
-    private Map<String, Object> pageHits(Integer page, Integer pageSize, String merchantId, Long ruleId, String ownerType, String decision, String startTime, String endTime) {
+    private Map<String, Object> pageHits(Integer page, Integer pageSize, String merchantId, Long ruleId, String ownerType, String decision, String startTime, String endTime, List<String> merchantScopeIds) {
         int current = page == null ? 1 : page;
         int size = Math.min(pageSize == null ? 20 : pageSize, 100);
         LambdaQueryWrapper<RiskHitRecord> wrapper = new LambdaQueryWrapper<RiskHitRecord>()
                 .eq(StringUtils.hasText(merchantId), RiskHitRecord::getMerchantId, merchantId)
+                .in(merchantScopeIds != null && !StringUtils.hasText(merchantId) && !merchantScopeIds.isEmpty(),
+                        RiskHitRecord::getMerchantId, merchantScopeIds)
                 .eq(ruleId != null, RiskHitRecord::getRuleId, ruleId)
                 .eq(StringUtils.hasText(ownerType), RiskHitRecord::getOwnerType, ownerType)
                 .eq(StringUtils.hasText(decision), RiskHitRecord::getDecision, decision)

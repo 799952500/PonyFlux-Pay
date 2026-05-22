@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
@@ -19,7 +19,22 @@
           </el-select>
         </el-form-item>
         <el-form-item label="商户号">
-          <el-input v-model="queryForm.merchantId" placeholder="可选" clearable style="width: 140px" />
+          <el-select
+            v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1"
+            v-model="queryForm.merchantId"
+            placeholder="全部商户"
+            clearable
+            style="width: 160px"
+          >
+            <el-option v-if="!merchantFilterLocked" label="全部" value="" />
+            <el-option
+              v-for="mid in authorizedMerchantIds"
+              :key="mid"
+              :label="mid"
+              :value="mid"
+            />
+          </el-select>
+          <el-input v-else v-model="queryForm.merchantId" disabled style="width: 160px" />
         </el-form-item>
         <el-form-item label="订单号">
           <el-input v-model="queryForm.orderKeyword" placeholder="模糊" clearable style="width: 160px" />
@@ -40,7 +55,7 @@
     <div class="content-card">
       <TableToolbar title="对账结果" :total="total" />
 
-      <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="list" stripe size="small" class="data-table">
         <el-table-column label="对账状态" prop="reconStatus" width="110" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="tagTypeOf(RECON_STATUS_TAG, row.reconStatus, 'warning')">
@@ -91,7 +106,7 @@
             <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" min-width="100" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="row.orderId"
@@ -120,7 +135,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
@@ -135,8 +150,10 @@ import {
   RECON_HANDLE_LABEL,
 } from '@/utils/format'
 import { getReconOrderResults, type ReconOrderResultItem } from '@/api/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 
-const router = useRouter()
+const { open: openOrderDetail } = useOrderDetailOverlay()
+const { merchantFilterLocked, authorizedMerchantIds, applyDefaultMerchantFilter } = useMerchantScope()
 const loading = ref(false)
 const list = ref<ReconOrderResultItem[]>([])
 const total = ref(0)
@@ -198,8 +215,9 @@ function handleReset() {
 }
 
 function goOrder(orderId: string) {
-  router.push({ path: `/admin/orders/${encodeURIComponent(orderId)}` })
+  openOrderDetail(orderId)
 }
 
+applyDefaultMerchantFilter(queryForm)
 load()
 </script>

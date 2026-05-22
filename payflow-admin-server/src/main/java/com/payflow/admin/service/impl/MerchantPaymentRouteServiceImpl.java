@@ -2,7 +2,9 @@ package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.MerchantPaymentRoute;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.kit.ClientScopesKit;
+import com.payflow.common.exception.BizException;
 import com.payflow.admin.mapper.MerchantPaymentRouteMapper;
 import com.payflow.admin.service.MerchantCashierRouteSyncService;
 import com.payflow.admin.service.MerchantPaymentRouteService;
@@ -32,7 +34,30 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     }
 
     @Override
+    public List<MerchantPaymentRoute> listAll(List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return listAll();
+        }
+        if (merchantScopeIds.isEmpty()) {
+            return List.of();
+        }
+        return mapper.selectList(new LambdaQueryWrapper<MerchantPaymentRoute>()
+                .in(MerchantPaymentRoute::getMerchantId, merchantScopeIds)
+                .orderByDesc(MerchantPaymentRoute::getPriority)
+                .orderByAsc(MerchantPaymentRoute::getId));
+    }
+
+    @Override
     public List<MerchantPaymentRoute> listByMerchantId(String merchantId) {
+        return listByMerchantId(merchantId, null);
+    }
+
+    @Override
+    public List<MerchantPaymentRoute> listByMerchantId(String merchantId, List<String> merchantScopeIds) {
+        if ("__NO_ACCESS__".equals(AdminRequestContext.resolveMerchantFilter(merchantId, merchantScopeIds))) {
+            return List.of();
+        }
+        AdminRequestContext.assertMerchantAllowed(merchantId, merchantScopeIds);
         return mapper.selectList(new LambdaQueryWrapper<MerchantPaymentRoute>()
                 .eq(MerchantPaymentRoute::getMerchantId, merchantId)
                 .orderByDesc(MerchantPaymentRoute::getPriority)
@@ -42,6 +67,20 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     @Override
     public MerchantPaymentRoute getById(Long id) {
         return mapper.selectById(id);
+    }
+
+    @Override
+    public MerchantPaymentRoute getById(Long id, List<String> merchantScopeIds) {
+        MerchantPaymentRoute route = getById(id);
+        if (route == null || merchantScopeIds == null) {
+            return route;
+        }
+        if (merchantScopeIds.isEmpty()
+                || route.getMerchantId() == null
+                || !merchantScopeIds.contains(route.getMerchantId())) {
+            return null;
+        }
+        return route;
     }
 
     @Override
@@ -70,10 +109,13 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     @Override
     @Transactional(transactionManager = "adminTransactionManager")
     public void updateRoute(Long id, MerchantPaymentRoute patch) {
-        MerchantPaymentRoute exist = mapper.selectById(id);
-        if (exist == null) {
-            throw new IllegalArgumentException("路由不存在: " + id);
-        }
+        updateRoute(id, patch, null);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void updateRoute(Long id, MerchantPaymentRoute patch, List<String> merchantScopeIds) {
+        MerchantPaymentRoute exist = requireAccessibleRoute(id, merchantScopeIds);
         if (patch.getPaymentMethodId() != null) {
             exist.setPaymentMethodId(patch.getPaymentMethodId());
         }
@@ -96,13 +138,16 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     @Override
     @Transactional(transactionManager = "adminTransactionManager")
     public void deleteRoute(Long id) {
+        deleteRoute(id, null);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void deleteRoute(Long id, List<String> merchantScopeIds) {
         if (id == null) {
             throw new IllegalArgumentException("路由ID不能为空");
         }
-        MerchantPaymentRoute exist = mapper.selectById(id);
-        if (exist == null) {
-            throw new IllegalArgumentException("路由不存在: " + id);
-        }
+        MerchantPaymentRoute exist = requireAccessibleRoute(id, merchantScopeIds);
         String merchantId = exist.getMerchantId();
         mapper.deleteById(id);
         scheduleCashierSync(merchantId);
@@ -111,10 +156,13 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     @Override
     @Transactional(transactionManager = "adminTransactionManager")
     public void toggleRoute(Long id) {
-        MerchantPaymentRoute exist = mapper.selectById(id);
-        if (exist == null) {
-            throw new IllegalArgumentException("路由不存在: " + id);
-        }
+        toggleRoute(id, null);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void toggleRoute(Long id, List<String> merchantScopeIds) {
+        MerchantPaymentRoute exist = requireAccessibleRoute(id, merchantScopeIds);
         exist.setEnabled(Boolean.FALSE.equals(exist.getEnabled()));
         mapper.updateById(exist);
         scheduleCashierSync(exist.getMerchantId());
@@ -123,6 +171,13 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
     @Override
     @Transactional(transactionManager = "adminTransactionManager")
     public void replaceRoutes(String merchantId, List<MerchantPaymentRoute> routes) {
+        replaceRoutes(merchantId, routes, null);
+    }
+
+    @Override
+    @Transactional(transactionManager = "adminTransactionManager")
+    public void replaceRoutes(String merchantId, List<MerchantPaymentRoute> routes, List<String> merchantScopeIds) {
+        AdminRequestContext.assertMerchantAllowed(merchantId, merchantScopeIds);
         mapper.delete(new LambdaQueryWrapper<MerchantPaymentRoute>()
                 .eq(MerchantPaymentRoute::getMerchantId, merchantId));
         if (routes != null && !routes.isEmpty()) {
@@ -136,6 +191,17 @@ public class MerchantPaymentRouteServiceImpl implements MerchantPaymentRouteServ
             }
         }
         scheduleCashierSync(merchantId);
+    }
+
+    private MerchantPaymentRoute requireAccessibleRoute(Long id, List<String> merchantScopeIds) {
+        MerchantPaymentRoute exist = getById(id, merchantScopeIds);
+        if (exist == null) {
+            if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+                throw new BizException(6101, "无权访问该资源");
+            }
+            throw new IllegalArgumentException("路由不存在: " + id);
+        }
+        return exist;
     }
 
     private void scheduleCashierSync(String merchantId) {

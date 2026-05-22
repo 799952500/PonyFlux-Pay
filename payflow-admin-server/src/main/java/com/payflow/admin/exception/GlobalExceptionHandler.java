@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -72,11 +73,25 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Object> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
+        String firstMessage = "参数校验失败";
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
+            if (firstMessage.equals("参数校验失败") && error.getDefaultMessage() != null) {
+                firstMessage = error.getDefaultMessage();
+            }
         }
         log.warn("参数校验失败: {}", errors);
-        return new ApiResponse<>(400, "参数校验失败", errors);
+        return new ApiResponse<>(400, firstMessage, errors);
+    }
+
+    /**
+     * Redis 不可用时返回明确提示，避免笼统的 500。
+     */
+    @ExceptionHandler(RedisConnectionFailureException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ApiResponse<Object> handleRedisDown(RedisConnectionFailureException ex) {
+        log.warn("Redis 连接失败: {}", ex.getMessage());
+        return new ApiResponse<>(503, "Redis 服务不可用，请启动 redis-server（端口 6379）", null);
     }
 
     /**
@@ -106,6 +121,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 资源存在未解除关联，禁止删除。
+     */
+    @ExceptionHandler(ResourceDependencyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Object> handleResourceDependency(ResourceDependencyException ex) {
+        log.warn("删除被关联阻断: {}", ex.getMessage());
+        Map<String, Object> data = new HashMap<>();
+        if (ex.getResult() != null) {
+            data.put("blocked", ex.getResult().isBlocked());
+            data.put("summary", ex.getResult().getSummary());
+            data.put("refs", ex.getResult().getRefs());
+        }
+        return new ApiResponse<>(ResourceDependencyException.CODE, ex.getMessage(), data);
+    }
+
+    /**
      * 处理业务异常（BizException），允许透传 message（内容由开发者控制）。
      *
      * @param ex       业务异常
@@ -119,10 +150,13 @@ public class GlobalExceptionHandler {
             status = HttpStatus.NOT_FOUND;
         } else if (ex.getCode() == 6006) {
             status = HttpStatus.CONFLICT;
+        } else if (ex.getCode() == 6101) {
+            status = HttpStatus.FORBIDDEN;
         }
         log.warn("业务异常: code={}, message={}", ex.getCode(), ex.getMessage());
+        String message = ex.getCode() == 6101 ? "无权访问该资源" : ex.getMessage();
         return ResponseEntity.status(status)
-                .body(new ApiResponse<>(ex.getCode(), ex.getMessage(), null));
+                .body(new ApiResponse<>(ex.getCode(), message, null));
     }
 
     /**

@@ -8,12 +8,15 @@ import com.payflow.admin.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 阶梯费率服务。
@@ -39,6 +42,27 @@ public class FeeRateService {
                         .orderByDesc(FeeRateConfig::getPriority)
                         .orderByAsc(FeeRateConfig::getTierMin)
         );
+    }
+
+    public List<FeeRateConfig> getAllRules(List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return getAllRules();
+        }
+        if (merchantScopeIds.isEmpty()) {
+            return List.of();
+        }
+        Set<String> groups = merchantMapper.selectList(new LambdaQueryWrapper<Merchant>()
+                        .in(Merchant::getMerchantId, merchantScopeIds))
+                .stream()
+                .map(Merchant::getMerchantGroup)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        return getAllRules().stream()
+                .filter(rule -> "global".equalsIgnoreCase(rule.getScopeType())
+                        || ("merchant_group".equalsIgnoreCase(rule.getScopeType())
+                        && rule.getScopeValue() != null
+                        && groups.contains(rule.getScopeValue())))
+                .toList();
     }
 
     public FeeRateConfig createRule(FeeRateConfig config) {
@@ -199,9 +223,33 @@ public class FeeRateService {
     // ==================== 审计日志 ====================
 
     public IPage<FeeRateAuditLog> getAuditLogs(Long merchantId, int page, int size) {
+        return getAuditLogs(merchantId, page, size, null);
+    }
+
+    public IPage<FeeRateAuditLog> getAuditLogs(Long merchantId, int page, int size, List<String> merchantScopeIds) {
         LambdaQueryWrapper<FeeRateAuditLog> wrapper = new LambdaQueryWrapper<FeeRateAuditLog>()
                 .orderByDesc(FeeRateAuditLog::getChangeTime);
-        if (merchantId != null) {
+        if (merchantScopeIds != null) {
+            if (merchantScopeIds.isEmpty()) {
+                return new Page<>(page, size, 0);
+            }
+            List<Long> dbIds = merchantMapper.selectList(new LambdaQueryWrapper<Merchant>()
+                            .in(Merchant::getMerchantId, merchantScopeIds))
+                    .stream()
+                    .map(Merchant::getId)
+                    .toList();
+            if (dbIds.isEmpty()) {
+                return new Page<>(page, size, 0);
+            }
+            if (merchantId != null) {
+                if (!dbIds.contains(merchantId)) {
+                    return new Page<>(page, size, 0);
+                }
+                wrapper.eq(FeeRateAuditLog::getMerchantId, merchantId);
+            } else {
+                wrapper.in(FeeRateAuditLog::getMerchantId, dbIds);
+            }
+        } else if (merchantId != null) {
             wrapper.eq(FeeRateAuditLog::getMerchantId, merchantId);
         }
         return feeRateAuditLogMapper.selectPage(new Page<>(page, size), wrapper);

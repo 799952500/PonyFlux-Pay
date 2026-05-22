@@ -15,6 +15,17 @@
             <el-option label="PATCH" value="PATCH" />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" label="商户号">
+          <el-select v-model="queryForm.merchantId" placeholder="全部" clearable filterable style="width: 160px">
+            <el-option v-if="!merchantFilterLocked" label="全部" value="" />
+            <el-option
+              v-for="m in merchantOptions"
+              :key="m.merchantId"
+              :label="m.merchantName || m.merchantId"
+              :value="m.merchantId"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="日期">
           <el-date-picker
             v-model="dateRange"
@@ -36,10 +47,21 @@
     <div class="content-card">
       <TableToolbar title="操作日志" :total="total" />
 
-      <el-table v-loading="loading" :data="list" stripe size="small" class="data-table">
-        <el-table-column label="时间" prop="createdAt" width="172">
+      <el-table table-layout="auto" v-loading="loading" :data="list" stripe size="small" class="data-table">
+        <el-table-column label="时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="商户" prop="merchantId" width="100">
+          <template #default="{ row }">
+            <span class="cell-mono text-xs">{{ row.merchantId || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="分类" prop="classification" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.classification" size="small" type="info" effect="plain">{{ row.classification }}</el-tag>
+            <span v-else class="text-xs text-slate-400">—</span>
           </template>
         </el-table-column>
         <el-table-column label="操作者" prop="username" width="120">
@@ -85,7 +107,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getAuditLogs } from '@/api/admin'
+import { getAuditLogs, getMerchantsSimple } from '@/api/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import {
@@ -97,15 +120,19 @@ import {
 } from '@/utils/format'
 import type { AuditLogItem } from '@/types'
 
+const { merchantFilterLocked, authorizedMerchantIds, filterMerchantOptions, applyDefaultMerchantFilter } =
+  useMerchantScope()
 const loading = ref(false)
 const list = ref<AuditLogItem[]>([])
 const total = ref(0)
+const merchantOptions = ref<Array<{ merchantId: string; merchantName: string }>>([])
 const dateRange = ref<[string, string] | null>(null)
 const queryForm = reactive({
   page: 1,
   pageSize: 20,
   username: '',
   action: '',
+  merchantId: '',
 })
 
 async function loadData() {
@@ -116,6 +143,7 @@ async function loadData() {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
     }
+    if (queryForm.merchantId) params.merchantId = queryForm.merchantId
     const resp = await getAuditLogs(params as Parameters<typeof getAuditLogs>[0])
     list.value = resp.list
     total.value = resp.total
@@ -132,10 +160,19 @@ function handleSearch() {
 }
 
 function handleReset() {
-  Object.assign(queryForm, { page: 1, pageSize: 20, username: '', action: '' })
+  Object.assign(queryForm, { page: 1, pageSize: 20, username: '', action: '', merchantId: '' })
+  applyDefaultMerchantFilter(queryForm)
   dateRange.value = null
   loadData()
 }
 
-onMounted(() => loadData())
+onMounted(async () => {
+  try {
+    merchantOptions.value = filterMerchantOptions(await getMerchantsSimple())
+  } catch {
+    merchantOptions.value = []
+  }
+  applyDefaultMerchantFilter(queryForm)
+  loadData()
+})
 </script>

@@ -1,7 +1,7 @@
 <template>
   <div class="content-card">
     <div class="flex items-center justify-between mb-4">
-      <p class="text-[#0F172A] font-semibold text-sm">商户交易排行</p>
+      <p class="dashboard-section-title">商户交易排行</p>
       <el-radio-group v-model="rankDays" size="small" @change="loadRanking">
         <el-radio-button value="7">近7天</el-radio-button>
         <el-radio-button value="30">近30天</el-radio-button>
@@ -13,17 +13,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useMerchantInsightOverlay } from '@/composables/useMerchantInsightOverlay'
 import * as echarts from 'echarts/core'
 import { BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { getMerchantRanking } from '@/api/admin'
 import { registerFlipSource } from '@/transitions/flipShared'
+import { getChartTheme } from '@/utils/chartTheme'
+import { useThemeStore } from '@/stores/theme'
+import { storeToRefs } from 'pinia'
 
 echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
-const router = useRouter()
+const { open: openMerchantInsight } = useMerchantInsightOverlay()
+const { themeKey } = storeToRefs(useThemeStore())
 const rankDays = ref<'7' | '30'>('7')
 const barChartRef = ref<HTMLDivElement | null>(null)
 let barChart: echarts.ECharts | null = null
@@ -55,11 +59,15 @@ async function loadRanking() {
       return id.length > 8 ? id.substring(0, 8) + '...' : id
     })
     const amounts = ranking.map((r: any) => Number(r.totalAmount ?? 0) / 100)
+    const theme = getChartTheme()
 
     chart.setOption({
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
+        backgroundColor: theme.tooltipBg,
+        borderColor: theme.tooltipBorder,
+        textStyle: { color: theme.tooltipText },
         formatter: (params: any) => {
           const p = Array.isArray(params) ? params[0] : params
           const idx = p.dataIndex
@@ -71,7 +79,7 @@ async function loadRanking() {
       xAxis: {
         type: 'category',
         data: names,
-        axisLabel: { color: '#9ca3af', fontSize: 10 },
+        axisLabel: { color: theme.axis, fontSize: 10 },
         axisLine: { show: false },
         axisTick: { show: false },
       },
@@ -86,13 +94,13 @@ async function loadRanking() {
           barWidth: '50%',
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#065f46' },
-              { offset: 1, color: '#0d9488' },
+              { offset: 0, color: theme.barGradientStart },
+              { offset: 1, color: theme.barGradientEnd },
             ]),
             borderRadius: [4, 4, 0, 0],
           },
           emphasis: {
-            itemStyle: { color: '#047857' },
+            itemStyle: { color: theme.linePrimary },
           },
         },
       ],
@@ -113,7 +121,7 @@ async function loadRanking() {
         )
       }
 
-      router.push(`/admin/dashboard/merchant/${encodeURIComponent(item.merchantId)}`)
+      openMerchantInsight(item.merchantId)
     })
   } catch {
     // 静默处理
@@ -129,6 +137,7 @@ onMounted(() => {
 })
 
 watch(rankDays, () => loadRanking())
+watch(themeKey, () => loadRanking())
 
 onUnmounted(() => {
   barChart?.dispose()
@@ -136,16 +145,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.content-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid rgba(99, 102, 241, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-  padding: 24px;
-  transition: box-shadow 0.2s;
-}
-.content-card:hover {
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.1);
-}
-</style>

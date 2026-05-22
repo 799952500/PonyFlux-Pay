@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
@@ -41,7 +41,7 @@
     <div class="content-card">
       <TableToolbar title="对账任务" :total="total" />
 
-      <el-table v-loading="loading" :data="taskList" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="taskList" stripe size="small" class="data-table">
         <el-table-column label="任务号" prop="taskId" min-width="200" show-overflow-tooltip />
         <el-table-column label="渠道" prop="channel" width="90">
           <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
@@ -61,12 +61,12 @@
         </el-table-column>
         <el-table-column label="差异数" prop="diffCount" width="80" align="right" />
         <el-table-column label="触发" prop="triggeredBy" width="100" />
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" min-width="220" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openDrawer(row)">详情</el-button>
             <el-button link type="primary" size="small" :disabled="!row.fileObjectKey" @click="downloadFile(row.taskId)">
@@ -137,7 +137,7 @@
               <el-button size="small" type="primary" @click="loadDiffs">筛选</el-button>
             </div>
             <TableToolbar :total="diffTotal" />
-            <el-table v-loading="diffLoading" :data="diffList" stripe size="small" max-height="420" class="data-table">
+            <el-table table-layout="auto" v-loading="diffLoading" :data="diffList" stripe size="small" max-height="420" class="data-table">
               <el-table-column prop="diffType" label="类型" width="130">
                 <template #default="{ row }">
                   <el-tag size="small" type="warning" effect="plain">
@@ -157,12 +157,12 @@
                   {{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}
                 </template>
               </el-table-column>
-              <el-table-column label="处理时间" prop="handledAt" width="172">
+              <el-table-column label="处理时间" prop="handledAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
                 <template #default="{ row }">
                   <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.handledAt) }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="160" fixed="right">
+              <el-table-column label="操作" min-width="160" class-name="col-actions" fixed="right">
                 <template #default="{ row }">
                   <el-button
                     v-if="row.handleStatus === 'PENDING'"

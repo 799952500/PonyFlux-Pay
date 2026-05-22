@@ -21,11 +21,23 @@ public class AdminAuditLog {
 
     private String username;
 
+    private String operatorType;
+
+    private String merchantId;
+
     private String action;
 
     private String resourcePath;
 
+    private String resourceType;
+
+    private String resourceId;
+
     private String detail;
+
+    private String result;
+
+    private String denyReason;
 
     private String clientIp;
 

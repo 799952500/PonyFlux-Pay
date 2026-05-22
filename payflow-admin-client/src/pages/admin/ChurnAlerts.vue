@@ -23,7 +23,7 @@
     <div class="content-card">
       <TableToolbar title="流失预警" :total="pagination.total" />
 
-      <el-table :data="alerts" v-loading="loading" stripe size="small" class="data-table">
+      <el-table table-layout="auto" :data="alerts" v-loading="loading" stripe size="small" class="data-table">
         <el-table-column label="商户ID" prop="merchantId" width="100">
           <template #default="{ row }">
             <span class="cell-mono">{{ row.merchantId }}</span>
@@ -56,12 +56,12 @@
         <el-table-column label="跟进人" prop="assignee" width="100">
           <template #default="{ row }">{{ row.assignee || '—' }}</template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createTime" width="172">
+        <el-table-column label="创建时间" prop="createTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="180" fixed="right">
+        <el-table-column label="操作" min-width="180" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.status === 'pending'" link type="primary" size="small" @click="handleStatus(row, 'in_progress')">
               开始处理

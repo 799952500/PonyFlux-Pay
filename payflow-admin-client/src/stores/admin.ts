@@ -32,6 +32,9 @@ export const useAdminStore = defineStore('admin', () => {
       adminId: profile.adminId ?? prev?.adminId,
       username: profile.username ?? prev?.username ?? '',
       role: profile.role ?? prev?.role ?? '',
+      platformAdmin: profile.platformAdmin ?? prev?.platformAdmin,
+      scopeMode: profile.scopeMode ?? prev?.scopeMode,
+      authorizedMerchantIds: profile.authorizedMerchantIds ?? prev?.authorizedMerchantIds,
       menus: profile.menus ?? prev?.menus,
       token: nextToken,
     }

@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div>
     <div class="content-card">
       <div class="flex items-center justify-between px-5 pt-4 pb-2">
-        <span class="text-base font-semibold text-gray-700">菜单管理</span>
+        <span class="dashboard-section-title text-base">菜单管理</span>
         <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd()">新增菜单</el-button>
       </div>
 
@@ -13,7 +13,9 @@
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         stripe
         size="small"
+        table-layout="auto"
         default-expand-all
+        class="data-table"
       >
         <el-table-column label="菜单名称" prop="menuName" min-width="180">
           <template #default="{ row }"><span class="font-medium">{{ row.menuName }}</span></template>
@@ -40,11 +42,13 @@
             <el-switch v-model="row.visible" @change="handleToggleVisible(row)" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" min-width="240" class-name="col-actions" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openAdd(row.id)">添加子菜单</el-button>
-            <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" :disabled="!!row.children?.length" @click="handleDelete(row)">删除</el-button>
+            <div class="table-actions">
+              <el-button link type="primary" size="small" @click="openAdd(row.id)">添加子菜单</el-button>
+              <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+              <el-button link type="danger" size="small" :disabled="!!row.children?.length" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -100,6 +104,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getMenuTree, createMenu, updateMenu, deleteMenu } from '@/api/admin'
+import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import type { SysMenu } from '@/types'
 
 const loading = ref(false)
@@ -221,25 +226,13 @@ async function handleToggleVisible(row: SysMenu) {
 }
 
 async function handleDelete(row: SysMenu) {
-  if (row.children?.length) {
-    ElMessage.warning('该菜单存在子菜单，无法删除')
-    return
-  }
-  try {
-    await ElMessageBox.confirm(`确认删除菜单「${row.menuName}」？删除后不可恢复。`, '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    await deleteMenu(row.id)
-    ElMessage.success('已删除')
-    loadMenuTree()
-  } catch (e: any) {
-    if (e !== 'cancel' && e?.message !== 'cancel') {
-      const msg = e?.response?.data?.message || '删除失败'
-      ElMessage.error(msg)
-    }
-  }
+  await confirmDeleteWithGuard({
+    resourceType: 'SYS_MENU',
+    resourceId: row.id,
+    displayName: row.menuName,
+    deleteFn: () => deleteMenu(row.id),
+    onSuccess: loadMenuTree,
+  })
 }
 
 onMounted(() => { loadMenuTree() })

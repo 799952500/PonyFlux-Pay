@@ -16,13 +16,15 @@ import java.util.List;
 public interface CashierReconPaymentMapper {
 
     @Select("""
-            SELECT payment_id AS paymentId, order_id AS orderId, pay_channel AS payChannel,
-                   channel_transaction_id AS channelTransactionId, amount, status,
-                   created_at AS createdAt, updated_at AS updatedAt
-            FROM cashier_payments
-            WHERE pay_channel = #{payChannel}
-              AND status = 'SUCCESS'
-              AND DATE(COALESCE(updated_at, created_at)) = #{billDate}
+            SELECT p.payment_id AS paymentId, p.order_id AS orderId, p.pay_channel AS payChannel,
+                   p.channel_transaction_id AS channelTransactionId, p.amount, p.status,
+                   p.created_at AS createdAt, p.updated_at AS updatedAt,
+                   o.merchant_id AS merchantId
+            FROM cashier_payments p
+            INNER JOIN cashier_orders o ON o.order_id = p.order_id
+            WHERE p.pay_channel = #{payChannel}
+              AND p.status = 'SUCCESS'
+              AND DATE(COALESCE(p.updated_at, p.created_at)) = #{billDate}
             """)
     List<CashierReconPaymentRow> listSuccessByBillDate(@Param("payChannel") String payChannel,
                                                         @Param("billDate") LocalDate billDate);

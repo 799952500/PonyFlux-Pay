@@ -25,18 +25,12 @@
 
     <!-- 渠道卡片区 -->
     <div v-loading="loading" class="channel-page-grid">
-      <el-row v-if="channelList.length" :gutter="20" class="channel-card-row">
-        <!-- 适中密度：平板两列、中屏三列、大屏四列，兼顾可读性与屏占比 -->
-        <el-col
+      <div v-if="channelList.length" class="channel-card-grid">
+          <div
           v-for="channel in channelList"
           :key="channel.channelCode || channel.id"
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :lg="8"
-          :xl="6"
+          class="content-card channel-card-shell"
         >
-          <div class="content-card channel-card-shell">
             <!-- 上：图标 + 名称/编码（独占整行，不与按钮抢横向空间） -->
             <div class="channel-card-identity">
               <div
@@ -101,8 +95,7 @@
               <span class="channel-card-footer-value">{{ channel.priority ?? 0 }}</span>
             </div>
           </div>
-        </el-col>
-      </el-row>
+      </div>
 
       <!-- 空状态 -->
       <el-empty v-if="!loading && !channelList.length" description="暂无渠道数据" class="py-12" />
@@ -158,7 +151,7 @@
       destroy-on-close
     >
       <div v-loading="drawerLoading" class="min-h-[120px]">
-        <el-table v-if="drawerMethods.length" :data="drawerMethods" stripe size="small" class="data-table w-full">
+        <el-table table-layout="auto" v-if="drawerMethods.length" :data="drawerMethods" stripe size="small" class="data-table w-full">
           <el-table-column label="编号" prop="methodCode" min-width="120" show-overflow-tooltip />
           <el-table-column label="名称" prop="methodName" min-width="140" show-overflow-tooltip />
           <el-table-column label="状态" width="88" align="center">
@@ -185,6 +178,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getChannels, createChannel, updateChannel, toggleChannel, deleteChannel, getPaymentMethodsByChannelId } from '@/api/admin'
+import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import type { Channel } from '@/types'
 
 const router = useRouter()
@@ -394,19 +388,13 @@ async function handleToggle(channel: Channel) {
 }
 
 async function handleDelete(row: Channel) {
-  const name = row.channelName
-  try {
-    await ElMessageBox.confirm(`确认删除渠道「${name}」？删除后不可恢复。`, '删除确认', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    await deleteChannel(row.id)
-    ElMessage.success('删除成功')
-    loadChannels()
-  } catch {
-    // cancelled
-  }
+  await confirmDeleteWithGuard({
+    resourceType: 'CHANNEL',
+    resourceId: row.id,
+    displayName: row.channelName,
+    deleteFn: () => deleteChannel(row.id),
+    onSuccess: loadChannels,
+  })
 }
 
 onMounted(() => { loadChannels() })
@@ -423,8 +411,10 @@ onMounted(() => { loadChannels() })
   padding-top: 4px;
 }
 
-.channel-card-row :deep(.el-col) {
-  margin-bottom: 20px;
+.channel-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .channel-card-shell.content-card {
@@ -483,7 +473,7 @@ onMounted(() => { loadChannels() })
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--pf-text-primary);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -491,7 +481,7 @@ onMounted(() => { loadChannels() })
 .channel-card-code {
   margin: 6px 0 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--pf-sidebar-text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   word-break: break-all;
   line-height: 1.35;
@@ -506,7 +496,7 @@ onMounted(() => { loadChannels() })
   gap: 12px 16px;
   padding: 0 0 14px;
   margin-bottom: 14px;
-  border-bottom: 1px solid rgba(4, 120, 87, 0.1);
+  border-bottom: 1px solid var(--pf-card-border);
 }
 
 .channel-card-toolbar-btns {
@@ -524,7 +514,7 @@ onMounted(() => { loadChannels() })
 
 .channel-card-switch-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--pf-sidebar-text-muted);
   white-space: nowrap;
 }
 
@@ -532,7 +522,7 @@ onMounted(() => { loadChannels() })
   flex: 1;
   font-size: 13px;
   line-height: 1.55;
-  color: #64748b;
+  color: var(--pf-text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -540,7 +530,8 @@ onMounted(() => { loadChannels() })
   margin-bottom: 14px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--pf-primary-muted);
+  border: 1px solid var(--pf-card-border);
 }
 
 .channel-card-methods {
@@ -550,23 +541,24 @@ onMounted(() => { loadChannels() })
   width: 100%;
   margin: 0 0 14px;
   padding: 10px 14px;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--pf-card-border);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--pf-primary-muted);
   cursor: pointer;
   font: inherit;
   text-align: left;
+  color: inherit;
   transition: background 0.15s, border-color 0.15s;
 }
 
 .channel-card-methods:hover {
-  background: #ecfdf5;
-  border-color: #6ee7b7;
+  background: var(--pf-sidebar-hover-bg);
+  border-color: var(--pf-primary);
 }
 
 .channel-card-methods-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--pf-text-secondary);
   font-weight: 500;
 }
 
@@ -576,17 +568,17 @@ onMounted(() => { loadChannels() })
   justify-content: space-between;
   padding-top: 14px;
   margin-top: auto;
-  border-top: 1px solid rgba(4, 120, 87, 0.1);
+  border-top: 1px solid var(--pf-card-border);
 }
 
 .channel-card-footer-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--pf-sidebar-text-muted);
 }
 
 .channel-card-footer-value {
   font-size: 14px;
   font-weight: 600;
-  color: #047857;
+  color: var(--pf-primary);
 }
 </style>

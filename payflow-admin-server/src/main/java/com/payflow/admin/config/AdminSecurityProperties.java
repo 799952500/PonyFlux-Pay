@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "payflow.security")
 public class AdminSecurityProperties {
 
-    /** 是否展示「登录需验证码」元信息（登录接口始终校验验证码） */
+    /** 是否启用「密码错误后再要求验证码」策略（首次登录免验证码） */
     private boolean loginCaptchaEnabled = true;
 
     /** 连续失败次数阈值后锁定账号 */

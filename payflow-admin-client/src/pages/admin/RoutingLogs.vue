@@ -41,7 +41,15 @@
         </div>
       </div>
 
-      <el-table :data="logs" v-loading="loading" stripe size="small" class="data-table">
+      <el-table
+        table-layout="auto"
+        :data="logs"
+        v-loading="loading"
+        stripe
+        size="small"
+        class="data-table"
+        @row-click="openLogDetail"
+      >
         <el-table-column label="交易流水号" prop="tradeNo" min-width="168">
           <template #default="{ row }">
             <span class="cell-mono text-[#047857] font-medium">{{ row.tradeNo }}</span>
@@ -94,9 +102,14 @@
             <span v-else class="cell-empty">0</span>
           </template>
         </el-table-column>
-        <el-table-column label="决策时间" prop="createTime" width="172">
+        <el-table-column label="决策时间" prop="createTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createTime) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="72" class-name="col-actions" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click.stop="openLogDetail(row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -110,6 +123,30 @@
         @current-change="loadLogs"
       />
     </div>
+
+    <el-drawer v-model="detailVisible" title="路由决策详情" direction="rtl" size="480px" destroy-on-close>
+      <el-descriptions v-if="currentLog" :column="1" border class="detail-descriptions">
+        <el-descriptions-item label="交易流水号">{{ currentLog.tradeNo }}</el-descriptions-item>
+        <el-descriptions-item label="商户 ID">{{ currentLog.merchantId ?? '—' }}</el-descriptions-item>
+        <el-descriptions-item label="选中渠道">
+          <el-tag size="small" :type="channelTagType(String(currentLog.selectedChannel ?? ''))">
+            {{ channelLabel(String(currentLog.selectedChannel ?? '')) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="选择原因">
+          {{ labelOf(ROUTING_REASON_LABEL, String(currentLog.selectionReason ?? '')) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="决策耗时">{{ currentLog.decisionCostMs }} ms</el-descriptions-item>
+        <el-descriptions-item label="降级次数">{{ currentLog.fallbackCount ?? 0 }}</el-descriptions-item>
+        <el-descriptions-item label="决策时间">{{ formatDateTime(String(currentLog.createTime ?? '')) }}</el-descriptions-item>
+        <el-descriptions-item label="可选渠道">
+          <pre class="routing-log-json">{{ formatJson(currentLog.availableChannels) }}</pre>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-drawer>
   </div>
 </template>
 
@@ -131,6 +168,8 @@ import {
 const loading = ref(false)
 const exporting = ref(false)
 const logs = ref<any[]>([])
+const detailVisible = ref(false)
+const currentLog = ref<Record<string, unknown> | null>(null)
 
 const filters = reactive({
   tradeNo: '',
@@ -150,6 +189,27 @@ function latencyClass(ms?: number) {
   if (Number.isNaN(value)) return 'cell-empty'
   if (value >= 40) return 'text-amber-600 font-medium tabular-nums text-xs'
   return 'text-slate-600 tabular-nums text-xs'
+}
+
+function formatJson(raw: unknown) {
+  if (raw == null || raw === '') return '—'
+  if (typeof raw === 'string') {
+    try {
+      return JSON.stringify(JSON.parse(raw), null, 2)
+    } catch {
+      return raw
+    }
+  }
+  try {
+    return JSON.stringify(raw, null, 2)
+  } catch {
+    return String(raw)
+  }
+}
+
+function openLogDetail(row: Record<string, unknown>) {
+  currentLog.value = row
+  detailVisible.value = true
 }
 
 function handleSearch() {
@@ -199,3 +259,15 @@ async function handleExport() {
 
 loadLogs()
 </script>
+
+<style scoped>
+.routing-log-json {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+</style>

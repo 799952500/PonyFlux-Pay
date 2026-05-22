@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.ChurnAlert;
+import com.payflow.admin.entity.Merchant;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.ChurnAlertMapper;
+import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.cashier.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +32,7 @@ import java.util.Map;
 public class ChurnAlertService {
 
     private final ChurnAlertMapper churnAlertMapper;
+    private final MerchantMapper merchantMapper;
     private final OrderMapper orderMapper;
 
     /**
@@ -106,9 +110,29 @@ public class ChurnAlertService {
      * 查询预警列表（分页）
      */
     public IPage<ChurnAlert> getAlerts(int pageNum, int pageSize, String merchantId, String status) {
+        return getAlerts(pageNum, pageSize, merchantId, status, null);
+    }
+
+    public IPage<ChurnAlert> getAlerts(int pageNum, int pageSize, String merchantId, String status,
+                                       List<String> merchantScopeIds) {
+        String scopedMerchantId = AdminRequestContext.resolveMerchantFilter(merchantId, merchantScopeIds);
+        if ("__NO_ACCESS__".equals(scopedMerchantId)) {
+            return new Page<>(pageNum, pageSize, 0);
+        }
         LambdaQueryWrapper<ChurnAlert> wrapper = new LambdaQueryWrapper<>();
-        if (merchantId != null && !merchantId.isEmpty()) {
-            wrapper.eq(ChurnAlert::getMerchantId, Long.parseLong(merchantId));
+        if (scopedMerchantId != null && !scopedMerchantId.isEmpty()) {
+            Long dbId = resolveMerchantDbId(scopedMerchantId);
+            if (dbId != null) {
+                wrapper.eq(ChurnAlert::getMerchantId, dbId);
+            } else {
+                return new Page<>(pageNum, pageSize, 0);
+            }
+        } else if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            List<Long> dbIds = resolveMerchantDbIds(merchantScopeIds);
+            if (dbIds.isEmpty()) {
+                return new Page<>(pageNum, pageSize, 0);
+            }
+            wrapper.in(ChurnAlert::getMerchantId, dbIds);
         }
         if (status != null && !status.isEmpty()) {
             wrapper.eq(ChurnAlert::getStatus, status);
@@ -121,7 +145,41 @@ public class ChurnAlertService {
      * 获取预警详情
      */
     public ChurnAlert getAlertDetail(Long id) {
-        return churnAlertMapper.selectById(id);
+        return getAlertDetail(id, null);
+    }
+
+    public ChurnAlert getAlertDetail(Long id, List<String> merchantScopeIds) {
+        ChurnAlert alert = churnAlertMapper.selectById(id);
+        if (alert == null || merchantScopeIds == null) {
+            return alert;
+        }
+        if (merchantScopeIds.isEmpty()) {
+            return null;
+        }
+        Merchant merchant = merchantMapper.selectById(alert.getMerchantId());
+        if (merchant == null || merchant.getMerchantId() == null
+                || !merchantScopeIds.contains(merchant.getMerchantId())) {
+            return null;
+        }
+        return alert;
+    }
+
+    private Long resolveMerchantDbId(String merchantCode) {
+        Merchant merchant = merchantMapper.selectOne(new LambdaQueryWrapper<Merchant>()
+                .eq(Merchant::getMerchantId, merchantCode)
+                .last("LIMIT 1"));
+        return merchant != null ? merchant.getId() : null;
+    }
+
+    private List<Long> resolveMerchantDbIds(List<String> merchantCodes) {
+        if (merchantCodes == null || merchantCodes.isEmpty()) {
+            return List.of();
+        }
+        return merchantMapper.selectList(new LambdaQueryWrapper<Merchant>()
+                        .in(Merchant::getMerchantId, merchantCodes))
+                .stream()
+                .map(Merchant::getId)
+                .toList();
     }
 
     /**

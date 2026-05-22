@@ -51,11 +51,27 @@ public class AdminReconQueryService {
             boolean onlyAbnormal,
             long page,
             long size) {
+        return pageOrderResults(billDate, channel, merchantId, orderKeyword, onlyAbnormal, page, size, null);
+    }
+
+    public Map<String, Object> pageOrderResults(
+            LocalDate billDate,
+            String channel,
+            String merchantId,
+            String orderKeyword,
+            boolean onlyAbnormal,
+            long page,
+            long size,
+            List<String> merchantScopeIds) {
+        String scopedMerchantId = resolveMerchantFilter(merchantId, merchantScopeIds);
+        if ("__NO_ACCESS__".equals(scopedMerchantId)) {
+            return pagePayload(List.of(), 0, page, size);
+        }
         String channelNorm = StringUtils.hasText(channel) ? channel.trim().toLowerCase() : null;
         if (onlyAbnormal) {
-            return pageAbnormalOnly(billDate, channelNorm, page, size);
+            return pageAbnormalOnly(billDate, channelNorm, page, size, merchantScopeIds);
         }
-        return pageAllPayments(billDate, channelNorm, merchantId, orderKeyword, page, size);
+        return pageAllPayments(billDate, channelNorm, scopedMerchantId, orderKeyword, page, size);
     }
 
     private Map<String, Object> pageAllPayments(
@@ -112,6 +128,15 @@ public class AdminReconQueryService {
             String channelNorm,
             long page,
             long size) {
+        return pageAbnormalOnly(billDate, channelNorm, page, size, null);
+    }
+
+    private Map<String, Object> pageAbnormalOnly(
+            LocalDate billDate,
+            String channelNorm,
+            long page,
+            long size,
+            List<String> merchantScopeIds) {
         long offset = (page - 1) * size;
         long total = reconDiffEntityMapper.countAbnormalByBillDate(billDate, channelNorm, null, null);
         List<ReconAbnormalPageRow> abnormalRows = reconDiffEntityMapper.listAbnormalByBillDate(
@@ -126,6 +151,9 @@ public class AdminReconQueryService {
         List<ReconOrderResultVO> list = new ArrayList<>();
         for (ReconAbnormalPageRow r : abnormalRows) {
             String mid = r.getLocalOrderId() != null ? merchantByOrder.get(r.getLocalOrderId()) : null;
+            if (!isMerchantAllowed(mid, merchantScopeIds)) {
+                continue;
+            }
             list.add(ReconOrderResultVO.builder()
                     .orderId(r.getLocalOrderId())
                     .merchantId(mid)
@@ -150,11 +178,19 @@ public class AdminReconQueryService {
      * 汇总：按支付账号（收款账户）对比本地成功收款与渠道账单（SUCCESS 任务），及待处理差异笔数。
      */
     public ReconSummaryResponse buildSummary(LocalDate billDate, String channel, String accountCode) {
+        return buildSummary(billDate, channel, accountCode, null);
+    }
+
+    public ReconSummaryResponse buildSummary(LocalDate billDate, String channel, String accountCode,
+                                             List<String> merchantScopeIds) {
         String channelNorm = StringUtils.hasText(channel) ? channel.trim().toLowerCase() : null;
         String acctFilter = StringUtils.hasText(accountCode) ? accountCode.trim() : null;
 
         List<ReconLocalAccountAggRow> localRows = reconCashierReportMapper.aggregateLocalSuccessByAccount(
                 billDate, acctFilter);
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            localRows = List.of();
+        }
         List<ReconTaskEntity> tasks = reconTaskEntityMapper.selectList(
                 Wrappers.<ReconTaskEntity>lambdaQuery()
                         .eq(ReconTaskEntity::getBillDate, billDate)
@@ -242,6 +278,12 @@ public class AdminReconQueryService {
      */
     public Map<String, Object> pageAnomalies(
             LocalDate billDate, String channel, String accountCode, String handleStatus, long page, long size) {
+        return pageAnomalies(billDate, channel, accountCode, handleStatus, page, size, null);
+    }
+
+    public Map<String, Object> pageAnomalies(
+            LocalDate billDate, String channel, String accountCode, String handleStatus, long page, long size,
+            List<String> merchantScopeIds) {
         String channelNorm = StringUtils.hasText(channel) ? channel.trim().toLowerCase() : null;
         String acct = StringUtils.hasText(accountCode) ? accountCode.trim() : null;
         String handle = StringUtils.hasText(handleStatus) ? handleStatus.trim().toUpperCase() : null;
@@ -256,13 +298,17 @@ public class AdminReconQueryService {
         Map<String, String> merchantByOrder = lookupMerchantMap(orderIds);
         List<Map<String, Object>> list = new ArrayList<>();
         for (ReconAbnormalPageRow r : rows) {
+            String mid = r.getLocalOrderId() != null ? merchantByOrder.get(r.getLocalOrderId()) : null;
+            if (!isMerchantAllowed(mid, merchantScopeIds)) {
+                continue;
+            }
             Map<String, Object> m = new HashMap<>();
             m.put("diffId", r.getDiffId());
             m.put("taskId", r.getTaskId());
             m.put("diffType", r.getDiffType());
             m.put("channelTradeNo", r.getChannelTradeNo());
             m.put("localOrderId", r.getLocalOrderId());
-            m.put("merchantId", r.getLocalOrderId() != null ? merchantByOrder.get(r.getLocalOrderId()) : null);
+            m.put("merchantId", mid);
             m.put("channelAmount", r.getChannelAmount());
             m.put("localAmount", r.getLocalAmount());
             m.put("handleStatus", r.getHandleStatus());
@@ -359,6 +405,27 @@ public class AdminReconQueryService {
 
     private static String emptyToNull(String s) {
         return StringUtils.hasText(s) ? s.trim() : null;
+    }
+
+    private static String resolveMerchantFilter(String merchantId, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return emptyToNull(merchantId);
+        }
+        if (merchantScopeIds.isEmpty()) {
+            return "__NO_ACCESS__";
+        }
+        if (StringUtils.hasText(merchantId)) {
+            String requested = merchantId.trim();
+            return merchantScopeIds.contains(requested) ? requested : "__NO_ACCESS__";
+        }
+        return merchantScopeIds.size() == 1 ? merchantScopeIds.get(0) : null;
+    }
+
+    private static boolean isMerchantAllowed(String merchantId, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return true;
+        }
+        return StringUtils.hasText(merchantId) && merchantScopeIds.contains(merchantId);
     }
 
     private static Map<String, Object> pagePayload(List<?> list, long total, long page, long size) {

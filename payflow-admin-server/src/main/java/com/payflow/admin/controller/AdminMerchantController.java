@@ -3,7 +3,9 @@ package com.payflow.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.dto.UpdateMerchantRequest;
 import com.payflow.admin.entity.Merchant;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.MerchantService;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -41,6 +43,7 @@ public class AdminMerchantController {
     @Operation(summary = "分页查询商户列表")
     @GetMapping
     public ResponseEntity<Map<String, Object>> listMerchants(
+            HttpServletRequest request,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
@@ -56,7 +59,8 @@ public class AdminMerchantController {
             resolvedPageSize = 20;
         }
 
-        IPage<Merchant> merchantPage = merchantService.page(page, resolvedPageSize, keyword, status);
+        IPage<Merchant> merchantPage = merchantService.page(
+                page, resolvedPageSize, keyword, status, AdminRequestContext.merchantScope(request));
 
         Map<String, Object> data = new HashMap<>();
         data.put("total", merchantPage.getTotal());

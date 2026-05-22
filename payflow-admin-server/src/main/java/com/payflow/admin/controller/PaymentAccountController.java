@@ -141,20 +141,11 @@ public class PaymentAccountController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        try {
-            service.delete(id);
-            return ResponseEntity.ok(Map.of(
-                    "code", 0,
-                    "message", "success",
-                    "data", Map.of()
-            ));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.ok(Map.of(
-                    "code", 1,
-                    "message", e.getMessage(),
-                    "data", Map.of()
-            ));
-        }
+        service.delete(id);
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", Map.of()));
     }
 
     /**

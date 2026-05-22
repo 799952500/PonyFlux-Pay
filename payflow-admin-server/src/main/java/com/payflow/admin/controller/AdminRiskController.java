@@ -3,7 +3,9 @@ package com.payflow.admin.controller;
 import com.payflow.admin.dto.RiskRuleQueryRequest;
 import com.payflow.admin.dto.RiskRuleStatusRequest;
 import com.payflow.admin.dto.RiskRuleUpsertRequest;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.RiskHitRecordQueryService;
+import jakarta.servlet.http.HttpServletRequest;
 import com.payflow.admin.service.RiskRuleAdminService;
 import com.payflow.admin.service.RiskRuleAuditService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,28 +43,36 @@ public class AdminRiskController {
 
     @Operation(summary = "查询风控规则列表")
     @GetMapping("/rules")
-    public ResponseEntity<Map<String, Object>> listRules(@Valid RiskRuleQueryRequest request) {
-        return ok(riskRuleAdminService.pageRules(request));
+    public ResponseEntity<Map<String, Object>> listRules(
+            HttpServletRequest request,
+            @Valid RiskRuleQueryRequest query) {
+        return ok(riskRuleAdminService.pageRules(query, AdminRequestContext.merchantScope(request)));
     }
 
-    @Operation(summary = "创建平台风控规则")
+    @Operation(summary = "创建风控规则")
     @PostMapping("/rules")
-    public ResponseEntity<Map<String, Object>> createRule(@Valid @RequestBody RiskRuleUpsertRequest request) {
-        return ok(riskRuleAdminService.createRule(request));
+    public ResponseEntity<Map<String, Object>> createRule(
+            HttpServletRequest request,
+            @Valid @RequestBody RiskRuleUpsertRequest body) {
+        return ok(riskRuleAdminService.createRule(body, AdminRequestContext.merchantScope(request)));
     }
 
     @Operation(summary = "更新风控规则")
     @PutMapping("/rules/{ruleId}")
-    public ResponseEntity<Map<String, Object>> updateRule(@PathVariable Long ruleId,
-                                                          @Valid @RequestBody RiskRuleUpsertRequest request) {
-        return ok(riskRuleAdminService.updateRule(ruleId, request));
+    public ResponseEntity<Map<String, Object>> updateRule(
+            HttpServletRequest request,
+            @PathVariable Long ruleId,
+            @Valid @RequestBody RiskRuleUpsertRequest body) {
+        return ok(riskRuleAdminService.updateRule(ruleId, body, AdminRequestContext.merchantScope(request)));
     }
 
     @Operation(summary = "启用或停用风控规则")
     @PutMapping("/rules/{ruleId}/status")
-    public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable Long ruleId,
-                                                            @Valid @RequestBody RiskRuleStatusRequest request) {
-        return ok(riskRuleAdminService.updateStatus(ruleId, request));
+    public ResponseEntity<Map<String, Object>> updateStatus(
+            HttpServletRequest request,
+            @PathVariable Long ruleId,
+            @Valid @RequestBody RiskRuleStatusRequest body) {
+        return ok(riskRuleAdminService.updateStatus(ruleId, body, AdminRequestContext.merchantScope(request)));
     }
 
     @Operation(summary = "查询平台定向规则商户范围")
@@ -80,7 +90,9 @@ public class AdminRiskController {
 
     @Operation(summary = "查询风控命中记录")
     @GetMapping("/hits")
-    public ResponseEntity<Map<String, Object>> listHits(@RequestParam(defaultValue = "1") Integer page,
+    public ResponseEntity<Map<String, Object>> listHits(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer page,
                                                         @RequestParam(defaultValue = "20") Integer pageSize,
                                                         @RequestParam(required = false) String merchantId,
                                                         @RequestParam(required = false) Long ruleId,
@@ -88,7 +100,9 @@ public class AdminRiskController {
                                                         @RequestParam(required = false) String decision,
                                                         @RequestParam(required = false) String startTime,
                                                         @RequestParam(required = false) String endTime) {
-        return ok(riskHitRecordQueryService.pageAdminHits(page, pageSize, merchantId, ruleId, ownerType, decision, startTime, endTime));
+        return ok(riskHitRecordQueryService.pageAdminHits(
+                page, pageSize, merchantId, ruleId, ownerType, decision, startTime, endTime,
+                AdminRequestContext.merchantScope(request)));
     }
 
     @Operation(summary = "查询风控规则审计")

@@ -47,6 +47,9 @@ public class RiskRuleUpsertRequest {
 
     private String ownerType;
 
+    /** 商户自建规则归属商户号（商户管理员可不传，由服务端回填） */
+    private String ownerMerchantId;
+
     private String scopeType;
 
     private List<String> scopeMerchantIds;

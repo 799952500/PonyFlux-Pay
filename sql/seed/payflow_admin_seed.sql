@@ -12,7 +12,9 @@ SET @pwd = '$2b$10$UHTRg4BSLqaHosl88JbOE.WOCrOmMusFph5Jws0aEEOKrMPq4Px5a';
 INSERT INTO admin_users (id, username, password, role, nickname, status, data_merchant_ids, created_at, updated_at) VALUES
 (1, 'admin', @pwd, 'SUPER_ADMIN', '超级管理员', 'ACTIVE', NULL, NOW(), NOW()),
 (2, 'finance_demo', @pwd, 'FINANCE', '财务-张敏', 'ACTIVE', 'M100001', NOW(), NOW()),
-(3, 'risk_demo', @pwd, 'RISK', '风控-陈磊', 'ACTIVE', NULL, NOW(), NOW());
+(3, 'risk_demo', @pwd, 'RISK', '风控-陈磊', 'ACTIVE', NULL, NOW(), NOW()),
+(4, 'merchant_m100001', @pwd, 'ADMIN', '星云零售商户管理员', 'ACTIVE', 'M100001', NOW(), NOW()),
+(5, 'merchant_m100002', @pwd, 'ADMIN', '蓝海餐饮商户管理员', 'ACTIVE', 'M100002', NOW(), NOW());
 
 INSERT INTO channels (
   id, channel_code, channel_name, channel_type, api_url, api_key, enabled, priority, icon, description, fee_rate, created_at, updated_at
@@ -104,39 +106,41 @@ INSERT INTO admin_system_configs (
 (5, 'system.site_name', 'PonyFlux Pay 演示环境', 'STRING', 'system', '站点名称', 10, 1, NOW(), NOW()),
 (6, 'system.support_email', 'support@demo.payflow.local', 'STRING', 'system', '支持邮箱', 20, 1, NOW(), NOW());
 
-INSERT INTO admin_audit_logs (username, action, resource_path, detail, client_ip, created_at) VALUES
-('admin', 'POST', '/api/v1/admin/auth/login', '登录成功', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
-('admin', 'PUT', '/api/v1/admin/channels/1', '更新渠道：微信支付', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
-('finance_demo', 'GET', '/api/v1/admin/orders', '查询订单列表', '10.0.0.8', DATE_SUB(NOW(), INTERVAL 30 MINUTE)),
-('admin', 'POST', '/api/v1/admin/refunds/REF-20260518-001/reject', '拒绝退款', '127.0.0.1', DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
-('risk_demo', 'GET', '/api/v1/admin/security/audit', '查询安全审计', '10.0.0.12', NOW());
+INSERT INTO admin_audit_logs (username, operator_type, merchant_id, action, resource_path, resource_type, resource_id, detail, result, deny_reason, client_ip, created_at) VALUES
+('admin', 'SYSTEM_ADMIN', NULL, 'POST', '/api/v1/admin/auth/login', 'AUTH', NULL, '登录成功', 'SUCCESS', NULL, '127.0.0.1', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+('admin', 'SYSTEM_ADMIN', NULL, 'PUT', '/api/v1/admin/channels/1', 'CHANNEL', '1', '更新渠道：微信支付', 'SUCCESS', NULL, '127.0.0.1', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+('finance_demo', 'MERCHANT_ADMIN', 'M100001', 'GET', '/api/v1/admin/orders', 'ORDER', NULL, '查询订单列表', 'SUCCESS', NULL, '10.0.0.8', DATE_SUB(NOW(), INTERVAL 30 MINUTE)),
+('admin', 'SYSTEM_ADMIN', 'M100001', 'POST', '/api/v1/admin/refunds/REF-20260518-001/reject', 'REFUND', 'REF-20260518-001', '拒绝退款', 'SUCCESS', NULL, '127.0.0.1', DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
+('risk_demo', 'SYSTEM_ADMIN', NULL, 'GET', '/api/v1/admin/security/audit', 'SECURITY_AUDIT', NULL, '查询安全审计', 'SUCCESS', NULL, '10.0.0.12', NOW()),
+('merchant_m100001', 'MERCHANT_ADMIN', 'M100001', 'GET', '/api/v1/admin/orders/ORD-20260518-0003', 'ORDER', 'ORD-20260518-0003', '跨商户订单详情访问被拒绝', 'DENIED', '授权商户范围不包含目标资源', '10.0.0.21', DATE_SUB(NOW(), INTERVAL 20 MINUTE)),
+('merchant_m100002', 'MERCHANT_ADMIN', 'M100002', 'POST', '/api/v1/admin/refunds/REF-20260518-001/approve', 'REFUND', 'REF-20260518-001', '跨商户退款审核被拒绝', 'DENIED', '授权商户范围不包含目标资源', '10.0.0.22', DATE_SUB(NOW(), INTERVAL 18 MINUTE));
 
 INSERT INTO recon_task (
-  task_id, channel, account_code, bill_date, bill_type, status,
+  task_id, channel, account_code, merchant_id, bill_date, bill_type, status,
   bill_total_count, bill_total_amount, local_total_count, local_total_amount,
   diff_count, elapsed_ms, triggered_by, created_at, updated_at
 ) VALUES
-('RECON-20260517-001', 'alipay', 'CASHIER_ALI_001', DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'trade', 'SUCCESS',
+('RECON-20260517-001', 'alipay', 'CASHIER_ALI_001', 'M100002', DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'trade', 'SUCCESS',
  3, 43200, 2, 38700, 2, 2850, 'XXL_JOB', NOW(), NOW()),
-('RECON-20260516-001', 'wxpay', 'CASHIER_WX_001', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'trade', 'SUCCESS',
+('RECON-20260516-001', 'wxpay', 'CASHIER_WX_001', 'M100001', DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'trade', 'SUCCESS',
   5, 198900, 4, 178800, 1, 3100, 'MANUAL', DATE_SUB(NOW(), INTERVAL 1 DAY), NOW()),
-('RECON-20260515-FAIL', 'wxpay', 'CASHIER_WX_001', DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'trade', 'FAIL',
+('RECON-20260515-FAIL', 'wxpay', 'CASHIER_WX_001', NULL, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'trade', 'FAIL',
   NULL, NULL, NULL, NULL, 0, NULL, 'XXL_JOB', DATE_SUB(NOW(), INTERVAL 2 DAY), NOW());
 
 INSERT INTO recon_bill_record (
-  task_id, channel, channel_trade_no, out_trade_no, amount_fen, refund_fen, channel_status, finish_time, raw_line, parse_error
+  task_id, merchant_id, channel, channel_trade_no, out_trade_no, amount_fen, refund_fen, channel_status, finish_time, raw_line, parse_error
 ) VALUES
-('RECON-20260517-001', 'alipay', '2026051822001234567', 'ORD-20260518-0003', 8800, 0, 'SUCCESS', NOW(), 'demo,csv,line', 0),
-('RECON-20260517-001', 'alipay', 'ALI_ONLY_999', NULL, 100, 0, 'SUCCESS', NOW(), 'channel_only', 0),
-('RECON-20260516-001', 'wxpay', '4200001234567890', 'ORD-20260518-0001', 29900, 0, 'SUCCESS', NOW(), 'wx,line', 0);
+('RECON-20260517-001', 'M100002', 'alipay', '2026051822001234567', 'ORD-20260518-0003', 8800, 0, 'SUCCESS', NOW(), 'demo,csv,line', 0),
+('RECON-20260517-001', NULL, 'alipay', 'ALI_ONLY_999', NULL, 100, 0, 'SUCCESS', NOW(), 'channel_only', 0),
+('RECON-20260516-001', 'M100001', 'wxpay', '4200001234567890', 'ORD-20260518-0001', 29900, 0, 'SUCCESS', NOW(), 'wx,line', 0);
 
 INSERT INTO recon_diff (
-  task_id, diff_type, channel_trade_no, local_order_id,
+  task_id, merchant_id, diff_type, channel_trade_no, local_order_id,
   channel_amount, local_amount, channel_status, local_status, handle_status, suggested_action, created_at
 ) VALUES
-('RECON-20260517-001', 'AMOUNT_MISMATCH', '2026051822001234567', 'ORD-20260518-0003', 8801, 8800, 'SUCCESS', 'PAID', 'PENDING', 'MANUAL_REVIEW', NOW()),
-('RECON-20260517-001', 'CHANNEL_ONLY', 'ALI_ONLY_999', NULL, 100, NULL, 'SUCCESS', NULL, 'PENDING', 'AUTO_QUERY', NOW()),
-('RECON-20260516-001', 'LOCAL_ONLY', NULL, 'ORD-20260516-0007', NULL, 6600, NULL, 'PAYING', 'PENDING', 'REVIEW', NOW());
+('RECON-20260517-001', 'M100002', 'AMOUNT_MISMATCH', '2026051822001234567', 'ORD-20260518-0003', 8801, 8800, 'SUCCESS', 'PAID', 'PENDING', 'MANUAL_REVIEW', NOW()),
+('RECON-20260517-001', NULL, 'CHANNEL_ONLY', 'ALI_ONLY_999', NULL, 100, NULL, 'SUCCESS', NULL, 'PENDING', 'AUTO_QUERY', NOW()),
+('RECON-20260516-001', 'M100001', 'LOCAL_ONLY', NULL, 'ORD-20260516-0007', NULL, 6600, NULL, 'PAYING', 'PENDING', 'REVIEW', NOW());
 
 INSERT INTO admin_dashboard_metrics (
   metric_time, granularity, channel_code, total_amount, total_count, active_merchants, fee_income, refund_amount, refund_count
@@ -262,7 +266,8 @@ INSERT INTO sys_menus (
 (52, 40, 'menus', '菜单管理', 'MENU', '/admin/menus', NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
 (42, 40, 'dicts', '数据字典', 'MENU', '/admin/dicts', NULL, 5, 1, 'ACTIVE', NOW(), NOW()),
 (54, 40, 'audit_logs', '操作日志', 'MENU', '/admin/audit-logs', NULL, 6, 1, 'ACTIVE', NOW(), NOW()),
-(64, 40, 'security_audit', '安全审计', 'MENU', '/admin/security-audit', NULL, 7, 1, 'ACTIVE', NOW(), NOW());
+(64, 40, 'security_audit', '安全审计', 'MENU', '/admin/security-audit', NULL, 7, 1, 'ACTIVE', NOW(), NOW()),
+(69, 40, 'data_isolation', '数据隔离治理', 'MENU', '/admin/data-isolation', NULL, 8, 1, 'ACTIVE', NOW(), NOW());
 
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 1, id, NOW() FROM sys_menus;
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 2, id, NOW() FROM sys_menus WHERE id NOT IN (51, 52, 53, 54, 64);
@@ -274,7 +279,7 @@ INSERT INTO sys_users (id, username, password, nickname, phone, email, status, c
 (2, 'sys_operator', @pwd, '运营小王', '13800002222', 'ops@demo.local', 'ACTIVE', NOW(), NOW()),
 (3, 'sys_auditor', @pwd, '审计（禁用演示）', '13800003333', 'audit@demo.local', 'DISABLED', NOW(), NOW());
 
-INSERT INTO sys_user_roles (user_id, role_id, created_at) VALUES (1, 1, NOW()), (2, 2, NOW()), (3, 4, NOW());
+INSERT INTO sys_user_roles (user_id, role_id, created_at) VALUES (1, 1, NOW()), (2, 2, NOW()), (3, 4, NOW()), (4, 2, NOW()), (5, 2, NOW());
 
 ALTER TABLE admin_channels AUTO_INCREMENT = 100;
 ALTER TABLE admin_merchants AUTO_INCREMENT = 100;

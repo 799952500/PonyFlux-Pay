@@ -1,0 +1,239 @@
+/**
+ * 亮色主题：柔和排版与对比度（清晰但不刺眼）
+ * 适用于 mint / ocean / violet，dark 主题不受影响
+ */
+
+:root,
+[data-theme='mint'],
+[data-theme='ocean'],
+[data-theme='violet'] {
+  --pf-link: #0f766e;
+  --pf-link-hover: #0d9488;
+  --pf-text-strong: #334155;
+  --pf-border-neutral: rgba(51, 65, 85, 0.08);
+  --pf-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.03);
+
+  /* Element Plus 浅色语义：略降对比，避免纯黑字 */
+  --el-text-color-primary: var(--pf-text-primary);
+  --el-text-color-regular: var(--pf-text-secondary);
+  --el-text-color-secondary: var(--pf-sidebar-text-muted);
+  --el-text-color-placeholder: #94a3b8;
+  --el-border-color: var(--pf-border-neutral);
+  --el-border-color-light: rgba(51, 65, 85, 0.06);
+  --el-border-color-lighter: rgba(51, 65, 85, 0.04);
+  --el-fill-color-blank: var(--pf-card-bg);
+  --el-bg-color: var(--pf-card-bg);
+  --el-bg-color-page: var(--pf-bg-page);
+}
+
+[data-theme='mint'],
+[data-theme='ocean'],
+[data-theme='violet'] {
+  --pf-text-strong: #334155;
+  --pf-table-header: rgba(51, 65, 85, 0.035);
+  --pf-login-header-bg: #fafbfb;
+}
+
+/* 全局排版：亮色下更柔和的抗锯齿与行高 */
+:root:not([data-theme='dark']) body,
+[data-theme='mint'] body,
+[data-theme='ocean'] body,
+[data-theme='violet'] body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+/* 表单与表格：标签/表头不用过重字重 */
+:root:not([data-theme='dark']) .el-form-item__label,
+[data-theme='mint'] .el-form-item__label,
+[data-theme='ocean'] .el-form-item__label,
+[data-theme='violet'] .el-form-item__label {
+  color: var(--pf-text-secondary);
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .data-table .el-table__header-wrapper th.el-table__cell,
+[data-theme='mint'] .data-table .el-table__header-wrapper th.el-table__cell,
+[data-theme='ocean'] .data-table .el-table__header-wrapper th.el-table__cell,
+[data-theme='violet'] .data-table .el-table__header-wrapper th.el-table__cell {
+  color: var(--pf-text-secondary) !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.02em;
+}
+
+:root:not([data-theme='dark']) .data-table .el-table__body td.el-table__cell,
+[data-theme='mint'] .data-table .el-table__body td.el-table__cell,
+[data-theme='ocean'] .data-table .el-table__body td.el-table__cell,
+[data-theme='violet'] .data-table .el-table__body td.el-table__cell {
+  color: var(--pf-text-primary);
+  font-weight: 400;
+}
+
+:root:not([data-theme='dark']) .data-table .font-semibold,
+[data-theme='mint'] .data-table .font-semibold,
+[data-theme='ocean'] .data-table .font-semibold,
+[data-theme='violet'] .data-table .font-semibold {
+  font-weight: 500 !important;
+  color: var(--pf-text-strong) !important;
+}
+
+/* 链接色：降低饱和度，避免刺眼翠绿 */
+:root:not([data-theme='dark']) .pf-link,
+[data-theme='mint'] .pf-link,
+[data-theme='ocean'] .pf-link,
+[data-theme='violet'] .pf-link {
+  color: var(--pf-link);
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+:root:not([data-theme='dark']) .pf-link:hover,
+[data-theme='mint'] .pf-link:hover,
+[data-theme='ocean'] .pf-link:hover,
+[data-theme='violet'] .pf-link:hover {
+  color: var(--pf-link-hover);
+}
+
+:root:not([data-theme='dark']) .content-card,
+[data-theme='mint'] .content-card,
+[data-theme='ocean'] .content-card,
+[data-theme='violet'] .content-card {
+  box-shadow: var(--pf-shadow-soft);
+}
+
+:root:not([data-theme='dark']) .content-card:hover,
+[data-theme='mint'] .content-card:hover,
+[data-theme='ocean'] .content-card:hover,
+[data-theme='violet'] .content-card:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
+}
+
+:root:not([data-theme='dark']) .btn-outline,
+[data-theme='mint'] .btn-outline,
+[data-theme='ocean'] .btn-outline,
+[data-theme='violet'] .btn-outline {
+  border-color: rgba(100, 116, 139, 0.28) !important;
+  color: var(--pf-text-secondary) !important;
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .btn-primary,
+[data-theme='mint'] .btn-primary,
+[data-theme='ocean'] .btn-primary,
+[data-theme='violet'] .btn-primary {
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+:root:not([data-theme='dark']) .dashboard-section-title,
+[data-theme='mint'] .dashboard-section-title,
+[data-theme='ocean'] .dashboard-section-title,
+[data-theme='violet'] .dashboard-section-title {
+  font-weight: 600;
+  color: var(--pf-text-strong);
+}
+
+:root:not([data-theme='dark']) .dashboard-kpi-value,
+[data-theme='mint'] .dashboard-kpi-value,
+[data-theme='ocean'] .dashboard-kpi-value,
+[data-theme='violet'] .dashboard-kpi-value {
+  font-weight: 600;
+  color: var(--pf-text-strong);
+}
+
+:root:not([data-theme='dark']) .table-toolbar__title,
+[data-theme='mint'] .table-toolbar__title,
+[data-theme='ocean'] .table-toolbar__title,
+[data-theme='violet'] .table-toolbar__title {
+  font-weight: 500;
+  color: var(--pf-text-strong);
+}
+
+:root:not([data-theme='dark']) .filter-label,
+[data-theme='mint'] .filter-label,
+[data-theme='ocean'] .filter-label,
+[data-theme='violet'] .filter-label {
+  color: var(--pf-text-secondary);
+}
+
+:root:not([data-theme='dark']) .el-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+[data-theme='mint'] .data-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+[data-theme='ocean'] .data-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+[data-theme='violet'] .data-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--pf-primary-muted) !important;
+}
+
+:root:not([data-theme='dark']) .el-tag,
+[data-theme='mint'] .el-tag,
+[data-theme='ocean'] .el-tag,
+[data-theme='violet'] .el-tag {
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .btn-back,
+[data-theme='mint'] .btn-back,
+[data-theme='ocean'] .btn-back,
+[data-theme='violet'] .btn-back {
+  color: var(--pf-link) !important;
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .sidebar-logo__name,
+[data-theme='mint'] .sidebar-logo__name,
+[data-theme='ocean'] .sidebar-logo__name,
+[data-theme='violet'] .sidebar-logo__name {
+  font-weight: 600;
+}
+
+:root:not([data-theme='dark']) .el-breadcrumb__inner,
+[data-theme='mint'] .el-breadcrumb__inner,
+[data-theme='ocean'] .el-breadcrumb__inner,
+[data-theme='violet'] .el-breadcrumb__inner {
+  color: var(--pf-text-secondary);
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .el-input__inner,
+:root:not([data-theme='dark']) .el-select__wrapper,
+[data-theme='mint'] .el-input__inner,
+[data-theme='ocean'] .el-input__inner,
+[data-theme='violet'] .el-input__inner {
+  color: var(--pf-text-primary);
+}
+
+/* 兼容页面内硬编码的翠绿链接色 */
+:root:not([data-theme='dark']) .text-\[\#047857\],
+[data-theme='mint'] .text-\[\#047857\],
+[data-theme='ocean'] .text-\[\#047857\],
+[data-theme='violet'] .text-\[\#047857\] {
+  color: var(--pf-link) !important;
+  font-weight: 500;
+}
+
+:root:not([data-theme='dark']) .topbar-title,
+[data-theme='mint'] .topbar-title,
+[data-theme='ocean'] .topbar-title,
+[data-theme='violet'] .topbar-title {
+  font-weight: 500 !important;
+  color: var(--pf-text-strong) !important;
+  letter-spacing: 0.01em;
+}
+
+:root:not([data-theme='dark']) .text-slate-800,
+[data-theme='mint'] .text-slate-800,
+[data-theme='ocean'] .text-slate-800,
+[data-theme='violet'] .text-slate-800 {
+  color: var(--pf-text-strong) !important;
+}
+
+:root:not([data-theme='dark']) h3.text-gray-700,
+[data-theme='mint'] h3.text-gray-700,
+[data-theme='ocean'] h3.text-gray-700,
+[data-theme='violet'] h3.text-gray-700 {
+  color: var(--pf-text-secondary) !important;
+  font-weight: 500 !important;
+}

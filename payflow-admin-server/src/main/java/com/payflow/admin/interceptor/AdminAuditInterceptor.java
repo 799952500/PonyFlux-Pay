@@ -58,6 +58,7 @@ public class AdminAuditInterceptor implements HandlerInterceptor {
         }
         return uri.contains("/auth/login")
                 || uri.contains("/auth/captcha")
+                || uri.contains("/auth/captcha-required")
                 || uri.contains("/meta/");
     }
 

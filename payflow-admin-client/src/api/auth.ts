@@ -4,6 +4,15 @@
 import request from './request'
 import type { AdminLoginDTO, AdminLoginResponse } from '@/types'
 
+export interface CaptchaRequiredResult {
+  required: boolean
+  failureCount: number
+}
+
+/** 查询当前用户名是否需要验证码 */
+export const getCaptchaRequired = (username: string): Promise<CaptchaRequiredResult> =>
+  request.get('/admin/auth/captcha-required', { params: { username } })
+
 /** 管理员登录 */
 export const adminLogin = (data: AdminLoginDTO): Promise<AdminLoginResponse> =>
   request.post('/admin/auth/login', data)

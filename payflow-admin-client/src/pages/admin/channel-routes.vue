@@ -1,10 +1,10 @@
-<template>
+﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default">
-        <el-form-item label="商户">
+        <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" label="商户">
           <el-select v-model="queryForm.merchantId" placeholder="全部商户" clearable style="width: 200px" @change="handleSearch">
-            <el-option label="全部商户" value="" />
+            <el-option v-if="!merchantFilterLocked" label="全部商户" value="" />
             <el-option v-for="m in merchantList" :key="m.merchantId" :label="m.merchantName" :value="m.merchantId" />
           </el-select>
         </el-form-item>
@@ -21,7 +21,7 @@
           <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建支付路由</el-button>
         </template>
       </TableToolbar>
-      <el-table v-loading="loading" :data="routeList" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="routeList" stripe size="small" class="data-table">
         <el-table-column label="路由ID" prop="routeId" min-width="100">
           <template #default="{ row }">
             <span class="text-xs tabular-nums font-medium text-[#047857]">{{ row.routeId }}</span>
@@ -70,7 +70,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" min-width="140" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <el-button link :type="row.enabled ? 'warning' : 'success'" size="small"
               @click.stop="handleToggle(row)">
@@ -99,7 +99,8 @@
     <el-dialog v-model="dialogVisible" title="新建支付路由" width="520px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="商户" prop="merchantId">
-          <el-select v-model="form.merchantId" placeholder="请选择商户" style="width: 100%">
+          <el-input v-if="merchantFilterLocked && authorizedMerchantIds.length <= 1" :model-value="form.merchantId" disabled />
+          <el-select v-else v-model="form.merchantId" placeholder="请选择商户" style="width: 100%">
             <el-option v-for="m in merchantList" :key="m.merchantId" :label="m.merchantName" :value="m.merchantId" />
           </el-select>
         </el-form-item>
@@ -157,6 +158,15 @@ import {
   tagTypeOf,
 } from '@/utils/format'
 import type { Channel } from '@/types'
+import { useMerchantScope } from '@/composables/useMerchantScope'
+
+const {
+  merchantFilterLocked,
+  authorizedMerchantIds,
+  filterMerchantOptions,
+  applyDefaultMerchantFilter,
+  applyMerchantIdForCreate,
+} = useMerchantScope()
 
 interface ChannelAccount {
   id?: number
@@ -237,7 +247,8 @@ async function loadRoutes() {
 
 async function loadMerchants() {
   try {
-    merchantList.value = await getMerchantsSimple()
+    merchantList.value = filterMerchantOptions(await getMerchantsSimple())
+    applyDefaultMerchantFilter(queryForm)
   } catch { /* ignore */ }
 }
 
@@ -273,6 +284,7 @@ function handleReset() { Object.assign(queryForm, { merchantId: '' }); handleSea
 
 function openCreateDialog() {
   Object.assign(form, { merchantId: '', channelId: '', accountId: '' as number | string, priority: 100 })
+  applyDefaultMerchantFilter(form)
   dialogVisible.value = true
 }
 
@@ -284,13 +296,14 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    const payload = {
+    const payload: Record<string, unknown> = {
       merchantId: form.merchantId,
       channelId: Number(form.channelId),
       paymentAccountId: Number(form.accountId),
       priority: form.priority,
       enabled: true,
     }
+    applyMerchantIdForCreate(payload)
     await createChannelRoute(payload as unknown as Partial<import('@/types').ChannelRoute>)
     ElMessage.success('支付路由创建成功')
     dialogVisible.value = false

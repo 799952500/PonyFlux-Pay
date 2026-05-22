@@ -1,12 +1,12 @@
 <template>
-  <div class="p-6">
-    <div v-if="metaVersion" class="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 flex flex-wrap gap-x-6 gap-y-1">
+  <div class="page-table-shell">
+    <div v-if="metaVersion" class="mb-4 rounded-lg border px-4 py-3 text-sm flex flex-wrap gap-x-6 gap-y-1 settings-meta-bar">
       <span><span class="text-slate-400">应用名</span> {{ metaVersion.application }}</span>
       <span><span class="text-slate-400">运行环境</span> {{ metaVersion.profiles }}</span>
     </div>
     <!-- 页面标题 + 刷新缓存区 -->
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-700">系统配置</h2>
+      <h2 class="text-lg font-semibold dashboard-section-title">系统配置</h2>
       <div class="flex items-center gap-2">
         <!-- 按分类刷新 -->
         <el-select v-model="refreshCategory" placeholder="选择分类" size="default" style="width: 140px">
@@ -42,19 +42,27 @@
     </div>
 
     <!-- 配置表格 -->
-    <el-table :data="tableData" stripe class="w-full" row-key="id">
+    <el-table table-layout="auto" :data="tableData" stripe size="small" class="data-table w-full" row-key="id">
       <el-table-column prop="configKey" label="配置键" min-width="180" />
+      <el-table-column prop="classification" label="数据分类" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag size="small" :type="row.classification === 'GLOBAL' ? 'warning' : 'info'">
+            {{ row.classification || 'GLOBAL' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="configValue" label="配置值" min-width="200">
         <template #default="{ row }">
+          <el-tag v-if="row.sensitive" size="small" type="danger" class="mr-1">敏感</el-tag>
           <span v-if="row.valueType === 'BOOLEAN'">
             <el-tag :type="row.configValue === 'true' ? 'success' : 'danger'" size="small">
               {{ row.configValue }}
             </el-tag>
           </span>
-          <span v-else-if="row.valueType === 'NUMBER'" class="font-mono text-blue-600">
+          <span v-else-if="row.valueType === 'NUMBER'" class="font-mono cell-mono">
             {{ row.configValue }}
           </span>
-          <span v-else class="font-mono text-gray-600">{{ row.configValue }}</span>
+          <span v-else class="font-mono cell-mono">{{ row.configValue }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="valueType" label="类型" width="100" align="center">
@@ -79,17 +87,26 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" align="center">
+      <el-table-column label="操作" min-width="120" class-name="col-actions" align="center">
         <template #default="{ row }">
-          <el-button size="small" link type="primary" @click="openDialog(row)">编辑</el-button>
-          <el-button size="small" link type="danger" @click="handleDelete(row)">删除</el-button>
+          <div class="table-actions">
+            <el-button size="small" link type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button size="small" link type="danger" @click="handleDelete(row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
   </div>
 
   <!-- 新增/编辑对话框 -->
-  <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑配置' : '新增配置'" width="500px">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="isEdit ? '编辑配置' : '新增配置'"
+    width="500px"
+    destroy-on-close
+    append-to-body
+    :close-on-click-modal="false"
+  >
     <el-form :model="form" :rules="formRules" ref="formRef" label-width="100px">
       <el-form-item label="配置键" prop="configKey">
         <el-input v-model="form.configKey" :disabled="isEdit" placeholder="如：max_refund_rate" />
@@ -128,7 +145,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/request'
 import { getMetaVersion } from '@/api/admin'
@@ -143,6 +161,8 @@ interface SystemConfig {
   description: string
   sortOrder: number
   status: number
+  classification?: string
+  sensitive?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -186,10 +206,19 @@ const formRules: FormRules = {
 }
 
 async function loadData() {
-  const params: any = {}
+  const params: Record<string, string> = {}
   if (activeCategory.value) params.category = activeCategory.value
-  const data = await request.get('/admin/system-configs', { params })
-  tableData.value = Array.isArray(data) ? data : []
+  try {
+    const data = await request.get('/admin/system-configs', { params })
+    tableData.value = Array.isArray(data) ? data : []
+  } catch {
+    tableData.value = []
+    ElMessage.error('加载系统配置失败')
+  }
+}
+
+function closeDialog() {
+  dialogVisible.value = false
 }
 
 async function refreshByCategory() {
@@ -289,6 +318,14 @@ async function handleDelete(row: SystemConfig) {
     ElMessage.error('删除失败')
   }
 }
+
+onBeforeRouteLeave(() => {
+  closeDialog()
+})
+
+onBeforeUnmount(() => {
+  closeDialog()
+})
 
 onMounted(() => {
   loadData()

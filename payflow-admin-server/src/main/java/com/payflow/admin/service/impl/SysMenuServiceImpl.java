@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.*;
 import com.payflow.admin.mapper.*;
 import com.payflow.admin.service.SysMenuService;
+import com.payflow.admin.service.guard.ResourceDeleteGuardService;
+import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysRoleMapper sysRoleMapper;
+    private final ResourceDeleteGuardService resourceDeleteGuardService;
 
     @Override
     public List<SysMenu> list() {
@@ -52,6 +55,7 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public void delete(Long id) {
+        resourceDeleteGuardService.assertDeletable(ResourceType.SYS_MENU, id);
         sysMenuMapper.deleteById(id);
     }
 

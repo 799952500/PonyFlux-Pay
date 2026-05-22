@@ -3,6 +3,7 @@ package com.payflow.admin.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.DashboardMetrics;
 import com.payflow.admin.entity.cashier.Order;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.DashboardMetricsMapper;
 import com.payflow.admin.mapper.cashier.OrderMapper;
 import lombok.RequiredArgsConstructor;
@@ -146,7 +147,19 @@ public class DashboardAggregationService {
      * 获取商户交易排行（从流水表实时查询 Top N）
      */
     public List<Map<String, Object>> getMerchantRanking(LocalDateTime start, LocalDateTime end, int limit) {
-        return orderMapper.merchantRanking(start, end, limit);
+        return getMerchantRanking(start, end, limit, null);
+    }
+
+    public List<Map<String, Object>> getMerchantRanking(LocalDateTime start, LocalDateTime end, int limit,
+                                                        List<String> merchantScopeIds) {
+        List<Map<String, Object>> ranking = orderMapper.merchantRanking(start, end, limit);
+        if (merchantScopeIds == null) {
+            return ranking;
+        }
+        return ranking.stream()
+                .filter(r -> r.get("merchantId") != null
+                        && merchantScopeIds.contains(r.get("merchantId").toString()))
+                .toList();
     }
 
     // ==================== 现有仪表盘（兼容旧逻辑） ====================
@@ -155,6 +168,13 @@ public class DashboardAggregationService {
      * 构建前端仪表盘所需 data 结构（与 {@code dashboard.vue} 对齐）。
      */
     public Map<String, Object> buildDashboardPayload(int trendDays) {
+        return buildDashboardPayload(trendDays, null);
+    }
+
+    public Map<String, Object> buildDashboardPayload(int trendDays, List<String> merchantScopeIds) {
+        if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
+            return emptyDashboardPayload();
+        }
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
         if (trendDays < 1) {
@@ -165,11 +185,11 @@ public class DashboardAggregationService {
         }
         LocalDate trendStart = today.minusDays(trendDays - 1L);
 
-        long todayRevenueFen = nz(orderMapper.sumPaidRevenueFenOnDay(today));
-        long yesterdayRevenueFen = nz(orderMapper.sumPaidRevenueFenOnDay(yesterday));
-        long todayOrders = nz(orderMapper.countCreatedOnDay(today));
-        long yesterdayOrders = nz(orderMapper.countCreatedOnDay(yesterday));
-        long todayPaid = nz(orderMapper.countPaidOnDay(today));
+        long todayRevenueFen = sumPaidRevenueFenOnDay(today, merchantScopeIds);
+        long yesterdayRevenueFen = sumPaidRevenueFenOnDay(yesterday, merchantScopeIds);
+        long todayOrders = countCreatedOnDay(today, merchantScopeIds);
+        long yesterdayOrders = countCreatedOnDay(yesterday, merchantScopeIds);
+        long todayPaid = countPaidOnDay(today, merchantScopeIds);
 
         double conversionRate = todayOrders == 0 ? 0D
                 : BigDecimal.valueOf(todayPaid * 100.0 / todayOrders).setScale(1, RoundingMode.HALF_UP).doubleValue();
@@ -206,6 +226,12 @@ public class DashboardAggregationService {
         LocalDateTime rankStart = today.minusDays(30).atStartOfDay();
         LocalDateTime rankEnd = today.plusDays(1).atStartOfDay();
         List<Map<String, Object>> ranking = orderMapper.merchantRanking(rankStart, rankEnd, 10);
+        if (merchantScopeIds != null) {
+            ranking = ranking.stream()
+                    .filter(r -> r.get("merchantId") != null
+                            && merchantScopeIds.contains(r.get("merchantId").toString()))
+                    .toList();
+        }
         List<Map<String, Object>> merchantRanking = ranking.stream().map(r -> {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("merchantId", str(r.get("merchantId")));
@@ -225,7 +251,7 @@ public class DashboardAggregationService {
         data.put("trendData", trendData);
         data.put("channelDistribution", channelDistribution);
         data.put("merchantRanking", merchantRanking);
-        data.put("recentOrders", buildRecentOrders());
+        data.put("recentOrders", buildRecentOrders(merchantScopeIds));
 
         // 计算环比变化率
         long revenueChangePct = yesterdayRevenueFen == 0 ? 0
@@ -233,7 +259,7 @@ public class DashboardAggregationService {
 
         // 计算同比变化率（与7天前对比）
         LocalDate sevenDaysAgo = today.minusDays(7);
-        long sevenDaysAgoRevenue = nz(orderMapper.sumPaidRevenueFenOnDay(sevenDaysAgo));
+        long sevenDaysAgoRevenue = sumPaidRevenueFenOnDay(sevenDaysAgo, merchantScopeIds);
         long revenueYoyPct = sevenDaysAgoRevenue == 0 ? 0
                 : (todayRevenueFen - sevenDaysAgoRevenue) * 100 / sevenDaysAgoRevenue;
 
@@ -263,11 +289,69 @@ public class DashboardAggregationService {
         };
     }
 
-    private List<Map<String, Object>> buildRecentOrders() {
-        List<Order> list = orderMapper.selectList(
-                new LambdaQueryWrapper<Order>()
-                        .orderByDesc(Order::getCreatedAt)
-                        .last("LIMIT 10"));
+    private Map<String, Object> emptyDashboardPayload() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("todayRevenue", 0D);
+        data.put("yesterdayRevenue", 0D);
+        data.put("todayOrders", 0L);
+        data.put("yesterdayOrders", 0L);
+        data.put("todayPaid", 0L);
+        data.put("conversionRate", 0D);
+        data.put("trendData", List.of());
+        data.put("channelDistribution", List.of());
+        data.put("merchantRanking", List.of());
+        data.put("recentOrders", List.of());
+        data.put("revenueChangePct", 0L);
+        data.put("revenueYoYPct", 0L);
+        data.put("todayRefunds", 0);
+        data.put("activeMerchants", 0);
+        data.put("successRate", "0%");
+        return data;
+    }
+
+    private long sumPaidRevenueFenOnDay(LocalDate day, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return nz(orderMapper.sumPaidRevenueFenOnDay(day));
+        }
+        return orderMapper.selectList(new LambdaQueryWrapper<Order>()
+                        .in(Order::getStatus, "PAID", "SUCCESS")
+                        .in(Order::getMerchantId, merchantScopeIds)
+                        .apply("DATE(COALESCE(pay_time, updated_at, created_at)) = {0}", day))
+                .stream()
+                .mapToLong(o -> o.getPayAmount() != null ? o.getPayAmount() : (o.getAmount() != null ? o.getAmount() : 0L))
+                .sum();
+    }
+
+    private long countCreatedOnDay(LocalDate day, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return nz(orderMapper.countCreatedOnDay(day));
+        }
+        return orderMapper.selectCount(new LambdaQueryWrapper<Order>()
+                .in(Order::getMerchantId, merchantScopeIds)
+                .apply("DATE(created_at) = {0}", day));
+    }
+
+    private long countPaidOnDay(LocalDate day, List<String> merchantScopeIds) {
+        if (merchantScopeIds == null) {
+            return nz(orderMapper.countPaidOnDay(day));
+        }
+        return orderMapper.selectCount(new LambdaQueryWrapper<Order>()
+                .in(Order::getStatus, "PAID", "SUCCESS")
+                .in(Order::getMerchantId, merchantScopeIds)
+                .apply("DATE(COALESCE(pay_time, updated_at, created_at)) = {0}", day));
+    }
+
+    private List<Map<String, Object>> buildRecentOrders(List<String> merchantScopeIds) {
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<Order>()
+                .orderByDesc(Order::getCreatedAt)
+                .last("LIMIT 10");
+        if (merchantScopeIds != null) {
+            if (merchantScopeIds.isEmpty()) {
+                return List.of();
+            }
+            wrapper.in(Order::getMerchantId, merchantScopeIds);
+        }
+        List<Order> list = orderMapper.selectList(wrapper);
         List<Map<String, Object>> out = new ArrayList<>();
         for (Order o : list) {
             Map<String, Object> m = new LinkedHashMap<>();

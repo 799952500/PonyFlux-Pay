@@ -1,10 +1,6 @@
 <template>
-  <div class="page-detail-shell">
-    <div class="detail-toolbar">
-      <el-button class="btn-back" :icon="ArrowLeft" @click="$router.back()">返回订单列表</el-button>
-    </div>
-
-    <div v-if="loading" class="content-card detail-card">
+  <div class="order-detail-panel">
+    <div v-if="loading" class="detail-card content-card">
       <el-skeleton animated :rows="6" />
     </div>
 
@@ -12,10 +8,7 @@
       <header class="detail-hero content-card detail-card">
         <div class="detail-hero__main">
           <p class="detail-hero__eyebrow">订单号</p>
-          <h1
-            class="detail-hero__id"
-            :data-flip="`order-${order.orderId}`"
-          >{{ order.orderId }}</h1>
+          <h2 class="detail-hero__id" :data-flip="`order-${order.orderId}`">{{ order.orderId }}</h2>
           <div class="detail-hero__tags">
             <el-tag size="small" :type="tagTypeOf(ORDER_STATUS_TAG, order.status)">
               {{ labelOf(ORDER_STATUS_LABEL, order.status) }}
@@ -74,11 +67,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getOrderDetail } from '@/api/admin'
+import { useMerchantScope } from '@/composables/useMerchantScope'
 import type { Order } from '@/types'
 import {
   channelLabel,
@@ -91,7 +83,12 @@ import {
   tagTypeOf,
 } from '@/utils/format'
 
-const route = useRoute()
+const props = defineProps<{
+  orderId: string | null
+  active?: boolean
+}>()
+
+const { isMerchantAllowed } = useMerchantScope()
 const loading = ref(false)
 const order = ref<Order | null>(null)
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
@@ -102,20 +99,40 @@ function syncViewport() {
   viewportWidth.value = window.innerWidth
 }
 
-onMounted(async () => {
-  window.addEventListener('resize', syncViewport)
+async function loadDetail(id: string) {
   loading.value = true
+  order.value = null
   try {
-    order.value = await getOrderDetail(route.params.orderId as string)
+    const detail = await getOrderDetail(id)
+    if (detail && !isMerchantAllowed(detail.merchantId)) {
+      order.value = null
+      ElMessage.warning('无权查看该订单')
+    } else {
+      order.value = detail
+    }
   } catch {
     order.value = null
     ElMessage.error('加载订单详情失败')
   } finally {
     loading.value = false
   }
-})
+}
 
-onUnmounted(() => {
-  window.removeEventListener('resize', syncViewport)
-})
+watch(
+  () => [props.orderId, props.active] as const,
+  ([id, active]) => {
+    if (active !== false && id) loadDetail(id)
+    if (!id) order.value = null
+  },
+  { immediate: true },
+)
+
+onMounted(() => window.addEventListener('resize', syncViewport))
+onUnmounted(() => window.removeEventListener('resize', syncViewport))
 </script>
+
+<style scoped>
+.order-detail-panel {
+  padding: 0 4px 16px;
+}
+</style>

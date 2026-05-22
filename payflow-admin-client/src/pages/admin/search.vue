@@ -23,20 +23,20 @@
     <div class="content-card">
       <TableToolbar title="搜索结果" :total="hits.length" />
 
-      <el-table v-loading="loading" :data="hits" stripe size="small" class="data-table" @row-click="openOrder">
+      <el-table table-layout="auto" v-loading="loading" :data="hits" stripe size="small" class="data-table" @row-click="openOrder">
         <el-table-column label="订单号" prop="orderId" min-width="170">
           <template #default="{ row }">
             <span
               :data-flip="`order-${row.orderId}`"
-              class="text-xs tabular-nums text-[#047857] cursor-pointer"
+              class="cell-mono pf-link cursor-pointer"
             >#{{ row.orderId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户" prop="merchantId" width="140" />
         <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="140" />
-        <el-table-column label="金额（元）" prop="amount" width="110" align="right">
+        <el-table-column label="金额（元）" prop="amount" width="110" align="right" class-name="col-amount">
           <template #default="{ row }">
-            <span class="font-semibold tabular-nums">¥{{ formatMoneyFen(row.amount) }}</span>
+            <span class="cell-amount">¥{{ formatMoneyFen(row.amount) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" prop="status" width="100">
@@ -46,7 +46,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import { adminSearchOrders } from '@/api/admin'
@@ -75,6 +76,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+const { open: openOrderDetail } = useOrderDetailOverlay()
 const keyword = ref(String(route.query.q ?? ''))
 const limit = ref(20)
 const loading = ref(false)
@@ -101,7 +103,7 @@ async function runSearch() {
 }
 
 function openOrder(row: AdminSearchOrderHit) {
-  router.push(`/admin/orders/${row.orderId}`)
+  openOrderDetail(row.orderId)
 }
 
 watch(

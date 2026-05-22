@@ -36,6 +36,27 @@ public class ChannelRouteServiceImpl implements ChannelRouteService {
     }
 
     @Override
+    public void ensureMerchantAccountLink(String merchantId, Long channelId, Long paymentAccountId) {
+        if (merchantId == null || merchantId.isBlank() || channelId == null || paymentAccountId == null) {
+            return;
+        }
+        Long exists = mapper.selectCount(new LambdaQueryWrapper<ChannelRoute>()
+                .eq(ChannelRoute::getMerchantId, merchantId)
+                .eq(ChannelRoute::getChannelId, channelId)
+                .eq(ChannelRoute::getPaymentAccountId, paymentAccountId));
+        if (exists != null && exists > 0) {
+            return;
+        }
+        ChannelRoute route = new ChannelRoute();
+        route.setMerchantId(merchantId);
+        route.setChannelId(channelId);
+        route.setPaymentAccountId(paymentAccountId);
+        route.setEnabled(true);
+        route.setPriority(100);
+        mapper.insert(route);
+    }
+
+    @Override
     public void toggle(Long id) {
         ChannelRoute route = mapper.selectById(id);
         if (route == null) {

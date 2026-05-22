@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.DashboardAggregationService;
 import com.payflow.admin.service.OrderService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +36,10 @@ public class AdminDashboardController {
     @Operation(summary = "数据概览首页")
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> dashboard(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "7") int trendDays) {
-        Map<String, Object> data = dashboardAggregationService.buildDashboardPayload(trendDays);
+        Map<String, Object> data = dashboardAggregationService.buildDashboardPayload(
+                trendDays, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -49,8 +53,10 @@ public class AdminDashboardController {
     @Operation(summary = "获取今日核心统计指标")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "7") int trendDays) {
-        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(trendDays);
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(
+                trendDays, AdminRequestContext.merchantScope(request));
         Map<String, Object> legacy = new LinkedHashMap<>();
         legacy.put("todayRevenue", full.get("todayRevenue"));
         legacy.put("todayOrders", full.get("todayOrders"));
@@ -72,8 +78,10 @@ public class AdminDashboardController {
     @Operation(summary = "收入趋势数据")
     @GetMapping("/trend")
     public ResponseEntity<Map<String, Object>> trend(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "7") int days) {
-        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(days);
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(
+                days, AdminRequestContext.merchantScope(request));
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> trendData = (List<Map<String, Object>>) full.get("trendData");
         return ResponseEntity.ok(Map.of(
@@ -89,8 +97,10 @@ public class AdminDashboardController {
     @Operation(summary = "各渠道交易分布")
     @GetMapping("/channel-dist")
     public ResponseEntity<Map<String, Object>> channelDist(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "7") int trendDays) {
-        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(trendDays);
+        Map<String, Object> full = dashboardAggregationService.buildDashboardPayload(
+                trendDays, AdminRequestContext.merchantScope(request));
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> channelDistribution =
                 (List<Map<String, Object>>) full.get("channelDistribution");
@@ -125,11 +135,13 @@ public class AdminDashboardController {
     @Operation(summary = "商户交易额排行榜")
     @GetMapping("/merchant-ranking")
     public ResponseEntity<Map<String, Object>> merchantRanking(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "30") int days,
             @RequestParam(defaultValue = "10") int limit) {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = end.minusDays(days);
-        List<Map<String, Object>> ranking = dashboardAggregationService.getMerchantRanking(start, end, limit);
+        List<Map<String, Object>> ranking = dashboardAggregationService.getMerchantRanking(
+                start, end, limit, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -143,7 +155,13 @@ public class AdminDashboardController {
     @Operation(summary = "商户交易洞察")
     @GetMapping("/merchant/{merchantId}/insight")
     public ResponseEntity<Map<String, Object>> merchantInsight(
+            HttpServletRequest request,
             @PathVariable String merchantId) {
+        List<String> scope = AdminRequestContext.merchantScope(request);
+        if ("__NO_ACCESS__".equals(AdminRequestContext.resolveMerchantFilter(merchantId, scope))) {
+            return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
+        }
+        AdminRequestContext.assertMerchantAllowed(merchantId, scope);
         Map<String, Object> data = orderService.getMerchantInsight(merchantId);
         return ResponseEntity.ok(Map.of(
                 "code", 0,

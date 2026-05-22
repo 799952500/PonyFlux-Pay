@@ -1,0 +1,206 @@
+/* 主题预设：mint / ocean / violet / dark */
+
+:root,
+[data-theme='mint'] {
+  --pf-primary: #2aa89a;
+  --pf-primary-hover: #0d9488;
+  --pf-primary-soft: #e8f6f3;
+  --pf-primary-muted: rgba(42, 168, 154, 0.05);
+  --pf-bg-page: #f2f5f4;
+  --pf-bg-sidebar: #fafbfb;
+  --pf-bg-sidebar-border: rgba(51, 65, 85, 0.08);
+  --pf-sidebar-text: #4a5a6a;
+  --pf-sidebar-text-muted: #7a8a99;
+  --pf-sidebar-active-bg: rgba(42, 168, 154, 0.1);
+  --pf-sidebar-active-text: #0f766e;
+  --pf-sidebar-hover-bg: rgba(42, 168, 154, 0.06);
+  --pf-topbar-bg: rgba(250, 251, 251, 0.92);
+  --pf-topbar-border: rgba(51, 65, 85, 0.08);
+  --pf-topbar-text: #334155;
+  --pf-card-bg: #fcfdfd;
+  --pf-card-border: rgba(51, 65, 85, 0.08);
+  --pf-card-shadow: rgba(15, 23, 42, 0.04);
+  --pf-text-primary: #3d4a59;
+  --pf-text-secondary: #5c6b7a;
+  --pf-amount: #a16207;
+  --pf-wave-1: #99f6e4;
+  --pf-wave-2: #5eead4;
+  --pf-wave-3: #14b8a6;
+  --pf-login-header-bg: #fafbfb;
+  --pf-scrollbar-light: rgba(20, 184, 166, 0.28);
+  --pf-scrollbar-light-hover: rgba(20, 184, 166, 0.48);
+  --pf-scrollbar-dark: rgba(20, 184, 166, 0.22);
+  --pf-scrollbar-dark-hover: rgba(20, 184, 166, 0.42);
+  --pf-table-hover: rgba(42, 168, 154, 0.08);
+  --pf-table-header: rgba(51, 65, 85, 0.035);
+  --pf-table-stripe: rgba(42, 168, 154, 0.04);
+  --pf-table-stripe-strong: rgba(42, 168, 154, 0.08);
+  --pf-table-cell-py: 11px;
+  --pf-table-cell-py-compact: 7px;
+  --pf-table-header-py: 12px;
+  --pf-table-header-py-compact: 9px;
+  --pf-glow: rgba(94, 234, 212, 0.55);
+}
+
+[data-theme='ocean'] {
+  --pf-primary: #0284c7;
+  --pf-primary-hover: #0369a1;
+  --pf-primary-soft: #e8f4fc;
+  --pf-primary-muted: rgba(2, 132, 199, 0.05);
+  --pf-bg-page: #f3f6f9;
+  --pf-bg-sidebar: #fafbfb;
+  --pf-bg-sidebar-border: rgba(51, 65, 85, 0.08);
+  --pf-sidebar-text: #4a5a6a;
+  --pf-sidebar-text-muted: #7a8a99;
+  --pf-sidebar-active-bg: rgba(2, 132, 199, 0.08);
+  --pf-sidebar-active-text: #075985;
+  --pf-sidebar-hover-bg: rgba(2, 132, 199, 0.06);
+  --pf-topbar-bg: rgba(250, 251, 251, 0.92);
+  --pf-topbar-border: rgba(51, 65, 85, 0.08);
+  --pf-topbar-text: #334155;
+  --pf-card-bg: #fcfdfe;
+  --pf-card-border: rgba(51, 65, 85, 0.08);
+  --pf-card-shadow: rgba(15, 23, 42, 0.04);
+  --pf-text-primary: #3d4a59;
+  --pf-text-secondary: #5c6b7a;
+  --pf-amount: #0369a1;
+  --pf-wave-1: #7dd3fc;
+  --pf-wave-2: #38bdf8;
+  --pf-wave-3: #0284c7;
+  --pf-login-header-bg: #ffffff;
+  --pf-scrollbar-light: rgba(2, 132, 199, 0.28);
+  --pf-scrollbar-light-hover: rgba(2, 132, 199, 0.48);
+  --pf-scrollbar-dark: rgba(2, 132, 199, 0.22);
+  --pf-scrollbar-dark-hover: rgba(2, 132, 199, 0.42);
+  --pf-table-hover: rgba(2, 132, 199, 0.08);
+  --pf-table-header: rgba(51, 65, 85, 0.035);
+  --pf-table-stripe: rgba(2, 132, 199, 0.04);
+  --pf-table-stripe-strong: rgba(2, 132, 199, 0.08);
+  --pf-table-cell-py: 11px;
+  --pf-table-cell-py-compact: 7px;
+  --pf-table-header-py: 12px;
+  --pf-table-header-py-compact: 9px;
+  --pf-glow: rgba(56, 189, 248, 0.55);
+}
+
+[data-theme='violet'] {
+  --pf-primary: #7c3aed;
+  --pf-primary-hover: #6d28d9;
+  --pf-primary-soft: #f0ebfa;
+  --pf-primary-muted: rgba(124, 58, 237, 0.05);
+  --pf-bg-page: #f6f4f9;
+  --pf-bg-sidebar: #fafbfb;
+  --pf-bg-sidebar-border: rgba(51, 65, 85, 0.08);
+  --pf-sidebar-text: #4a5a6a;
+  --pf-sidebar-text-muted: #7a8a99;
+  --pf-sidebar-active-bg: rgba(124, 58, 237, 0.08);
+  --pf-sidebar-active-text: #5b21b6;
+  --pf-sidebar-hover-bg: rgba(124, 58, 237, 0.06);
+  --pf-topbar-bg: rgba(250, 251, 251, 0.92);
+  --pf-topbar-border: rgba(51, 65, 85, 0.08);
+  --pf-topbar-text: #334155;
+  --pf-card-bg: #fdfcfe;
+  --pf-card-border: rgba(51, 65, 85, 0.08);
+  --pf-card-shadow: rgba(15, 23, 42, 0.04);
+  --pf-text-primary: #3d4a59;
+  --pf-text-secondary: #5c6b7a;
+  --pf-amount: #7c3aed;
+  --pf-wave-1: #c4b5fd;
+  --pf-wave-2: #a78bfa;
+  --pf-wave-3: #7c3aed;
+  --pf-login-header-bg: #ffffff;
+  --pf-scrollbar-light: rgba(124, 58, 237, 0.28);
+  --pf-scrollbar-light-hover: rgba(124, 58, 237, 0.48);
+  --pf-scrollbar-dark: rgba(124, 58, 237, 0.22);
+  --pf-scrollbar-dark-hover: rgba(124, 58, 237, 0.42);
+  --pf-table-hover: rgba(124, 58, 237, 0.08);
+  --pf-table-header: rgba(51, 65, 85, 0.035);
+  --pf-table-stripe: rgba(124, 58, 237, 0.04);
+  --pf-table-stripe-strong: rgba(124, 58, 237, 0.08);
+  --pf-table-cell-py: 11px;
+  --pf-table-cell-py-compact: 7px;
+  --pf-table-header-py: 12px;
+  --pf-table-header-py-compact: 9px;
+  --pf-glow: rgba(167, 139, 250, 0.55);
+}
+
+[data-theme='dark'] {
+  --pf-primary: #2dd4bf;
+  --pf-primary-hover: #5eead4;
+  --pf-primary-soft: rgba(45, 212, 191, 0.18);
+  --pf-primary-muted: rgba(45, 212, 191, 0.14);
+  --pf-bg-page: #0f172a;
+  --pf-bg-sidebar: #1e293b;
+  --pf-bg-sidebar-border: rgba(255, 255, 255, 0.1);
+  --pf-sidebar-text: #e2e8f0;
+  --pf-sidebar-text-muted: #94a3b8;
+  --pf-sidebar-active-bg: rgba(45, 212, 191, 0.18);
+  --pf-sidebar-active-text: #99f6e4;
+  --pf-sidebar-hover-bg: rgba(45, 212, 191, 0.1);
+  --pf-topbar-bg: rgba(30, 41, 59, 0.96);
+  --pf-topbar-border: rgba(255, 255, 255, 0.1);
+  --pf-topbar-text: #f8fafc;
+  --pf-card-bg: #1e293b;
+  --pf-card-border: rgba(255, 255, 255, 0.1);
+  --pf-card-shadow: rgba(0, 0, 0, 0.35);
+  --pf-text-primary: #f8fafc;
+  --pf-text-secondary: #cbd5e1;
+  --pf-amount: #fbbf24;
+  --pf-wave-1: #134e4a;
+  --pf-wave-2: #115e59;
+  --pf-wave-3: #0f766e;
+  --pf-login-header-bg: #1e293b;
+  --pf-scrollbar-light: rgba(148, 163, 184, 0.4);
+  --pf-scrollbar-light-hover: rgba(148, 163, 184, 0.6);
+  --pf-scrollbar-dark: rgba(45, 212, 191, 0.3);
+  --pf-scrollbar-dark-hover: rgba(45, 212, 191, 0.5);
+  --pf-table-hover: rgba(45, 212, 191, 0.14);
+  --pf-table-header: rgba(45, 212, 191, 0.12);
+  --pf-table-stripe: rgba(255, 255, 255, 0.03);
+  --pf-table-stripe-strong: rgba(45, 212, 191, 0.1);
+  --pf-table-cell-py: 11px;
+  --pf-table-cell-py-compact: 7px;
+  --pf-table-header-py: 12px;
+  --pf-table-header-py-compact: 9px;
+  --pf-glow: rgba(45, 212, 191, 0.45);
+
+  /* Element Plus 暗色语义色 */
+  --el-bg-color: #1e293b;
+  --el-bg-color-page: #0f172a;
+  --el-bg-color-overlay: #1e293b;
+  --el-text-color-primary: #f8fafc;
+  --el-text-color-regular: #e2e8f0;
+  --el-text-color-secondary: #94a3b8;
+  --el-text-color-placeholder: #64748b;
+  --el-text-color-disabled: #475569;
+  --el-border-color: rgba(255, 255, 255, 0.14);
+  --el-border-color-light: rgba(255, 255, 255, 0.1);
+  --el-border-color-lighter: rgba(255, 255, 255, 0.08);
+  --el-border-color-extra-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color: rgba(255, 255, 255, 0.08);
+  --el-fill-color-light: rgba(255, 255, 255, 0.06);
+  --el-fill-color-lighter: rgba(255, 255, 255, 0.04);
+  --el-fill-color-blank: #1e293b;
+  --el-fill-color-dark: rgba(0, 0, 0, 0.2);
+  --el-mask-color: rgba(0, 0, 0, 0.72);
+  --el-color-info: #94a3b8;
+}
+
+/* Element Plus 主色绑定 */
+:root {
+  --color-primary: var(--pf-primary);
+  --color-accent: var(--pf-primary-hover);
+  --color-success: var(--pf-primary);
+  --scrollbar-thumb-light: var(--pf-scrollbar-light);
+  --scrollbar-thumb-light-hover: var(--pf-scrollbar-light-hover);
+  --scrollbar-thumb-dark: var(--pf-scrollbar-dark);
+  --scrollbar-thumb-dark-hover: var(--pf-scrollbar-dark-hover);
+
+  --el-color-primary: var(--pf-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--pf-primary) 70%, white);
+  --el-color-primary-light-5: color-mix(in srgb, var(--pf-primary) 50%, white);
+  --el-color-primary-light-7: color-mix(in srgb, var(--pf-primary) 30%, white);
+  --el-color-primary-light-8: color-mix(in srgb, var(--pf-primary) 20%, white);
+  --el-color-primary-light-9: var(--pf-primary-soft);
+  --el-color-primary-dark-2: var(--pf-primary-hover);
+}

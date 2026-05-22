@@ -40,6 +40,10 @@ public class PaymentAccount {
     @TableField(exist = false)
     private String channelName;
 
+    /** 创建时绑定商户（仅请求体，不入库 payment_accounts 表） */
+    @TableField(exist = false)
+    private String merchantId;
+
     private String appId;
 
     @JsonProperty(access = Access.WRITE_ONLY)

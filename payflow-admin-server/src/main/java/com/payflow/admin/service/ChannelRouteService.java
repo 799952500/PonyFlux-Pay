@@ -15,6 +15,11 @@ public interface ChannelRouteService {
 
     ChannelRoute create(ChannelRoute route);
 
+    /**
+     * 为商户绑定渠道收款账号（已存在则跳过）。
+     */
+    void ensureMerchantAccountLink(String merchantId, Long channelId, Long paymentAccountId);
+
     void toggle(Long id);
 
     void delete(Long id);

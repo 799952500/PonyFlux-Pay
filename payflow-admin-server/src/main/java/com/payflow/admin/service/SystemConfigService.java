@@ -15,6 +15,9 @@ public interface SystemConfigService {
     /** 按分类查列表（null 表示全部） */
     List<SystemConfig> listByCategory(String category);
 
+    /** 管理端视图：附带全局标识与脱敏后的配置值 */
+    List<Map<String, Object>> listViewByCategory(String category, boolean platformAdmin);
+
     /** 按 key 查值（从缓存，Cache-Aside） */
     String getValue(String key);
 

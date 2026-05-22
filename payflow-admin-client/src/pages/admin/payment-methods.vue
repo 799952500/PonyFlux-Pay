@@ -7,7 +7,7 @@
           <el-radio-button value="">全部</el-radio-button>
           <el-radio-button value="WECHAT">微信支付</el-radio-button>
           <el-radio-button value="ALIPAY">支付宝</el-radio-button>
-          <el-radio-button value="UNIONPAY">银联</el-radio-button>
+          <el-radio-button value="UNION">银联</el-radio-button>
         </el-radio-group>
       </div>
       <el-form :inline="true" :model="queryForm" size="default">
@@ -16,7 +16,7 @@
             <el-option label="全部" value="" />
             <el-option label="微信支付" value="WECHAT" />
             <el-option label="支付宝" value="ALIPAY" />
-            <el-option label="银联" value="UNIONPAY" />
+            <el-option label="银联" value="UNION" />
           </el-select>
         </el-form-item>
         <el-form-item label="支付方式">
@@ -46,10 +46,10 @@
           </span>
           <span v-else class="table-toolbar__hint">共 {{ total }} 条记录</span>
         </div>
-        <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
+        <el-button v-if="platformAdmin" type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
       </div>
 
-      <el-table v-loading="loading" :data="displayTableData" stripe size="small" class="data-table">
+      <el-table table-layout="auto" v-loading="loading" :data="tableData" stripe size="small" class="data-table">
         <el-table-column label="支付方式编号" prop="methodCode" min-width="148">
           <template #default="{ row }">
             <span class="cell-mono text-[#047857] font-medium cursor-pointer hover:underline" @click="openDetail(row)">{{ row.methodCode }}</span>
@@ -75,12 +75,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="172">
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="140" fixed="right" align="center">
+        <el-table-column v-if="platformAdmin" label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
             <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
@@ -88,7 +88,6 @@
         </el-table-column>
       </el-table>
       <AdminPagination
-        v-if="activeChannelIdFromQuery == null"
         v-model:current-page="queryForm.page"
         v-model:page-size="queryForm.pageSize"
         :total="total"
@@ -97,14 +96,29 @@
       />
     </div>
 
-    <!-- 新建/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑支付方式' : '新建支付方式'" width="620px" destroy-on-close>
+    <el-alert
+      v-if="!platformAdmin"
+      class="mb-4"
+      type="info"
+      :closable="false"
+      show-icon
+      title="支付方式为平台公共定义，商户管理员仅可查看已启用的方式；账号与路由请在「支付账号」「商户管理」中配置。"
+    />
+
+    <!-- 新建/编辑弹窗（仅平台管理员） -->
+    <el-dialog
+      v-if="platformAdmin"
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑支付方式' : '新建支付方式'"
+      width="620px"
+      destroy-on-close
+    >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="130px" size="default">
         <el-form-item label="所属渠道" prop="channelType">
           <el-select v-model="form.channelType" placeholder="请选择渠道" style="width: 100%">
             <el-option label="微信支付" value="WECHAT" />
             <el-option label="支付宝" value="ALIPAY" />
-            <el-option label="银联" value="UNIONPAY" />
+            <el-option label="银联" value="UNION" />
           </el-select>
         </el-form-item>
         <el-form-item label="支付方式编号" prop="methodCode">
@@ -185,8 +199,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'
+import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import { channelLabel, channelTagType, formatDateTime, maskSecret } from '@/utils/format'
+import { isPlatformAdmin } from '@/utils/adminAccess'
 
+const platformAdmin = isPlatformAdmin()
 const route = useRoute()
 const router = useRouter()
 
@@ -240,12 +257,6 @@ const activeChannelIdFromQuery = computed(() => {
   return Number.isFinite(n) ? n : null
 })
 
-const displayTableData = computed(() => {
-  const fid = activeChannelIdFromQuery.value
-  if (fid == null) return tableData.value
-  return tableData.value.filter((r: { channelId?: number }) => Number(r.channelId) === fid)
-})
-
 function clearChannelQuery() {
   router.replace({ path: '/admin/payment-methods' })
 }
@@ -259,12 +270,33 @@ async function loadChannels() {
   }
 }
 
+function buildListParams() {
+  const params: Parameters<typeof getPaymentMethods>[0] = {
+    page: queryForm.page,
+    pageSize: queryForm.pageSize,
+  }
+  const fid = activeChannelIdFromQuery.value
+  if (fid != null) {
+    params.channelId = fid
+  } else if (queryForm.channel) {
+    params.channelType = queryForm.channel
+  }
+  const name = queryForm.name?.trim()
+  if (name) {
+    params.keyword = name
+  }
+  if (queryForm.status) {
+    params.status = queryForm.status
+  }
+  return params
+}
+
 async function loadData() {
   loading.value = true
   try {
-    const res: any = await getPaymentMethods({ page: queryForm.page, pageSize: queryForm.pageSize })
+    const res: any = await getPaymentMethods(buildListParams())
     tableData.value = Array.isArray(res) ? res : (res.list ?? [])
-    total.value = res.total ?? tableData.value.length
+    total.value = Number(res?.total ?? tableData.value.length)
   } catch {
     ElMessage.error('加载支付方式列表失败')
   } finally {
@@ -278,7 +310,12 @@ function handleSearch() {
 }
 
 function handleReset() {
+  selectedChannel.value = ''
   Object.assign(queryForm, { page: 1, pageSize: 20, channel: '', name: '', status: '' })
+  if (activeChannelIdFromQuery.value != null) {
+    clearChannelQuery()
+    return
+  }
   loadData()
 }
 
@@ -365,20 +402,20 @@ async function handleSubmit() {
 }
 
 async function handleDelete(row: any) {
-  await ElMessageBox.confirm(`确定要删除支付方式「${row.methodName}」吗？`, '删除确认', { type: 'warning' })
-  try {
-    await deletePaymentMethod(row.id)
-    ElMessage.success('删除成功')
-    loadData()
-  } catch {
-    ElMessage.error('删除失败')
-  }
+  await confirmDeleteWithGuard({
+    resourceType: 'PAYMENT_METHOD',
+    resourceId: row.id,
+    displayName: row.methodName,
+    deleteFn: () => deletePaymentMethod(row.id),
+    onSuccess: loadData,
+  })
 }
 
 watch(
   () => route.query.channelId,
   () => {
     queryForm.page = 1
+    loadData()
   }
 )
 

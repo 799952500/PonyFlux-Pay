@@ -11,7 +11,11 @@ import java.util.Map;
 public interface PaymentAccountService {
     List<PaymentAccount> listAll();
 
+    List<PaymentAccount> listAll(List<String> merchantScopeIds);
+
     PaymentAccount getById(Long id);
+
+    PaymentAccount getById(Long id, List<String> merchantScopeIds);
 
     PaymentAccount create(PaymentAccount account);
 

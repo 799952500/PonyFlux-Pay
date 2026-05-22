@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.ChurnAlert;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.ChurnAlertService;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +28,12 @@ public class ChurnAlertController {
     @Operation(summary = "预警列表")
     @GetMapping("")
     public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String merchantId,
             @RequestParam(required = false) String status) {
-        var result = churnAlertService.getAlerts(page, size, merchantId, status);
+        var result = churnAlertService.getAlerts(page, size, merchantId, status, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",
@@ -45,8 +48,10 @@ public class ChurnAlertController {
 
     @Operation(summary = "预警详情")
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> detail(@PathVariable Long id) {
-        ChurnAlert alert = churnAlertService.getAlertDetail(id);
+    public ResponseEntity<Map<String, Object>> detail(
+            HttpServletRequest request,
+            @PathVariable Long id) {
+        ChurnAlert alert = churnAlertService.getAlertDetail(id, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", alert));
     }
 

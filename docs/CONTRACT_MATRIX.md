@@ -46,6 +46,7 @@
 | `getMerchantRiskRules` / `createMerchantRiskRule` / `updateMerchantRiskRule` / `updateMerchantRiskRuleStatus` | GET/POST/PUT | `/merchant/risk/rules`、`/merchant/risk/rules/{ruleId}`、`/merchant/risk/rules/{ruleId}/status` | [`MerchantRiskController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantRiskController.java) |
 | `getMerchantRiskHitRecords` | GET | `/merchant/risk/hits` | 同上 |
 | 支付方式 | * | `/admin/payment-methods` | [`PaymentMethodController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentMethodController.java) |
+| 删除依赖预检 | GET | `/admin/resource-dependencies` | [`ResourceDependencyController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/ResourceDependencyController.java) |
 | 支付账号（旧路径） | * | `/admin/payment-accounts` | [`PaymentAccountController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentAccountController.java) |
 | 角色/菜单/用户 | * | `/admin/roles`、`/admin/menus`、`/admin/users` | [`SysRoleController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysRoleController.java)、[`SysMenuController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysMenuController.java)、[`SysUserController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysUserController.java) |
 | 系统配置 | * | `/admin/system-configs` | [`SystemConfigController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SystemConfigController.java) |
@@ -57,9 +58,10 @@
 | 审计日志 | GET | `/admin/audit-logs` | [`AdminAuditLogController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminAuditLogController.java) |
 | 安全审计（越权拒绝） | GET | `/admin/security/audit` | [`AdminSecurityAuditController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSecurityAuditController.java)（`RISK` / `SUPER_ADMIN`） |
 | 验证码 | GET | `/admin/auth/captcha` | [`AuthController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AuthController.java) |
+| 是否需要验证码 | GET | `/admin/auth/captcha-required?username=` | 同上；`data.required` 为 true 时前端展示验证码；首次登录（该用户无密码失败记录）为 false |
 | 版本信息 | GET | `/admin/meta/version` | [`AdminMetaController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminMetaController.java) |
 
-JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` 需带 `Authorization: Bearer <token>`（见 [`JwtInterceptor`](payflow-admin-server/src/main/java/com/payflow/admin/interceptor/JwtInterceptor.java)）。
+JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-required` 外，`/api/v1/admin/**` 需带 `Authorization: Bearer <token>`（见 [`JwtInterceptor`](payflow-admin-server/src/main/java/com/payflow/admin/interceptor/JwtInterceptor.java)）。
 
 ---
 
@@ -93,7 +95,7 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 
 ### 管理端（需登录 Token）
 
-- [ ] POST `/admin/auth/login`（可选：图形验证码流程）
+- [ ] POST `/admin/auth/login`（首次免验证码；密码错误后再走验证码）
 - [ ] GET `/admin/dashboard` — KPI 与图表数据非硬编码错误
 - [ ] GET `/admin/dashboard/metrics` — 预聚合指标查询（按粒度/日期/渠道筛选）
 - [ ] GET `/admin/dashboard/merchant-ranking` — 商户交易额 Top 10
@@ -171,6 +173,54 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 | 登录爆破防护 | admin-server + cashier-server | Redis 计数 + 锁 Key：5 次失败锁 15min |
 | Redis 故障关闭 | cashier-server | 拦截器中 Redis 不可用时抛 `BizException(5000)` 而非放行 |
 | 商户软删除 | admin-server | `DELETE /admin/merchants/{merchantId}` 改为设置 `status='DELETED'`，不再物理删除 |
+| 删除前关联校验 | admin-server | 删除渠道/支付方式/支付账号/商户绑定/菜单/角色等前检查引用；存在关联返回 `code=6006`（HTTP 409），`data.refs` 为引用清单 |
+
+### 删除依赖预检与阻断响应
+
+**预检**：`GET /api/v1/admin/resource-dependencies?resourceType=PAYMENT_METHOD&resourceId=12`
+
+| 字段 | 说明 |
+|------|------|
+| `resourceType` | `CHANNEL` / `PAYMENT_METHOD` / `PAYMENT_ACCOUNT` / `MERCHANT_PAYMENT_METHOD` / `MERCHANT` / `SYS_MENU` / `SYS_ROLE` |
+| `resourceId` | 主键；`MERCHANT` 时为商户号字符串 |
+
+**成功预检**（`code=0`）：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "blocked": false,
+    "summary": "可以安全删除",
+    "refs": []
+  }
+}
+```
+
+**删除被阻断**（`code=6006`，HTTP 409）：
+
+```json
+{
+  "code": 6006,
+  "message": "支付方式「微信扫码」仍被 2 处配置引用，请先解除关联",
+  "data": {
+    "blocked": true,
+    "summary": "支付方式「微信扫码」仍被 2 处配置引用，请先解除关联",
+    "refs": [
+      {
+        "refType": "MERCHANT_PAYMENT_ROUTE",
+        "refId": "1",
+        "merchantId": "M100001",
+        "label": "商户支付路由 #1（商户 M100001）",
+        "resolveHint": "/admin/merchants"
+      }
+    ]
+  }
+}
+```
+
+支付账号删除额外检查：`admin_channel_routes`、`cashier_channel_merchant_routes`（按 `account_code` 映射）、`recon_task` 非终态任务（`status` 非 `SUCCESS`/`FAIL`）。
 | sql.init.mode | cashier-server | `always` → `never`，防止 dev 环境误重置数据 |
 
 ---
@@ -209,3 +259,65 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha` 外，`/api/v1/admin/**` �
 | `POST /notify/**` | 渠道签名校验 | **系统模式**：`MerchantScopeHolder.runInSystemMode` |
 
 持久层：`cashier_orders`、`cashier_payment_link` 在商户上下文中自动追加 `merchant_id` 条件（MyBatis TenantLine）。
+
+---
+
+## 商户数据隔离治理 (008-merchant-data-isolation) 契约变更
+
+### 后台授权范围
+
+| Actor | 服务端范围规则 | 前端输入规则 | 输出规则 |
+|-------|----------------|--------------|----------|
+| 商户管理员 | 以后端登录态解析的 `authorizedMerchantIds` 为唯一可信边界 | `merchantId`、资源 ID、批量 ID、导出条件只能缩小范围，不能扩大范围 | 列表、详情、统计、导出、批量结果不得包含授权外资源 |
+| 系统管理员 | `platformAdmin=true` 时可跨商户筛选和治理 | 可传 `merchantId` 查看指定商户或全局治理视图 | 商户级数据必须展示 `merchantId` 或商户归属摘要 |
+| 系统任务 | 仅用于回调、补单、对账、Webhook 等后台流程 | 不接收前端扩大范围参数 | 写入结果必须保留原始资源商户归属 |
+
+跨商户访问被拒绝时，后台接口必须返回通用拒绝或空结果，不得暴露目标数据是否存在、目标商户名称、金额、状态、内部查询条件或敏感字段。
+
+### 新增/调整管理端 API
+
+| 前端方法 | HTTP | 路径 | 后端 Controller | 权限/范围 |
+|----------|------|------|-----------------|-----------|
+| `getDataIsolationChecks` | GET | `/admin/data-isolation/checks` | `DataIsolationCheckController` | 系统管理员可全局查询；商户管理员仅限授权范围内检查摘要 |
+| `scanDataIsolation` | POST | `/admin/data-isolation/checks/scan` | `DataIsolationCheckController` | 系统管理员触发扫描 |
+| `updateDataIsolationRemediation` | PUT | `/admin/data-isolation/checks/{checkId}/remediation` | `DataIsolationCheckController` | 系统管理员更新整改状态或豁免理由 |
+| `getAdminScope` | 登录响应字段 | `/admin/auth/login` | `AuthController` / `AdminAuthServiceImpl` | 返回 `authorizedMerchantIds`、`platformAdmin`、`scopeMode` |
+| `getAuditLogs` | GET | `/admin/audit-logs` | `AdminAuditLogController` | 增加 `merchantId`、`resourceType`、`result` 筛选与展示 |
+| `getSystemConfigs` | GET | `/admin/system-configs` | `SystemConfigController` | 增加全局配置标识和敏感摘要，商户专属配置按商户级处理 |
+
+### 隔离检查查询契约
+
+请求参数：`classification`、`riskLevel`、`remediationStatus`、`targetType`、`merchantId`、`page`、`size`。
+
+响应数据：
+
+| 字段 | 说明 |
+|------|------|
+| `checkId` | 检查项标识 |
+| `targetType` | `DATA_TABLE` / `PAGE` / `API` / `ASYNC_TASK` / `EXPORT_TASK` |
+| `targetName` | 表名、页面、接口或任务名 |
+| `classification` | `MERCHANT` / `GLOBAL` / `SYSTEM_AUDIT` / `MANUAL_REVIEW` |
+| `merchantFieldStatus` | `PRESENT` / `MISSING` / `NOT_APPLICABLE` / `PENDING_CONFIRM` |
+| `riskLevel` | `HIGH` / `MEDIUM` / `LOW` |
+| `affectedEntries` | 受影响入口摘要 |
+| `remediationStatus` | `PENDING` / `IN_PROGRESS` / `DONE` / `EXEMPTED` / `NEEDS_MANUAL_REVIEW` |
+| `decisionReason` | 分类、整改或豁免理由 |
+| `merchantId` | 关联商户；全局或待确认项可为空 |
+
+### 商户级入口范围要求
+
+| 入口类别 | 受影响接口 | 商户管理员期望 | 系统管理员期望 |
+|----------|------------|----------------|----------------|
+| 订单 | `/admin/orders`、`/admin/orders/{orderId}`、`/admin/orders/export` | 仅授权商户订单；授权外详情通用拒绝 | 可按商户筛选并展示归属 |
+| 支付 | 后台支付查询服务 | 通过订单归属限制授权范围 | 可跨商户排障 |
+| 退款 | `/admin/refunds`、`/admin/refunds/{refundId}/approve|reject` | 授权外退款不可见且不可审核 | 可按商户筛选和审核 |
+| 渠道账号/路由 | `/admin/channels/accounts`、`/admin/channels/routes`、`/admin/merchant-payment-*` | 仅授权商户配置，敏感字段脱敏 | 可维护全局账号池和商户绑定 |
+| 对账 | `/admin/reconcile/**` | 仅归属明确且授权内的任务/差异可见 | 可治理待人工确认项 |
+| 风控 | `/admin/risk/**`、`/merchant/risk/**` | 商户规则限本商户，平台规则只读或摘要展示 | 可维护平台规则和作用商户范围 |
+| 仪表盘/费率/流失预警 | `/admin/dashboard/**`、`/admin/fee-rates/**`、`/admin/churn-alerts` | 统计和列表限定授权商户 | 可跨商户或按商户查看 |
+| 导出/批量/异步 | `/admin/export/**` 及批量操作 | 授权外资源不处理、不导出 | 按平台权限治理 |
+| 审计 | `/admin/security/audit`、`/admin/audit-logs` | 仅自身授权范围相关摘要 | 可定位商户归属、资源类别和拒绝原因 |
+
+### 全局配置白名单
+
+以下目标为全局级或豁免候选，不强制绑定单一商户：`admin_channels` 基础渠道定义、`admin_payment_methods` 支付方式公共定义、`sys_menus` 菜单模板、`sys_roles` 角色定义、`/admin/dicts` 公共字典、平台级系统配置。若配置包含商户专属密钥、账号、费率、回调地址或证书，则必须转为商户级敏感数据并按授权范围脱敏输出。

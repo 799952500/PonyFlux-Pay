@@ -15,11 +15,19 @@ public interface RiskRuleAdminService {
 
     Map<String, Object> pageRules(RiskRuleQueryRequest request);
 
+    Map<String, Object> pageRules(RiskRuleQueryRequest request, List<String> merchantScopeIds);
+
     RiskRuleVO createRule(RiskRuleUpsertRequest request);
+
+    RiskRuleVO createRule(RiskRuleUpsertRequest request, List<String> merchantScopeIds);
 
     RiskRuleVO updateRule(Long ruleId, RiskRuleUpsertRequest request);
 
+    RiskRuleVO updateRule(Long ruleId, RiskRuleUpsertRequest request, List<String> merchantScopeIds);
+
     RiskRuleVO updateStatus(Long ruleId, RiskRuleStatusRequest request);
+
+    RiskRuleVO updateStatus(Long ruleId, RiskRuleStatusRequest request, List<String> merchantScopeIds);
 
     Map<String, Object> getScopes(Long ruleId);
 

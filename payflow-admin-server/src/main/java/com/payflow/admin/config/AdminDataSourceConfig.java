@@ -10,6 +10,7 @@ import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.mapper.ChannelRouteMapper;
 import com.payflow.admin.mapper.ChurnAlertMapper;
 import com.payflow.admin.mapper.DashboardMetricsMapper;
+import com.payflow.admin.mapper.DataIsolationCheckMapper;
 import com.payflow.admin.mapper.FeeRateAuditLogMapper;
 import com.payflow.admin.mapper.FeeRateConfigMapper;
 import com.payflow.admin.mapper.MerchantFeeSnapshotMapper;
@@ -121,6 +122,15 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<AdminAuditLogMapper> adminAuditLogMapper(
             @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<AdminAuditLogMapper> factory = new MapperFactoryBean<>(AdminAuditLogMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<DataIsolationCheckMapper> dataIsolationCheckMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<DataIsolationCheckMapper> factory = new MapperFactoryBean<>(DataIsolationCheckMapper.class);
         factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }

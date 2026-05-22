@@ -25,6 +25,7 @@ public class ReconDiff {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String taskId;
+    private String merchantId;
     private String diffType;
     private String channelTradeNo;
     private String localOrderId;

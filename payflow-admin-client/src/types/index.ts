@@ -296,6 +296,7 @@ export interface RiskRuleUpsertRequest {
   enabled: boolean
   priority: number
   ownerType?: RiskRuleOwnerType
+  ownerMerchantId?: string
   scopeType?: RiskRuleScopeType
   scopeMerchantIds?: string[]
   description?: string
@@ -416,6 +417,20 @@ export interface AuditLogItem {
   detail: string
   clientIp: string
   createdAt: string
+  merchantId?: string
+  classification?: string
+}
+
+export interface DataIsolationCheckItem {
+  checkId: string
+  targetType: string
+  targetName: string
+  classification: string
+  riskLevel: string
+  remediationStatus: string
+  merchantId?: string
+  lastScannedAt?: string
+  note?: string
 }
 
 /** 订单状态统计（/admin/orders/stats） */
@@ -451,7 +466,17 @@ export interface AdminLoginResponse {
   adminId?: string
   username: string
   role: string
+  platformAdmin?: boolean
+  scopeMode?: 'PLATFORM' | 'MERCHANT' | 'NONE'
+  authorizedMerchantIds?: string[]
   menus?: SysMenu[]
+}
+
+/** 商户数据授权范围（前端展示与筛选辅助，实际隔离以后端为准） */
+export interface MerchantScopeInfo {
+  platformAdmin: boolean
+  scopeMode?: string
+  authorizedMerchantIds: string[]
 }
 
 // ============================================================

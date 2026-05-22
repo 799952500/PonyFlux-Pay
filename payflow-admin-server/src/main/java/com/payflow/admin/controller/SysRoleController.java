@@ -93,12 +93,8 @@ public class SysRoleController {
     @RequireRole(RequireRole.SUPER_ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
-        try {
-            sysRoleService.delete(id);
-            return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.ok(Map.of("code", 1, "message", e.getMessage(), "data", Map.of()));
-        }
+        sysRoleService.delete(id);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", Map.of()));
     }
 
     /**

@@ -4,6 +4,7 @@ import com.payflow.admin.dto.LoginRequest;
 import com.payflow.admin.dto.LoginResponse;
 import com.payflow.admin.service.AdminAuthService;
 import com.payflow.admin.service.CaptchaService;
+import com.payflow.admin.service.LoginProtectionService;
 import com.payflow.admin.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -31,11 +32,12 @@ public class AuthController {
 
     private final AdminAuthService adminAuthService;
     private final CaptchaService captchaService;
+    private final LoginProtectionService loginProtectionService;
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 签发算术验证码（登录前必须先调用，提交登录时携带 captchaId 与 captchaAnswer）。
+     * 签发算术验证码（密码错误后登录需携带 captchaId 与 captchaAnswer）。
      */
     @Operation(summary = "获取验证码")
     @GetMapping("/captcha")
@@ -43,6 +45,24 @@ public class AuthController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(Map.of("code", 0, "message", "success", "data", captchaService.issue()));
+    }
+
+    /**
+     * 查询指定用户名当前是否需要验证码（首次登录为 false，已有密码错误记录为 true）。
+     */
+    @Operation(summary = "查询登录是否需要验证码")
+    @GetMapping("/captcha-required")
+    public ResponseEntity<Map<String, Object>> captchaRequired(
+            @RequestParam(value = "username", defaultValue = "") String username) {
+        String normalized = username == null ? "" : username.trim();
+        boolean required = loginProtectionService.isCaptchaRequired(normalized);
+        Map<String, Object> data = Map.of(
+                "required", required,
+                "failureCount", loginProtectionService.getFailureCount(normalized)
+        );
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(Map.of("code", 0, "message", "success", "data", data));
     }
 
     /**

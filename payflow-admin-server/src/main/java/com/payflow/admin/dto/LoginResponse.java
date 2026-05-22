@@ -21,6 +21,9 @@ public class LoginResponse {
     private String token;
     private String username;
     private String role;
+    private Boolean platformAdmin;
+    private String scopeMode;
+    private List<String> authorizedMerchantIds;
     private LocalDateTime expireTime;
     private List<SysMenu> menus;
 }

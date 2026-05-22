@@ -1,0 +1,328 @@
+/**
+ * 暗夜主题：修正 Element Plus / Tailwind 硬编码浅色字色导致的不可读问题
+ */
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* Tailwind 页面内常用灰/石板色文字 */
+[data-theme='dark'] .text-slate-500,
+[data-theme='dark'] .text-slate-600,
+[data-theme='dark'] .text-slate-700,
+[data-theme='dark'] .text-slate-800,
+[data-theme='dark'] .text-gray-500,
+[data-theme='dark'] .text-gray-600,
+[data-theme='dark'] .text-gray-700,
+[data-theme='dark'] .text-gray-800 {
+  color: var(--pf-text-secondary) !important;
+}
+
+[data-theme='dark'] .text-gray-400,
+[data-theme='dark'] .text-gray-500 {
+  color: var(--pf-sidebar-text-muted) !important;
+}
+
+[data-theme='dark'] .bg-slate-50,
+[data-theme='dark'] .bg-gray-50 {
+  background-color: var(--pf-primary-muted) !important;
+}
+
+[data-theme='dark'] .border-slate-200,
+[data-theme='dark'] .border-gray-200 {
+  border-color: var(--pf-card-border) !important;
+}
+
+/* 全局按钮 / 详情 */
+[data-theme='dark'] .btn-outline {
+  border-color: var(--pf-card-border) !important;
+  color: var(--pf-text-primary) !important;
+}
+
+[data-theme='dark'] .btn-outline:hover {
+  border-color: var(--pf-primary) !important;
+  color: var(--pf-primary) !important;
+}
+
+[data-theme='dark'] .rate-change__arrow {
+  color: var(--pf-sidebar-text-muted);
+}
+
+[data-theme='dark'] .detail-descriptions .el-descriptions__label {
+  color: var(--pf-text-secondary) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme='dark'] .detail-descriptions .el-descriptions__content {
+  color: var(--pf-text-primary) !important;
+  background: var(--pf-card-bg) !important;
+}
+
+/* Element Plus 表单与表格 */
+[data-theme='dark'] .el-input__wrapper,
+[data-theme='dark'] .el-textarea__inner,
+[data-theme='dark'] .el-select__wrapper {
+  background-color: var(--el-fill-color-blank);
+  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+}
+
+[data-theme='dark'] .el-input__inner,
+[data-theme='dark'] .el-textarea__inner {
+  color: var(--el-text-color-primary);
+}
+
+[data-theme='dark'] .el-input__inner::placeholder,
+[data-theme='dark'] .el-textarea__inner::placeholder {
+  color: var(--el-text-color-placeholder);
+}
+
+[data-theme='dark'] .el-form-item__label {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-table {
+  --el-table-bg-color: var(--pf-card-bg);
+  --el-table-tr-bg-color: var(--pf-card-bg);
+  --el-table-header-bg-color: var(--pf-table-header);
+  --el-table-row-hover-bg-color: var(--pf-table-hover);
+  --el-table-border-color: var(--pf-card-border);
+  --el-table-text-color: var(--pf-text-primary);
+  --el-table-header-text-color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-table th.el-table__cell,
+[data-theme='dark'] .el-table td.el-table__cell {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-table__empty-text {
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .el-dialog,
+[data-theme='dark'] .el-drawer {
+  --el-dialog-bg-color: var(--pf-card-bg);
+  --el-drawer-bg-color: var(--pf-card-bg);
+}
+
+[data-theme='dark'] .el-dialog__title,
+[data-theme='dark'] .el-drawer__title {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-dialog__body,
+[data-theme='dark'] .el-drawer__body {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-dropdown-menu {
+  background: var(--pf-card-bg);
+  border-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-dropdown-menu__item {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-dropdown-menu__item:not(.is-disabled):hover {
+  background: var(--pf-sidebar-hover-bg);
+  color: var(--pf-primary);
+}
+
+[data-theme='dark'] .el-pagination {
+  --el-pagination-text-color: var(--pf-text-secondary);
+  --el-pagination-button-color: var(--pf-text-primary);
+  --el-pagination-button-bg-color: var(--pf-card-bg);
+  --el-pagination-hover-color: var(--pf-primary);
+}
+
+[data-theme='dark'] .el-pagination .el-select .el-input__wrapper {
+  background-color: var(--el-fill-color-blank);
+}
+
+[data-theme='dark'] .el-descriptions__label {
+  color: var(--pf-text-secondary) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme='dark'] .el-descriptions__content {
+  color: var(--pf-text-primary) !important;
+}
+
+[data-theme='dark'] .el-card {
+  --el-card-bg-color: var(--pf-card-bg);
+  --el-card-border-color: var(--pf-card-border);
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-tabs__item {
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .el-tabs__item.is-active {
+  color: var(--pf-primary);
+}
+
+[data-theme='dark'] .el-breadcrumb__inner,
+[data-theme='dark'] .el-breadcrumb__separator {
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .el-breadcrumb__inner.is-link:hover {
+  color: var(--pf-primary);
+}
+
+[data-theme='dark'] .el-message-box {
+  --el-messagebox-title-color: var(--pf-text-primary);
+  background: var(--pf-card-bg);
+  border-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-message-box__message {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-popover.el-popper {
+  background: var(--pf-card-bg);
+  border-color: var(--pf-card-border);
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-select-dropdown,
+[data-theme='dark'] .el-picker-panel {
+  background: var(--pf-card-bg);
+  border-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-select-dropdown__item {
+  color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-select-dropdown__item.is-hovering {
+  background: var(--pf-sidebar-hover-bg);
+}
+
+[data-theme='dark'] .el-tree {
+  --el-tree-text-color: var(--pf-text-primary);
+  background: transparent;
+}
+
+[data-theme='dark'] .el-collapse-item__header {
+  color: var(--pf-text-primary);
+  background: var(--pf-card-bg);
+  border-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-collapse-item__content {
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .dict-pre {
+  color: var(--pf-text-primary);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme='dark'] .el-scrollbar__thumb {
+  background-color: var(--scrollbar-thumb-light) !important;
+}
+
+[data-theme='dark'] .el-scrollbar__thumb:hover {
+  background-color: var(--scrollbar-thumb-light-hover) !important;
+}
+
+[data-theme='dark'] .el-button:not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.is-link):not(.is-text) {
+  --el-button-text-color: var(--pf-text-primary);
+  --el-button-bg-color: rgba(255, 255, 255, 0.06);
+  --el-button-border-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-button:not(.el-button--primary):not(.is-link):not(.is-text):hover {
+  --el-button-hover-text-color: var(--pf-primary);
+  --el-button-hover-bg-color: var(--pf-sidebar-hover-bg);
+  --el-button-hover-border-color: var(--pf-primary);
+}
+
+[data-theme='dark'] .el-tag.el-tag--info {
+  --el-tag-text-color: var(--pf-text-secondary);
+  --el-tag-bg-color: rgba(255, 255, 255, 0.08);
+  --el-tag-border-color: var(--pf-card-border);
+}
+
+/* 仪表盘时间范围切换 */
+[data-theme='dark'] .el-radio-button__inner {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--pf-card-border);
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .el-radio-button__original-radio:checked + .el-radio-button__inner {
+  background: var(--pf-primary-muted);
+  border-color: var(--pf-primary);
+  color: var(--pf-primary);
+  box-shadow: none;
+}
+
+/* 筛选区占位符对比度 */
+[data-theme='dark'] .el-input__inner::placeholder,
+[data-theme='dark'] .el-textarea__inner::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+[data-theme='dark'] .el-range-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .el-select__placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 详情 dl / 抽屉说明块 */
+[data-theme='dark'] dl dt {
+  color: var(--pf-sidebar-text-muted) !important;
+}
+
+[data-theme='dark'] dl dd,
+[data-theme='dark'] .text-gray-800,
+[data-theme='dark'] .text-gray-700,
+[data-theme='dark'] .text-gray-600 {
+  color: var(--pf-text-primary) !important;
+}
+
+[data-theme='dark'] h2.text-gray-700,
+[data-theme='dark'] h3.text-gray-700,
+[data-theme='dark'] .text-base.text-gray-700 {
+  color: var(--pf-text-primary) !important;
+}
+
+[data-theme='dark'] pre.bg-gray-50,
+[data-theme='dark'] .bg-gray-50.rounded {
+  background: rgba(0, 0, 0, 0.25) !important;
+  color: var(--pf-text-primary) !important;
+  border: 1px solid var(--pf-card-border);
+}
+
+[data-theme='dark'] .border-b.pb-2 {
+  border-color: var(--pf-card-border) !important;
+}
+
+/* 表格内时间/次要文字（模板中的 tabular-nums 类） */
+[data-theme='dark'] .text-xs.text-slate-600,
+[data-theme='dark'] span.text-slate-600 {
+  color: var(--pf-text-secondary) !important;
+}
+
+[data-theme='dark'] .font-medium.text-slate-800 {
+  color: var(--pf-text-primary) !important;
+}
+
+/* 覆盖 scoped 组件内硬编码深色（如风控规则名） */
+[data-theme='dark'] .rule-name-cell__title,
+[data-theme='dark'] .table-cell-stack__primary {
+  color: var(--pf-text-primary) !important;
+}
+
+[data-theme='dark'] .rule-name-cell__code,
+[data-theme='dark'] .table-cell-stack__secondary {
+  color: var(--pf-sidebar-text-muted) !important;
+}

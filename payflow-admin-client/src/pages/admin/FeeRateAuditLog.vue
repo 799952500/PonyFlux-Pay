@@ -26,13 +26,13 @@
         </div>
       </div>
 
-      <el-table :data="logs" v-loading="loading" stripe size="small" class="data-table">
+      <el-table table-layout="auto" :data="logs" v-loading="loading" stripe size="small" class="data-table">
         <el-table-column label="商户ID" prop="merchantId" width="96" align="center">
           <template #default="{ row }">
             <span class="cell-mono font-medium">{{ row.merchantId ?? '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="变更时间" prop="changeTime" width="172">
+        <el-table-column label="变更时间" prop="changeTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.changeTime) }}</span>
           </template>

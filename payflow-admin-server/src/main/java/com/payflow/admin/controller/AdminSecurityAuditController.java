@@ -3,7 +3,9 @@ package com.payflow.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.entity.cashier.SecurityAuditEntity;
 import com.payflow.admin.security.RequireRole;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.AdminSecurityAuditService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ public class AdminSecurityAuditController {
     @GetMapping
     @RequireRole({RequireRole.RISK, RequireRole.SUPER_ADMIN})
     public ResponseEntity<Map<String, Object>> page(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(required = false) String merchantId,
@@ -44,7 +47,8 @@ public class AdminSecurityAuditController {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(LocalTime.MAX) : null;
         IPage<SecurityAuditEntity> p = adminSecurityAuditService.page(
-                page, pageSize, merchantId, outcome, reasonCode, requestPath, start, end);
+                page, pageSize, merchantId, outcome, reasonCode, requestPath, start, end,
+                AdminRequestContext.merchantScope(request));
         Map<String, Object> data = new HashMap<>();
         data.put("list", p.getRecords());
         data.put("total", p.getTotal());

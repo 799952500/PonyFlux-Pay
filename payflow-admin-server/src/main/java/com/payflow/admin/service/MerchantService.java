@@ -10,6 +10,8 @@ import java.util.List;
 public interface MerchantService {
     List<Merchant> listAll();
     IPage<Merchant> page(int page, int pageSize, String keyword, String status);
+
+    IPage<Merchant> page(int page, int pageSize, String keyword, String status, List<String> merchantScopeIds);
     Merchant getById(Long id);
     Merchant getByMerchantId(String merchantId);
     void create(Merchant merchant);

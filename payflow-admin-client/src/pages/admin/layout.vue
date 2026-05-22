@@ -1,245 +1,289 @@
 <template>
   <el-container class="h-screen overflow-hidden">
-    <!-- 侧边栏（森林底图 + 模糊，与登录页一致） -->
-    <el-aside width="240px" class="admin-sidebar h-full flex flex-col relative">
-      <div class="admin-sidebar__inner flex flex-col h-full min-h-0 relative z-[1]">
-      <!-- Logo -->
-      <div class="sidebar-logo border-b border-white/10 shrink-0">
-        <img src="/ponyflux-logo.svg" alt="PonyFlux Pay Logo" />
-        <div class="sidebar-logo-text">
-          <span class="text-white font-bold leading-none">小马支付</span>
-          <span class="text-white/50 text-xs ml-1.5">管理平台</span>
-        </div>
-      </div>
-
-      <!-- 菜单：优先使用登录/Profile 返回的 sys_menus（按角色）；无数据时回退静态 -->
-      <el-menu
-        :key="sidebarMenuKey"
-        :default-active="activeMenu"
-        :default-openeds="menuDefaultOpeneds"
-        class="flex-1 overflow-y-auto border-none admin-menu scrollbar-dark"
-        router
-      >
-        <template v-if="useDynamicMenu">
-          <AdminSidebarMenu :nodes="dynamicMenuRoots" />
-        </template>
-        <template v-else>
-        <el-sub-menu index="workspace-group">
-          <template #title>
-            <el-icon class="menu-icon"><Monitor /></el-icon>
-            <span class="menu-text">{{ t('menu.groupWorkspace') }}</span>
-          </template>
-          <el-menu-item index="/admin/dashboard">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.dashboard') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/insights/funnel">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.insightsFunnel') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/dashboard/churn-alerts">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.churnAlerts') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/notifications">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.notifications') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/search">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.globalSearch') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="trade-group">
-          <template #title>
-            <el-icon class="menu-icon"><Document /></el-icon>
-            <span class="menu-text">{{ t('menu.groupTrade') }}</span>
-          </template>
-          <el-menu-item index="/admin/orders">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.orders') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/refunds">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.refunds') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="reconcile-group">
-          <template #title>
-            <el-icon class="menu-icon"><Memo /></el-icon>
-            <span class="menu-text">{{ t('menu.groupReconcile') }}</span>
-          </template>
-          <el-menu-item index="/admin/reconcile/tasks">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.reconcileTasks') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/reconcile/results">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.reconcileResults') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/reconcile/summary">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.reconcileSummary') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="channel-account-group">
-          <template #title>
-            <el-icon class="menu-icon"><CreditCard /></el-icon>
-            <span class="menu-text">{{ t('menu.groupChannelAccount') }}</span>
-          </template>
-          <el-menu-item index="/admin/channels">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.channels') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/payment-methods">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.paymentMethods') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/payment-accounts">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.paymentAccounts') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="routing-group">
-          <template #title>
-            <el-icon class="menu-icon"><Connection /></el-icon>
-            <span class="menu-text">{{ t('menu.groupRouting') }}</span>
-          </template>
-          <el-menu-item index="/admin/channel-routing/health">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.channelRoutingHealth') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/routing/logs">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.routingLogs') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/fee-rate/config">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.feeRateConfig') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/fee-rate/audit-log">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.feeRateAuditLog') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="merchant-risk-group">
-          <template #title>
-            <el-icon class="menu-icon"><Shop /></el-icon>
-            <span class="menu-text">{{ t('menu.groupMerchantRisk') }}</span>
-          </template>
-          <el-menu-item index="/admin/merchants">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.merchants') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/onboarding">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.onboarding') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/risk">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.risk') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="system-group">
-          <template #title>
-            <el-icon class="menu-icon"><Setting /></el-icon>
-            <span class="menu-text">{{ t('menu.groupSystem') }}</span>
-          </template>
-          <el-menu-item index="/admin/settings">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.settings') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/users">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.users') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/roles">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.roles') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/menus">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.menus') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/dicts">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.dicts') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/audit-logs">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.auditLogs') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/admin/security-audit">
-            <span class="menu-leaf-dot" />
-            <span class="menu-text">{{ t('menu.securityAudit') }}</span>
-          </el-menu-item>
-        </el-sub-menu>
-        </template>
-      </el-menu>
-
-      <!-- 底部用户信息 -->
-      <div class="px-4 py-3 border-t border-white/10 shrink-0">
-        <div class="flex items-center gap-2">
-          <el-avatar :size="28" class="bg-gradient-to-br from-[#064e3b] to-[#0d9488] text-white text-xs">A</el-avatar>
-          <div class="min-w-0 flex-1">
-            <p class="text-xs text-white/80 font-medium truncate">{{ adminName }}</p>
-            <p class="text-xs text-white/50 truncate">管理员</p>
+    <el-aside
+      :width="themeStore.sidebarCollapsed ? '64px' : '240px'"
+      class="admin-sidebar h-full flex flex-col relative"
+      :class="{ 'admin-sidebar--collapsed': themeStore.sidebarCollapsed }"
+    >
+      <div class="admin-sidebar__inner flex flex-col h-full min-h-0">
+        <!-- Logo -->
+        <div class="sidebar-logo shrink-0">
+          <img :src="sidebarLogoSrc" alt="PonyFlux Pay Logo" class="sidebar-logo__img" />
+          <div v-show="!themeStore.sidebarCollapsed" class="sidebar-logo-text">
+            <span class="sidebar-logo__name">小马支付</span>
+            <span class="sidebar-logo__sub">管理平台</span>
           </div>
-          <el-tooltip content="退出登录" placement="top">
+        </div>
+
+        <!-- 菜单 -->
+        <el-menu
+          :default-active="route.path"
+          :default-openeds="menuDefaultOpeneds"
+          :collapse="themeStore.sidebarCollapsed"
+          :collapse-transition="true"
+          class="flex-1 overflow-y-auto border-none admin-menu scrollbar-dark"
+          router
+        >
+          <template v-if="useDynamicMenu">
+            <AdminSidebarMenu :nodes="dynamicMenuRoots" />
+          </template>
+          <template v-else>
+            <el-sub-menu index="workspace-group">
+              <template #title>
+                <el-icon class="menu-icon"><Monitor /></el-icon>
+                <span class="menu-text">{{ t('menu.groupWorkspace') }}</span>
+              </template>
+              <el-menu-item index="/admin/dashboard">
+                <el-icon class="menu-icon"><Odometer /></el-icon>
+                <span class="menu-text">{{ t('menu.dashboard') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/insights/funnel">
+                <el-icon class="menu-icon"><TrendCharts /></el-icon>
+                <span class="menu-text">{{ t('menu.insightsFunnel') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/dashboard/churn-alerts">
+                <el-icon class="menu-icon"><Bell /></el-icon>
+                <span class="menu-text">{{ t('menu.churnAlerts') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/search">
+                <el-icon class="menu-icon"><Search /></el-icon>
+                <span class="menu-text">{{ t('menu.globalSearch') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/notifications">
+                <el-icon class="menu-icon"><Message /></el-icon>
+                <span class="menu-text">{{ t('menu.notifications') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/preferences">
+                <el-icon class="menu-icon"><Brush /></el-icon>
+                <span class="menu-text">外观与显示</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="trade-group">
+              <template #title>
+                <el-icon class="menu-icon"><Document /></el-icon>
+                <span class="menu-text">{{ t('menu.groupTrade') }}</span>
+              </template>
+              <el-menu-item index="/admin/orders">
+                <el-icon class="menu-icon"><List /></el-icon>
+                <span class="menu-text">{{ t('menu.orders') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/refunds">
+                <el-icon class="menu-icon"><RefreshLeft /></el-icon>
+                <span class="menu-text">{{ t('menu.refunds') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="reconcile-group">
+              <template #title>
+                <el-icon class="menu-icon"><Memo /></el-icon>
+                <span class="menu-text">{{ t('menu.groupReconcile') }}</span>
+              </template>
+              <el-menu-item index="/admin/reconcile/tasks">
+                <el-icon class="menu-icon"><Calendar /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileTasks') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reconcile/results">
+                <el-icon class="menu-icon"><Finished /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileResults') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reconcile/summary">
+                <el-icon class="menu-icon"><DataAnalysis /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileSummary') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="channel-account-group">
+              <template #title>
+                <el-icon class="menu-icon"><CreditCard /></el-icon>
+                <span class="menu-text">{{ t('menu.groupChannelAccount') }}</span>
+              </template>
+              <el-menu-item v-if="platformAdmin" index="/admin/channels">
+                <el-icon class="menu-icon"><Connection /></el-icon>
+                <span class="menu-text">{{ t('menu.channels') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/payment-methods">
+                <el-icon class="menu-icon"><Wallet /></el-icon>
+                <span class="menu-text">{{ t('menu.paymentMethods') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/payment-accounts">
+                <el-icon class="menu-icon"><Money /></el-icon>
+                <span class="menu-text">{{ t('menu.paymentAccounts') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu v-if="platformAdmin" index="routing-group">
+              <template #title>
+                <el-icon class="menu-icon"><Share /></el-icon>
+                <span class="menu-text">{{ t('menu.groupRouting') }}</span>
+              </template>
+              <el-menu-item index="/admin/channel-routing/health">
+                <el-icon class="menu-icon"><CircleCheck /></el-icon>
+                <span class="menu-text">{{ t('menu.channelRoutingHealth') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/routing/logs">
+                <el-icon class="menu-icon"><Notebook /></el-icon>
+                <span class="menu-text">{{ t('menu.routingLogs') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/fee-rate/config">
+                <el-icon class="menu-icon"><Coin /></el-icon>
+                <span class="menu-text">{{ t('menu.feeRateConfig') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/fee-rate/audit-log">
+                <el-icon class="menu-icon"><Tickets /></el-icon>
+                <span class="menu-text">{{ t('menu.feeRateAuditLog') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu index="merchant-risk-group">
+              <template #title>
+                <el-icon class="menu-icon"><Shop /></el-icon>
+                <span class="menu-text">{{ t('menu.groupMerchantRisk') }}</span>
+              </template>
+              <el-menu-item index="/admin/merchants">
+                <el-icon class="menu-icon"><OfficeBuilding /></el-icon>
+                <span class="menu-text">{{ t('menu.merchants') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/onboarding">
+                <el-icon class="menu-icon"><UserFilled /></el-icon>
+                <span class="menu-text">{{ t('menu.onboarding') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/risk">
+                <el-icon class="menu-icon"><Warning /></el-icon>
+                <span class="menu-text">{{ t('menu.risk') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+
+            <el-sub-menu v-if="platformAdmin" index="system-group">
+              <template #title>
+                <el-icon class="menu-icon"><Setting /></el-icon>
+                <span class="menu-text">{{ t('menu.groupSystem') }}</span>
+              </template>
+              <el-menu-item index="/admin/settings">
+                <el-icon class="menu-icon"><Tools /></el-icon>
+                <span class="menu-text">{{ t('menu.settings') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/users">
+                <el-icon class="menu-icon"><Avatar /></el-icon>
+                <span class="menu-text">{{ t('menu.users') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/roles">
+                <el-icon class="menu-icon"><Key /></el-icon>
+                <span class="menu-text">{{ t('menu.roles') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/menus">
+                <el-icon class="menu-icon"><Menu /></el-icon>
+                <span class="menu-text">{{ t('menu.menus') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/dicts">
+                <el-icon class="menu-icon"><Collection /></el-icon>
+                <span class="menu-text">{{ t('menu.dicts') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/audit-logs">
+                <el-icon class="menu-icon"><DocumentCopy /></el-icon>
+                <span class="menu-text">{{ t('menu.auditLogs') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/security-audit">
+                <el-icon class="menu-icon"><Lock /></el-icon>
+                <span class="menu-text">{{ t('menu.securityAudit') }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </template>
+        </el-menu>
+
+        <!-- 底部用户 -->
+        <div class="sidebar-user shrink-0">
+          <el-avatar :size="28" class="sidebar-user__avatar">{{ adminName?.charAt(0) }}</el-avatar>
+          <div v-show="!themeStore.sidebarCollapsed" class="sidebar-user__info">
+            <p class="sidebar-user__name">{{ adminName }}</p>
+            <p class="sidebar-user__role">管理员</p>
+          </div>
+          <el-tooltip v-if="themeStore.sidebarCollapsed" content="退出登录" placement="right">
             <button class="logout-btn" @click="handleLogout" title="退出登录">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <el-icon><SwitchButton /></el-icon>
+            </button>
+          </el-tooltip>
+          <el-tooltip v-else content="退出登录" placement="top">
+            <button class="logout-btn" @click="handleLogout" title="退出登录">
+              <el-icon><SwitchButton /></el-icon>
             </button>
           </el-tooltip>
         </div>
       </div>
-      </div>
     </el-aside>
 
-    <!-- 主内容区 -->
     <el-container class="flex-col flex-1 min-h-0 overflow-hidden">
-      <!-- 顶部工具栏（与侧栏同一套森林模糊底） -->
-      <div class="admin-topbar h-[60px] shrink-0 topbar relative border-b border-white/10">
-        <div class="admin-topbar__inner relative z-[1] flex h-full w-full items-center px-6">
-        <h1 class="topbar-title text-white/95 font-semibold text-base m-0 tracking-tight">{{ pageTitle }}</h1>
-        <el-input
-          v-model="topSearchQ"
-          clearable
-          size="default"
-          placeholder="搜索订单号 / 商户订单号…"
-          class="topbar-search ml-4 w-[min(280px,28vw)]"
-          @keyup.enter="goGlobalSearch"
-        />
-        <div class="ml-auto flex items-center gap-3 topbar-actions">
-          <el-badge :value="0" class="cursor-pointer" :hidden="true">
-            <el-button circle class="!bg-white/10 !border-white/15 !text-slate-100">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </el-button>
-          </el-badge>
-          <el-avatar :size="32" class="bg-gradient-to-br from-[#064e3b] to-[#0d9488] text-white cursor-pointer ring-1 ring-white/20">{{ adminName?.charAt(0) }}</el-avatar>
-        </div>
+      <!-- 顶栏 -->
+      <div class="admin-topbar h-[60px] shrink-0">
+        <div class="admin-topbar__inner flex h-full w-full items-center px-4 gap-3">
+          <el-button text class="sidebar-toggle" @click="themeStore.toggleSidebar()">
+            <el-icon :size="18">
+              <Fold v-if="!themeStore.sidebarCollapsed" />
+              <Expand v-else />
+            </el-icon>
+          </el-button>
+
+          <h1 class="topbar-title font-semibold text-base m-0 tracking-tight">{{ pageTitle }}</h1>
+
+          <el-input
+            v-if="platformAdmin"
+            v-model="topSearchQ"
+            clearable
+            size="default"
+            placeholder="搜索订单号 / 商户订单号…"
+            class="topbar-search ml-2 w-[min(280px,28vw)]"
+            @keyup.enter="goGlobalSearch"
+          />
+
+          <div class="ml-auto flex items-center gap-2 topbar-actions">
+            <el-badge :value="0" class="cursor-pointer" :hidden="true">
+              <el-button circle class="topbar-notify-btn">
+                <el-icon><Bell /></el-icon>
+              </el-button>
+            </el-badge>
+
+            <!-- 主题切换 -->
+            <el-dropdown trigger="click" placement="bottom-end" @command="onThemeCommand">
+              <el-button circle class="topbar-theme-btn" title="切换主题">
+                <el-icon><Brush /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    v-for="preset in THEME_PRESETS"
+                    :key="preset.key"
+                    :command="preset.key"
+                  >
+                    <span class="theme-swatch" :style="{ background: preset.color }" />
+                    <span :class="{ 'theme-swatch-active': themeStore.themeKey === preset.key }">
+                      {{ preset.label }}
+                    </span>
+                    <el-icon v-if="themeStore.themeKey === preset.key" class="theme-check"><Check /></el-icon>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided command="__preferences">
+                    <el-icon><Setting /></el-icon>
+                    外观与显示…
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+
+            <el-avatar :size="32" class="topbar-avatar">{{ adminName?.charAt(0) }}</el-avatar>
+          </div>
         </div>
       </div>
 
-      <!-- 页面内容 -->
       <el-main class="admin-main flex-1 min-h-0 overflow-y-auto scrollbar-light">
         <router-view v-slot="{ Component }">
-          <transition name="page-zoom" mode="out-in">
-            <component :is="Component" />
+          <transition name="page-fade">
+            <component v-if="Component" :is="Component" :key="route.fullPath" class="admin-page-root" />
           </transition>
         </router-view>
       </el-main>
     </el-container>
+
+    <OrderDetailDrawer />
+    <MerchantInsightDrawer />
   </el-container>
 </template>
 
@@ -253,31 +297,83 @@ import {
   Document,
   Memo,
   CreditCard,
-  Connection,
   Shop,
   Setting,
+  Fold,
+  Expand,
+  Bell,
+  Brush,
+  Check,
+  SwitchButton,
+  Odometer,
+  TrendCharts,
+  Search,
+  Message,
+  List,
+  RefreshLeft,
+  Calendar,
+  Finished,
+  DataAnalysis,
+  Connection,
+  Wallet,
+  Money,
+  Share,
+  CircleCheck,
+  Notebook,
+  Coin,
+  Tickets,
+  OfficeBuilding,
+  UserFilled,
+  Warning,
+  Tools,
+  Avatar,
+  Key,
+  Menu,
+  Collection,
+  DocumentCopy,
+  Lock,
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '@/stores/admin'
+import { useThemeStore, THEME_PRESETS, type ThemeKey } from '@/stores/theme'
 import { getAdminProfile } from '@/api/auth'
 import AdminSidebarMenu from '@/components/AdminSidebarMenu.vue'
+import OrderDetailDrawer from '@/components/orders/OrderDetailDrawer.vue'
+import MerchantInsightDrawer from '@/components/merchants/MerchantInsightDrawer.vue'
+import { isPlatformAdmin, isPlatformOnlyRoute } from '@/utils/adminAccess'
 import type { SysMenu } from '@/types'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
+const themeStore = useThemeStore()
+const platformAdmin = computed(() => isPlatformAdmin())
+const sidebarLogoSrc = computed(() =>
+  themeStore.themeKey === 'dark' ? '/ponyflux-logo-dark.svg' : '/ponyflux-logo.svg',
+)
 
-const activeMenu = computed(() => route.path)
 const topSearchQ = ref('')
+
+function onThemeCommand(key: ThemeKey | '__preferences') {
+  if (key === '__preferences') {
+    router.push('/admin/preferences')
+    return
+  }
+  themeStore.setTheme(key)
+}
 
 function filterMenusForSidebar(menus: SysMenu[] | undefined): SysMenu[] {
   if (!menus?.length) return []
+  const platform = platformAdmin.value
   const out: SysMenu[] = []
   for (const m of menus) {
     if (m.status === 'DISABLED') continue
     if (m.visible === false) continue
+    if (!platform && m.path && isPlatformOnlyRoute(m.path)) continue
     const children = m.children?.length ? filterMenusForSidebar(m.children) : undefined
     if ((children && children.length > 0) || (m.path && m.path.length > 0)) {
+      out.push({ ...m, children })
+    } else if (!m.path && children && children.length > 0) {
       out.push({ ...m, children })
     }
   }
@@ -285,7 +381,6 @@ function filterMenusForSidebar(menus: SysMenu[] | undefined): SysMenu[] {
 }
 
 const dynamicMenuRoots = computed(() => filterMenusForSidebar(adminStore.user?.menus))
-
 const useDynamicMenu = computed(() => dynamicMenuRoots.value.length > 0)
 
 function collectDynamicOpenKeys(menus: SysMenu[], path: string, parents: string[] = []): string[] | null {
@@ -315,6 +410,7 @@ const menuDefaultOpeneds = computed(() => {
     || path.startsWith('/admin/insights')
     || path.startsWith('/admin/notifications')
     || path.startsWith('/admin/search')
+    || path.startsWith('/admin/preferences')
   ) {
     return ['workspace-group']
   }
@@ -360,18 +456,7 @@ const menuDefaultOpeneds = computed(() => {
   return ['workspace-group']
 })
 
-/** 切换顶层分组时通过 :key 重挂载侧栏，使 default-openeds 与当前模块一致 */
-const sidebarMenuKey = computed(() => {
-  if (useDynamicMenu.value) {
-    const openKeys = collectDynamicOpenKeys(dynamicMenuRoots.value, route.path) ?? []
-    return 'dyn-' + (openKeys[0] ?? 'root')
-  }
-  return menuDefaultOpeneds.value[0] ?? 'workspace-group'
-})
-
-const pageTitle = computed(() => {
-  return (route.meta?.title as string) ?? '控制台'
-})
+const pageTitle = computed(() => (route.meta?.title as string) ?? '控制台')
 
 const adminName = computed(() => {
   const u = adminStore.user
@@ -391,7 +476,7 @@ onMounted(async () => {
     const p = await getAdminProfile()
     adminStore.applyProfile(p)
   } catch {
-    /* 静默：Token 失效时由拦截器处理 */
+    /* 静默 */
   }
 })
 
@@ -405,308 +490,216 @@ async function handleLogout() {
     adminStore.clearAuth()
     router.push('/login')
   } catch {
-    // cancelled
+    /* cancelled */
   }
 }
 </script>
 
 <style scoped>
 .el-aside {
-  transition: width 0.3s;
+  transition: width 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* 侧栏：草坪底图 + 轻模糊 + 半透明罩层（能辨认草地/树影，文字仍可读） */
+/* 侧栏 */
 .admin-sidebar {
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 4px 0 36px rgba(0, 0, 0, 0.22);
-  isolation: isolate;
-  background-color: #0d2822;
+  background: var(--pf-bg-sidebar);
+  border-right: 1px solid var(--pf-bg-sidebar-border);
+  box-shadow: 2px 0 16px var(--pf-card-shadow);
 }
 
-.admin-sidebar::before {
-  content: '';
-  position: absolute;
-  inset: -12px;
-  z-index: 0;
-  background-image: url('/forest-hero.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: left center;
-  background-attachment: scroll;
-  filter: blur(9px) saturate(1.05);
-  -webkit-filter: blur(9px) saturate(1.05);
-  transform: translateZ(0);
+.admin-sidebar__inner {
+  height: 100%;
 }
 
-.admin-sidebar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(2, 36, 32, 0.52) 0%,
-    rgba(3, 48, 42, 0.48) 45%,
-    rgba(2, 28, 26, 0.55) 100%
-  );
-}
-
-/* 顶栏：同一张草坪图，与侧栏一致略偏左对齐，便于看成连续场景 */
-.admin-topbar {
-  overflow: hidden;
-  isolation: isolate;
-  background-color: #0d2822;
-}
-
-.admin-topbar::before {
-  content: '';
-  position: absolute;
-  inset: -12px;
-  z-index: 0;
-  background-image: url('/forest-hero.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: left top;
-  background-attachment: scroll;
-  filter: blur(9px) saturate(1.05);
-  -webkit-filter: blur(9px) saturate(1.05);
-  transform: translateZ(0);
-}
-
-.admin-topbar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    rgba(2, 36, 32, 0.5) 0%,
-    rgba(3, 44, 40, 0.46) 40%,
-    rgba(2, 30, 28, 0.52) 100%
-  );
-}
-
-/* Logo 区域 */
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 20px;
-  height: 76px;
+  gap: 12px;
+  padding: 16px;
+  height: 64px;
+  border-bottom: 1px solid var(--pf-bg-sidebar-border);
+  overflow: hidden;
 }
 
-.sidebar-logo img {
-  width: 48px;
-  height: 48px;
+.sidebar-logo__img {
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 12px rgba(13, 148, 136, 0.35));
+  border-radius: 8px;
 }
 
 .sidebar-logo-text {
   display: flex;
-  align-items: baseline;
-  gap: 0;
-  font-size: 16px;
-  font-weight: 700;
+  flex-direction: column;
+  min-width: 0;
 }
 
-/* ========== 菜单样式统一 ========== */
+.sidebar-logo__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pf-primary);
+  line-height: 1.3;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-logo__sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pf-sidebar-text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.admin-sidebar--collapsed .sidebar-logo {
+  justify-content: center;
+  padding: 16px 8px;
+}
+
+/* 菜单 */
 .admin-menu {
   background: transparent !important;
   border: none !important;
 }
 
-/* 菜单图标 */
 .menu-icon {
   font-size: 18px;
-  width: 20px;
-  height: 20px;
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--pf-sidebar-text-muted);
 }
 
-.admin-menu :deep(.el-sub-menu.is-opened > .el-sub-menu__title .menu-icon),
-.admin-menu :deep(.el-sub-menu__title:hover .menu-icon) {
-  color: #5eead4;
-}
-
-/* 叶子菜单小圆点 */
-.menu-leaf-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(148, 163, 184, 0.6);
-  flex-shrink: 0;
-  margin-right: 2px;
-}
-
-.admin-menu :deep(.el-menu-item.is-active .menu-leaf-dot) {
-  background: #14b8a6;
-  box-shadow: 0 0 6px rgba(20, 184, 166, 0.6);
-}
-
-/* 菜单文字 */
 .menu-text {
   font-size: 14px;
   font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-.topbar-title {
-  max-width: min(280px, 32vw);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* 一级菜单项：胶囊指示条 + 渐变填充 */
-.admin-menu :deep(.el-menu-item) {
+.admin-menu :deep(.el-menu-item),
+.admin-menu :deep(.el-sub-menu__title) {
   position: relative;
-  border-radius: 10px;
-  margin: 4px 12px;
-  height: 44px;
-  line-height: 44px;
-  color: #94A3B8 !important;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 16px !important;
-  transition: background-color .28s cubic-bezier(.32,.72,0,1),
-              color .22s ease,
-              transform .28s cubic-bezier(.32,.72,0,1);
-  overflow: hidden;
+  border-radius: 8px;
+  margin: 2px 8px;
+  color: var(--pf-sidebar-text) !important;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
 }
 
-/* 胶囊指示条（默认隐藏） */
-.admin-menu :deep(.el-menu-item)::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 50%;
-  width: 3px;
-  height: 60%;
-  border-radius: 4px;
-  background: #5eead4;
-  transform: translateY(-50%) scaleY(0);
-  opacity: 0;
-  transition: transform .28s cubic-bezier(.34,1.28,.64,1),
-              opacity .22s ease;
-  box-shadow: 0 0 10px rgba(94, 234, 212, .6);
-  pointer-events: none;
+.admin-menu :deep(.el-sub-menu__title) {
+  font-weight: 600;
 }
 
-.admin-menu :deep(.el-menu-item:not(.is-active):hover) {
-  background: rgba(13, 148, 136, 0.12) !important;
-  color: #ccfbf1 !important;
-  transform: translateX(2px);
+.admin-menu :deep(.el-menu-item:not(.is-active):hover),
+.admin-menu :deep(.el-sub-menu__title:hover) {
+  background: var(--pf-sidebar-hover-bg) !important;
+  color: var(--pf-primary) !important;
 }
 
-.admin-menu :deep(.el-menu-item:not(.is-active):hover)::before {
-  transform: translateY(-50%) scaleY(.4);
-  opacity: .35;
+.admin-menu :deep(.el-menu-item:not(.is-active):hover) .menu-icon,
+.admin-menu :deep(.el-sub-menu__title:hover) .menu-icon {
+  color: var(--pf-primary);
 }
 
 .admin-menu :deep(.el-menu-item.is-active) {
-  background: linear-gradient(90deg, rgba(13, 148, 136, 0.42) 0%, rgba(4, 120, 87, 0.15) 100%) !important;
-  color: #ffffff !important;
+  background: var(--pf-sidebar-active-bg) !important;
+  color: var(--pf-sidebar-active-text) !important;
   font-weight: 600;
 }
 
 .admin-menu :deep(.el-menu-item.is-active)::before {
-  transform: translateY(-50%) scaleY(1);
-  opacity: 1;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 60%;
+  border-radius: 0 3px 3px 0;
+  background: var(--pf-primary);
+  transform: translateY(-50%);
 }
 
-/* ========== 子菜单样式 ========== */
-.admin-menu :deep(.el-sub-menu__title) {
-  position: relative;
-  border-radius: 10px;
-  margin: 4px 12px;
-  height: 44px !important;
-  line-height: 44px !important;
-  color: #94A3B8 !important;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 16px !important;
-  transition: background-color .28s cubic-bezier(.32,.72,0,1),
-              color .22s ease,
-              transform .28s cubic-bezier(.32,.72,0,1);
-  overflow: hidden;
+.admin-menu :deep(.el-menu-item.is-active) .menu-icon,
+.admin-menu :deep(.el-sub-menu.is-active > .el-sub-menu__title) .menu-icon {
+  color: var(--pf-primary);
 }
 
-.admin-menu :deep(.el-sub-menu__title:hover) {
-  background: rgba(13, 148, 136, 0.12) !important;
-  color: #ccfbf1 !important;
-  transform: translateX(2px);
-}
-
-/* 子菜单展开后的容器 */
 .admin-menu :deep(.el-menu--inline) {
-  position: relative;
-  background: rgba(2, 22, 20, 0.32) !important;
-  border-radius: 0 0 8px 8px;
-  margin: 0 12px 6px;
-  padding: 4px 0 6px 8px;
-  border-left: 2px solid transparent;
-  border-image: linear-gradient(180deg, #0d9488 0%, rgba(13, 148, 136, 0.15) 70%, transparent 100%) 1;
+  background: transparent !important;
+  margin: 0 8px 6px;
+  padding: 2px 0 4px 4px;
+  border-left: 1px solid var(--pf-bg-sidebar-border);
 }
 
-/* 子菜单项：更纤细的胶囊指示条 */
 .admin-menu :deep(.el-menu--inline .el-menu-item) {
-  margin: 2px 8px;
+  margin: 1px 4px 1px 8px;
   height: 38px;
   line-height: 38px;
-  padding-left: 20px !important;
-  font-size: 13px;
-  gap: 8px;
+  padding-left: 12px !important;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
 }
 
-.admin-menu :deep(.el-menu--inline .el-menu-item)::before {
-  width: 2px;
-  height: 50%;
-  left: 2px;
-}
-
-.admin-menu :deep(.el-menu--inline .el-menu-item:not(.is-active):hover) {
-  background: rgba(4, 120, 87, 0.2) !important;
+.admin-menu :deep(.el-menu--inline .el-menu-item .menu-icon--leaf) {
+  font-size: 15px;
 }
 
 .admin-menu :deep(.el-menu--inline .el-menu-item.is-active) {
-  background: linear-gradient(90deg, rgba(13, 148, 136, 0.42) 0%, rgba(4, 120, 87, 0.12) 100%) !important;
+  background: var(--pf-sidebar-active-bg) !important;
 }
 
-/* ========== 主内容区 ========== */
-.admin-main {
-  background: rgba(236, 253, 245, 0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  padding: 24px 24px 80px;
-  border-left: 1px solid rgba(6, 78, 59, 0.12);
+.admin-menu :deep(.el-sub-menu__title .menu-icon--group) {
+  color: var(--pf-sidebar-text);
 }
 
-.topbar {
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+.admin-menu :deep(.el-sub-menu.is-opened > .el-sub-menu__title .menu-icon--group),
+.admin-menu :deep(.el-sub-menu__title:hover .menu-icon--group) {
+  color: var(--pf-primary);
 }
 
-.topbar-search :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+/* 底部用户 */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--pf-bg-sidebar-border);
 }
 
-.topbar-search :deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.45);
+.admin-sidebar--collapsed .sidebar-user {
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
 }
 
-.topbar-actions :deep(.el-button.is-circle) {
-  --el-button-hover-bg-color: rgba(255, 255, 255, 0.14);
-  --el-button-hover-border-color: rgba(255, 255, 255, 0.22);
+.sidebar-user__avatar {
+  background: linear-gradient(135deg, var(--pf-primary-hover), var(--pf-primary));
+  color: #fff;
+  flex-shrink: 0;
 }
 
-/* 退出按钮 */
+.sidebar-user__info {
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-user__name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user__role {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pf-sidebar-text-muted);
+}
+
 .logout-btn {
   display: flex;
   align-items: center;
@@ -716,13 +709,81 @@ async function handleLogout() {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: #94A3B8;
+  color: var(--pf-sidebar-text-muted);
   cursor: pointer;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .logout-btn:hover {
-  background: rgba(4, 120, 87, 0.35);
-  color: #99f6e4;
+  background: var(--pf-sidebar-hover-bg);
+  color: var(--pf-primary);
+}
+
+/* 顶栏 */
+.admin-topbar {
+  background: var(--pf-topbar-bg);
+  border-bottom: 1px solid var(--pf-topbar-border);
+  box-shadow: 0 1px 8px var(--pf-card-shadow);
+}
+
+.topbar-title {
+  color: var(--pf-topbar-text);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-width: min(280px, 32vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-toggle {
+  color: var(--pf-topbar-text) !important;
+}
+
+.topbar-search :deep(.el-input__wrapper) {
+  background: var(--pf-card-bg);
+  box-shadow: 0 0 0 1px var(--pf-card-border) inset;
+}
+
+.topbar-notify-btn,
+.topbar-theme-btn {
+  background: var(--pf-primary-muted) !important;
+  border-color: var(--pf-card-border) !important;
+  color: var(--pf-primary) !important;
+}
+
+.topbar-avatar {
+  background: linear-gradient(135deg, var(--pf-primary-hover), var(--pf-primary));
+  color: #fff;
+  cursor: pointer;
+}
+
+.theme-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  border: 2px solid transparent;
+}
+
+.theme-swatch-active {
+  font-weight: 600;
+  color: var(--pf-primary);
+}
+
+.theme-check {
+  margin-left: auto;
+  color: var(--pf-primary);
+}
+
+/* 主内容 */
+.admin-main {
+  background: var(--pf-bg-page);
+  padding: 24px 24px 80px;
+  transition: background-color 0.25s ease;
 }
 </style>

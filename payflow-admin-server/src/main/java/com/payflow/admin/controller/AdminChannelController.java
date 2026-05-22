@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.Channel;
+import com.payflow.admin.kit.GlobalResourceKit;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelService;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +39,13 @@ public class AdminChannelController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> listChannels() {
         return ResponseEntity.ok(Map.of(
-                "code", 0, "message", "success", "data",
-                channelService.listAll()
+                "code", 0,
+                "message", "success",
+                "data", Map.of(
+                        "list", channelService.listAll(),
+                        "classification", GlobalResourceKit.CLASSIFICATION_GLOBAL,
+                        "merchantScoped", false
+                )
         ));
     }
 

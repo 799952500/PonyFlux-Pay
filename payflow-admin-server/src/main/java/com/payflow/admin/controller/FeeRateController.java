@@ -2,7 +2,9 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.FeeRateConfig;
 import com.payflow.admin.entity.FeeRateAuditLog;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.FeeRateService;
+import jakarta.servlet.http.HttpServletRequest;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,8 +31,8 @@ public class FeeRateController {
 
     @Operation(summary = "费率规则列表")
     @GetMapping("")
-    public ResponseEntity<Map<String, Object>> list() {
-        List<FeeRateConfig> rules = feeRateService.getAllRules();
+    public ResponseEntity<Map<String, Object>> list(HttpServletRequest request) {
+        List<FeeRateConfig> rules = feeRateService.getAllRules(AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", rules));
     }
 
@@ -58,10 +60,12 @@ public class FeeRateController {
     @Operation(summary = "费率变更审计日志")
     @GetMapping("/audit-log")
     public ResponseEntity<Map<String, Object>> auditLog(
+            HttpServletRequest request,
             @RequestParam(required = false) Long merchantId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        IPage<FeeRateAuditLog> logs = feeRateService.getAuditLogs(merchantId, page, size);
+        IPage<FeeRateAuditLog> logs = feeRateService.getAuditLogs(
+                merchantId, page, size, AdminRequestContext.merchantScope(request));
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", logs));
     }
 }

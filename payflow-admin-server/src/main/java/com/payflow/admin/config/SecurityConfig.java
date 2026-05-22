@@ -50,6 +50,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/v1/admin/auth/login",
                         "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/auth/captcha-required",
                         "/api/v1/admin/auth/logout",
                         "/api/v1/admin/meta/**"
                 );
@@ -58,6 +59,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/v1/admin/auth/login",
                         "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/auth/captcha-required",
                         "/api/v1/admin/auth/logout",
                         "/api/v1/admin/meta/**"
                 );
@@ -66,6 +68,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/v1/admin/auth/login",
                         "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/auth/captcha-required",
                         "/api/v1/admin/auth/logout",
                         "/api/v1/admin/meta/**"
                 );

@@ -3,6 +3,8 @@ package com.payflow.admin.service.impl;
 import com.payflow.admin.entity.Channel;
 import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.service.ChannelService;
+import com.payflow.admin.service.guard.ResourceDeleteGuardService;
+import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.List;
 public class ChannelServiceImpl implements ChannelService {
 
     private final ChannelMapper channelMapper;
+    private final ResourceDeleteGuardService resourceDeleteGuardService;
 
     @Override
     public List<Channel> listAll() {
@@ -39,6 +42,7 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Override
     public void delete(Long id) {
+        resourceDeleteGuardService.assertDeletable(ResourceType.CHANNEL, id);
         channelMapper.deleteById(id);
     }
 }

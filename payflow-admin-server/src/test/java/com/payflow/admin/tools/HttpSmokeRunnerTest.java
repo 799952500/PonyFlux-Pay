@@ -56,16 +56,24 @@ public class HttpSmokeRunnerTest {
         assertEquals(0, publicLink.path("code").asInt());
         assertEquals("LNKSMOKE01", publicLink.path("data").path("linkId").asText());
 
-        // 3) admin captcha + login
-        JsonNode cap = getJson(ADMIN_BASE + "/admin/auth/captcha");
-        String captchaId = cap.path("data").path("captchaId").asText(null);
-        String question = cap.path("data").path("question").asText(null);
-        assertNotNull(captchaId);
-        assertNotNull(question);
-        String captchaAnswer = solve(question);
+        // 3) admin login（首次无验证码；若已有失败记录则带验证码）
+        JsonNode required = getJson(ADMIN_BASE + "/admin/auth/captcha-required?username=admin");
+        assertEquals(0, required.path("code").asInt());
+        boolean captchaRequired = required.path("data").path("required").asBoolean(false);
 
-        String loginBody = "{\"username\":\"admin\",\"password\":\"admin123\",\"captchaId\":\""
-                + captchaId + "\",\"captchaAnswer\":\"" + captchaAnswer + "\"}";
+        String loginBody;
+        if (captchaRequired) {
+            JsonNode cap = getJson(ADMIN_BASE + "/admin/auth/captcha");
+            String captchaId = cap.path("data").path("captchaId").asText(null);
+            String question = cap.path("data").path("question").asText(null);
+            assertNotNull(captchaId);
+            assertNotNull(question);
+            String captchaAnswer = solve(question);
+            loginBody = "{\"username\":\"admin\",\"password\":\"admin123\",\"captchaId\":\""
+                    + captchaId + "\",\"captchaAnswer\":\"" + captchaAnswer + "\"}";
+        } else {
+            loginBody = "{\"username\":\"admin\",\"password\":\"admin123\"}";
+        }
         JsonNode login = postJson(ADMIN_BASE + "/admin/auth/login", loginBody, null);
         assertEquals(0, login.path("code").asInt(), login.toString());
         String token = login.path("data").path("token").asText(null);
