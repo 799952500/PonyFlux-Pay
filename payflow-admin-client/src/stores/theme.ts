@@ -21,8 +21,8 @@ export const THEME_PRESETS: ThemePreset[] = [
   { key: 'dark', label: '暗夜', color: '#2dd4bf' },
 ]
 
-function isThemeKey(value: string | null): value is ThemeKey {
-  return value !== null && VALID_THEMES.includes(value as ThemeKey)
+export function isThemeKey(value: string | null | undefined): value is ThemeKey {
+  return value != null && VALID_THEMES.includes(value as ThemeKey)
 }
 
 export const useThemeStore = defineStore('theme', () => {
@@ -42,11 +42,13 @@ export const useThemeStore = defineStore('theme', () => {
     themeKey.value = key
     localStorage.setItem(THEME_STORAGE_KEY, key)
     apply()
+    import('@/composables/useAppearancePreferences').then((m) => m.schedulePersistUiPreferences())
   }
 
   function toggleSidebar() {
     sidebarCollapsed.value = !sidebarCollapsed.value
     localStorage.setItem(SIDEBAR_STORAGE_KEY, String(sidebarCollapsed.value))
+    import('@/composables/useAppearancePreferences').then((m) => m.schedulePersistUiPreferences())
   }
 
   function init() {

@@ -460,16 +460,24 @@ export interface AdminLoginDTO {
   captchaAnswer?: string
 }
 
+export interface AdminUiPreferences {
+  themeKey: 'mint' | 'ocean' | 'violet' | 'dark'
+  tableDensity: 'standard' | 'compact'
+  sidebarCollapsed: boolean
+}
+
 export interface AdminLoginResponse {
   /** 登录接口返回；profile 接口可为 null，此时沿用本地已存 Token */
   token?: string | null
-  adminId?: string
+  adminId?: string | number
   username: string
+  nickname?: string
   role: string
   platformAdmin?: boolean
   scopeMode?: 'PLATFORM' | 'MERCHANT' | 'NONE'
   authorizedMerchantIds?: string[]
   menus?: SysMenu[]
+  uiPreferences?: AdminUiPreferences
 }
 
 /** 商户数据授权范围（前端展示与筛选辅助，实际隔离以后端为准） */

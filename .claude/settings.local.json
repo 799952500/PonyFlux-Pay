@@ -51,7 +51,8 @@
       "Bash(.specify/extensions/git/scripts/powershell/initialize-repo.ps1:*)",
       "Bash(mvn:*)",
       "Bash(npm:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(D:/个人/pay/PonyFlux-Pay/.specify/extensions/git/scripts/bash/create-new-feature.sh:*)"
     ]
   }
 }

@@ -1,13 +1,18 @@
 package com.payflow.cashier.consumer;
 
+import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.cashier.config.PayflowProperties;
+import com.payflow.cashier.constant.MerchantNotifyConstants;
+import com.payflow.cashier.dto.MerchantNotifyDeliveryResult;
 import com.payflow.cashier.dto.MqMessage;
 import com.payflow.cashier.entity.Order;
 import com.payflow.cashier.mapper.OrderMapper;
-import com.payflow.cashier.util.MerchantSignatureUtil;
+import com.payflow.cashier.service.MerchantNotifyRecordService;
+import com.payflow.cashier.service.MerchantNotifyRecordService.AttemptContext;
 import com.payflow.cashier.service.OrderMqProducer;
+import com.payflow.cashier.util.MerchantSignatureUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -18,7 +23,6 @@ import java.util.stream.Collectors;
 
 /**
  * 商户异步通知 HTTP 投递与签名（供主消费与重试消费复用）。
-  * @author Lucas
  */
 @Slf4j
 @Component
@@ -28,6 +32,7 @@ public class MerchantNotifyWorker {
     private final OrderMapper orderMapper;
     private final OrderMqProducer orderMqProducer;
     private final PayflowProperties payflowProperties;
+    private final MerchantNotifyRecordService merchantNotifyRecordService;
 
     /**
      * 执行一次商户回调；失败且仍有重试次数时发送延迟重试 MQ。
@@ -46,20 +51,28 @@ public class MerchantNotifyWorker {
             String merchantNotifyUrl = order.getMerchantNotifyUrl();
             if (merchantNotifyUrl == null || merchantNotifyUrl.isBlank()) {
                 log.info("[商户回调] 商户未配置回调地址，跳过: orderId={}", orderId);
+                merchantNotifyRecordService.recordNotConfigured(order, message);
                 return;
             }
 
             Map<String, Object> notifyParams = buildNotifyParams(order, message);
-            appendCallbackSign(order.getMerchantId(), notifyParams);
+            boolean signSkipped = appendCallbackSign(order.getMerchantId(), notifyParams);
 
-            boolean success = sendMerchantNotify(merchantNotifyUrl, notifyParams);
+            AttemptContext ctx = merchantNotifyRecordService.beginAttempt(
+                    order, message, merchantNotifyUrl, notifyParams, signSkipped);
 
-            if (success) {
+            MerchantNotifyDeliveryResult delivery = sendMerchantNotify(merchantNotifyUrl, notifyParams);
+            boolean willRetry = !delivery.isSuccess() && message.hasRetries();
+
+            merchantNotifyRecordService.finishAttempt(
+                    ctx.summary(), ctx.attemptNo(), notifyParams, delivery, willRetry);
+
+            if (delivery.isSuccess()) {
                 log.info("[商户回调] 回调成功: orderId={}, url={}", orderId, merchantNotifyUrl);
                 return;
             }
 
-            if (message.hasRetries()) {
+            if (willRetry) {
                 MqMessage retryMsg = message.incrementRetry();
                 long delaySeconds = computeRetryDelay(retryMsg.getRetryCount());
                 log.warn("[商户回调] 回调失败，投递延迟重试: orderId={}, retryCount={}, delaySeconds={}",
@@ -96,13 +109,13 @@ public class MerchantNotifyWorker {
     }
 
     /**
-     * 对回调参数追加 sign：HMAC-SHA256(hex)，原文为按键名排序后的 key=value& 拼接串，密钥为商户 appSecret。
+     * 对回调参数追加 sign；返回 true 表示未配置密钥而跳过签名。
      */
-    private void appendCallbackSign(String merchantId, Map<String, Object> notifyParams) {
+    private boolean appendCallbackSign(String merchantId, Map<String, Object> notifyParams) {
         String appSecret = payflowProperties.getMerchantAppSecret(merchantId);
         if (appSecret == null || appSecret.isBlank()) {
             log.warn("[商户回调] 未配置商户密钥，跳过回调签名: merchantId={}", merchantId);
-            return;
+            return true;
         }
         TreeMap<String, String> sorted = new TreeMap<>();
         notifyParams.forEach((k, v) -> {
@@ -115,26 +128,60 @@ public class MerchantNotifyWorker {
                 .collect(Collectors.joining("&"));
         String sign = MerchantSignatureUtil.hmacSha256Hex(plain, appSecret);
         notifyParams.put("sign", sign);
+        return false;
     }
 
-    private boolean sendMerchantNotify(String url, Map<String, Object> params) {
+    private MerchantNotifyDeliveryResult sendMerchantNotify(String url, Map<String, Object> params) {
+        long start = System.currentTimeMillis();
         try {
-            String response = HttpUtil.createPost(url)
+            HttpResponse response = HttpUtil.createPost(url)
                     .form(params)
                     .timeout(10000)
-                    .execute()
-                    .body();
-            log.info("[商户回调] 收到商户响应: orderId={}, response={}", params.get("orderId"), response);
-            return response != null && (
-                    response.contains("success")
-                            || response.contains("SUCCESS")
-                            || response.contains("ok")
-                            || response.contains("OK")
+                    .execute();
+            int httpStatus = response.getStatus();
+            String body = response.body();
+            long durationMs = System.currentTimeMillis() - start;
+            log.info("[商户回调] 收到商户响应: orderId={}, httpStatus={}, response={}",
+                    params.get("orderId"), httpStatus, body);
+            boolean success = body != null && (
+                    body.contains("success")
+                            || body.contains("SUCCESS")
+                            || body.contains("ok")
+                            || body.contains("OK")
             );
+            if (success) {
+                return MerchantNotifyDeliveryResult.builder()
+                        .success(true)
+                        .httpStatus(httpStatus)
+                        .responseBody(body)
+                        .durationMs(durationMs)
+                        .build();
+            }
+            return MerchantNotifyDeliveryResult.builder()
+                    .success(false)
+                    .httpStatus(httpStatus)
+                    .responseBody(body)
+                    .failReasonType(MerchantNotifyConstants.FAIL_RESPONSE_NOT_SUCCESS)
+                    .failReasonDetail("商户响应未包含成功标识: " + preview(body))
+                    .durationMs(durationMs)
+                    .build();
         } catch (Exception e) {
+            long durationMs = System.currentTimeMillis() - start;
             log.warn("[商户回调] HTTP 请求失败: url={}, error={}", url, e.getMessage());
-            return false;
+            return MerchantNotifyDeliveryResult.builder()
+                    .success(false)
+                    .failReasonType(MerchantNotifyConstants.FAIL_TIMEOUT)
+                    .failReasonDetail(e.getMessage())
+                    .durationMs(durationMs)
+                    .build();
         }
+    }
+
+    private static String preview(String body) {
+        if (body == null) {
+            return "";
+        }
+        return body.length() <= 200 ? body : body.substring(0, 200);
     }
 
     private long computeRetryDelay(int retryCount) {

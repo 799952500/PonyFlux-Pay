@@ -66,6 +66,11 @@ payflow:
   cors:
     allowed-origins:
       - http://localhost:3001
+  crypto:
+    master-key: ${MASTER_KEY:dGVzdC1rZXktMzItYnl0ZXMtbG9uZy0xMjM0NTY=}
+  onboarding:
+    admin-login-url: http://localhost:3001/login
+    result-query-url: http://127.0.0.1:5173/onboarding/result
   cache:
     redis:
       enabled: true

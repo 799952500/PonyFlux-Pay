@@ -95,7 +95,7 @@ class PaymentRefundMerchantIsolationTest {
         when(refundMapper.selectPage(any(), any())).thenReturn(page);
         when(orderMapper.selectOne(any())).thenReturn(order);
 
-        IPage<Map<String, Object>> result = service.page(1, 20, null, null, null, null, List.of("M100001"));
+        IPage<Map<String, Object>> result = service.page(1, 20, null, null, null, null, null, List.of("M100001"));
 
         assertEquals(1, result.getRecords().size());
         assertEquals("REF-1", result.getRecords().get(0).get("refundId"));
@@ -109,7 +109,7 @@ class PaymentRefundMerchantIsolationTest {
         Page<Refund> page = new Page<>();
         when(refundMapper.selectPage(any(), any())).thenReturn(page);
 
-        IPage<Map<String, Object>> result = service.page(1, 20, null, null, null, null, List.of());
+        IPage<Map<String, Object>> result = service.page(1, 20, null, null, null, null, null, List.of());
 
         assertEquals(0, result.getRecords().size());
     }

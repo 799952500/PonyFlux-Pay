@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.client.CashierInternalRefundClient;
 import com.payflow.admin.entity.cashier.Order;
 import com.payflow.admin.entity.cashier.Refund;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.cashier.OrderMapper;
 import com.payflow.admin.mapper.cashier.RefundMapper;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +44,23 @@ public class AdminRefundService {
      * @param endDate    结束日期（含）
      * @return 分页数据（records 已转换为前端视图字段）
      */
-    public IPage<Map<String, Object>> page(int page, int pageSize, String status, String keyword,
+    public IPage<Map<String, Object>> page(int page, int pageSize, String merchantId, String status, String keyword,
                                            LocalDate startDate, LocalDate endDate,
                                            List<String> merchantScopeIds) {
+        int size = Math.min(Math.max(pageSize, 1), 100);
+        String merchantFilter = AdminRequestContext.resolveMerchantFilter(merchantId, merchantScopeIds);
+        if ("__NO_ACCESS__".equals(merchantFilter)) {
+            Page<Map<String, Object>> empty = new Page<>(page, size, 0);
+            empty.setRecords(List.of());
+            return empty;
+        }
+
         LambdaQueryWrapper<Refund> w = new LambdaQueryWrapper<>();
-        applyMerchantScope(w, merchantScopeIds);
+        if (merchantFilter != null) {
+            w.apply("order_id IN (SELECT order_id FROM cashier_orders WHERE merchant_id = {0})", merchantFilter);
+        } else if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
+            applyMerchantScope(w, merchantScopeIds);
+        }
         String dbStatus = toDbStatusFilter(status);
         if (dbStatus != null) {
             w.eq(Refund::getStatus, dbStatus);
@@ -64,10 +77,10 @@ public class AdminRefundService {
         }
         w.orderByDesc(Refund::getCreatedAt);
 
-        Page<Refund> p = new Page<>(page, pageSize);
+        Page<Refund> p = new Page<>(page, size);
         IPage<Refund> raw = refundMapper.selectPage(p, w);
 
-        Page<Map<String, Object>> viewPage = new Page<>(page, pageSize, raw.getTotal());
+        Page<Map<String, Object>> viewPage = new Page<>(page, size, raw.getTotal());
         viewPage.setRecords(raw.getRecords().stream().map(this::toViewRow).toList());
         return viewPage;
     }

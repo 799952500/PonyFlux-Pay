@@ -99,6 +99,33 @@ export const REFUND_STATUS_TAG: Record<string, string> = {
   REJECTED: 'danger',
 }
 
+/** 商户回调汇总状态（平台 → 商户） */
+export const MERCHANT_NOTIFY_SUMMARY_LABEL: Record<string, string> = {
+  SUCCESS: '成功',
+  FAILED: '失败',
+  IN_PROGRESS: '处理中',
+  NOT_CONFIGURED: '未配置',
+  PENDING: '待投递',
+}
+
+export const MERCHANT_NOTIFY_SUMMARY_TAG: Record<string, string> = {
+  SUCCESS: 'success',
+  FAILED: 'danger',
+  IN_PROGRESS: 'warning',
+  NOT_CONFIGURED: 'info',
+  PENDING: 'info',
+}
+
+export const MERCHANT_NOTIFY_TYPE_LABEL: Record<string, string> = {
+  PAYMENT: '支付通知',
+  REFUND: '退款通知',
+}
+
+export const MERCHANT_NOTIFY_TYPE_TAG: Record<string, string> = {
+  PAYMENT: 'primary',
+  REFUND: 'warning',
+}
+
 export const MERCHANT_STATUS_LABEL: Record<string, string> = {
   ACTIVE: '正常',
   SUSPENDED: '停用',

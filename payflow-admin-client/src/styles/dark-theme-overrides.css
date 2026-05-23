@@ -58,22 +58,60 @@
   background: var(--pf-card-bg) !important;
 }
 
-/* Element Plus 表单与表格 */
+/* Element Plus 表单：输入区背景与卡片/页面分层 */
 [data-theme='dark'] .el-input__wrapper,
 [data-theme='dark'] .el-textarea__inner,
-[data-theme='dark'] .el-select__wrapper {
-  background-color: var(--el-fill-color-blank);
-  box-shadow: 0 0 0 1px var(--el-border-color) inset;
+[data-theme='dark'] .el-select__wrapper,
+[data-theme='dark'] .el-date-editor.el-input__wrapper,
+[data-theme='dark'] .el-date-editor.el-range-editor,
+[data-theme='dark'] .el-input-number .el-input__wrapper {
+  background-color: var(--pf-input-bg, #0f172a) !important;
+  box-shadow: 0 0 0 1px var(--pf-input-border, rgba(255, 255, 255, 0.22)) inset !important;
+}
+
+[data-theme='dark'] .el-input__wrapper:hover,
+[data-theme='dark'] .el-select__wrapper:hover,
+[data-theme='dark'] .el-date-editor.el-input__wrapper:hover,
+[data-theme='dark'] .el-date-editor.el-range-editor:hover,
+[data-theme='dark'] .el-input-number .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--pf-input-border-hover, rgba(45, 212, 191, 0.45)) inset !important;
+}
+
+[data-theme='dark'] .el-input__wrapper.is-focus,
+[data-theme='dark'] .el-select__wrapper.is-focused,
+[data-theme='dark'] .el-date-editor.is-active,
+[data-theme='dark'] .el-date-editor.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--pf-input-border-focus, rgba(45, 212, 191, 0.75)) inset !important;
 }
 
 [data-theme='dark'] .el-input__inner,
-[data-theme='dark'] .el-textarea__inner {
+[data-theme='dark'] .el-textarea__inner,
+[data-theme='dark'] .el-range-input {
+  color: var(--el-text-color-primary) !important;
+  background-color: transparent !important;
+}
+
+[data-theme='dark'] .el-select__selected-item,
+[data-theme='dark'] .el-select__placeholder {
   color: var(--el-text-color-primary);
 }
 
 [data-theme='dark'] .el-input__inner::placeholder,
 [data-theme='dark'] .el-textarea__inner::placeholder {
   color: var(--el-text-color-placeholder);
+}
+
+/* 筛选栏 / 弹窗内表单：与 content-card 同底时仍保持输入框凹陷感 */
+[data-theme='dark'] .filter-bar .el-input__wrapper,
+[data-theme='dark'] .filter-bar .el-select__wrapper,
+[data-theme='dark'] .filter-bar .el-date-editor.el-input__wrapper,
+[data-theme='dark'] .filter-bar .el-date-editor.el-range-editor,
+[data-theme='dark'] .el-dialog .el-input__wrapper,
+[data-theme='dark'] .el-dialog .el-select__wrapper,
+[data-theme='dark'] .el-drawer .el-input__wrapper,
+[data-theme='dark'] .el-drawer .el-select__wrapper {
+  background-color: var(--pf-input-bg, #0f172a) !important;
+  box-shadow: 0 0 0 1px var(--pf-input-border, rgba(255, 255, 255, 0.22)) inset !important;
 }
 
 [data-theme='dark'] .el-form-item__label {
@@ -99,6 +137,32 @@
   color: var(--pf-text-secondary);
 }
 
+[data-theme='dark'] .el-dialog {
+  border-color: var(--pf-card-border);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .el-drawer.rtl {
+  border-left-color: var(--pf-card-border);
+  box-shadow:
+    -16px 0 40px rgba(0, 0, 0, 0.35),
+    -2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .el-dialog__header,
+[data-theme='dark'] .el-drawer__header {
+  background: color-mix(in srgb, var(--pf-primary-muted) 55%, var(--pf-card-bg));
+  border-bottom-color: var(--pf-card-border);
+}
+
+[data-theme='dark'] .el-dialog__footer,
+[data-theme='dark'] .el-drawer__footer {
+  border-top-color: var(--pf-card-border);
+  background: var(--pf-card-bg);
+}
+
 [data-theme='dark'] .el-dialog,
 [data-theme='dark'] .el-drawer {
   --el-dialog-bg-color: var(--pf-card-bg);
@@ -108,6 +172,16 @@
 [data-theme='dark'] .el-dialog__title,
 [data-theme='dark'] .el-drawer__title {
   color: var(--pf-text-primary);
+}
+
+[data-theme='dark'] .el-dialog__headerbtn .el-dialog__close,
+[data-theme='dark'] .el-drawer__close-btn {
+  color: var(--pf-text-secondary);
+}
+
+[data-theme='dark'] .el-dialog__headerbtn:hover .el-dialog__close,
+[data-theme='dark'] .el-drawer__close-btn:hover {
+  color: var(--pf-primary);
 }
 
 [data-theme='dark'] .el-dialog__body,
@@ -137,7 +211,8 @@
 }
 
 [data-theme='dark'] .el-pagination .el-select .el-input__wrapper {
-  background-color: var(--el-fill-color-blank);
+  background-color: var(--pf-input-bg, #0f172a) !important;
+  box-shadow: 0 0 0 1px var(--pf-input-border, rgba(255, 255, 255, 0.22)) inset !important;
 }
 
 [data-theme='dark'] .el-descriptions__label {

@@ -7,8 +7,6 @@ server:
 spring:
   lifecycle:
     timeout-per-shutdown-phase: 30s
-
-spring:
   application:
     name: payflow-cashier-server
 
@@ -97,10 +95,6 @@ payflow:
   # 商户签名密钥配置（兜底配置，优先于数据库）
   # 生产环境必须从数据库 merchants 表读取，禁止在此硬编码密钥
   merchants: []
-  security:
-    audit:
-      alert-threshold: 20
-      alert-window-minutes: 5
 
 # SpringDoc OpenAPI
 springdoc:

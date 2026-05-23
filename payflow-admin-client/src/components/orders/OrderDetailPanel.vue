@@ -22,6 +22,9 @@
           <span class="detail-hero__amount-label">订单金额</span>
           <span class="detail-hero__amount-value">¥{{ formatMoneyFen(order.amount) }}</span>
           <span v-if="order.currency && order.currency !== 'CNY'" class="detail-hero__currency">{{ order.currency }}</span>
+          <el-button class="mt-3" size="small" type="primary" plain @click="openMerchantNotify">
+            查看回调
+          </el-button>
         </div>
       </header>
 
@@ -63,11 +66,14 @@
     </template>
 
     <el-empty v-else class="detail-empty" description="未找到该订单" />
+
+    <MerchantNotifyDetailDrawer ref="notifyDrawerRef" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import MerchantNotifyDetailDrawer from '@/components/merchant-notifies/DetailDrawer.vue'
 import { ElMessage } from 'element-plus'
 import { getOrderDetail } from '@/api/admin'
 import { useMerchantScope } from '@/composables/useMerchantScope'
@@ -91,6 +97,12 @@ const props = defineProps<{
 const { isMerchantAllowed } = useMerchantScope()
 const loading = ref(false)
 const order = ref<Order | null>(null)
+const notifyDrawerRef = ref<InstanceType<typeof MerchantNotifyDetailDrawer> | null>(null)
+
+function openMerchantNotify() {
+  if (!order.value?.orderId) return
+  notifyDrawerRef.value?.openByOrderId(order.value.orderId)
+}
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
 
 const descColumn = computed(() => (viewportWidth.value < 768 ? 1 : 2))

@@ -18,8 +18,8 @@ export const TABLE_DENSITY_PRESETS: TableDensityPreset[] = [
   { key: 'compact', label: '紧凑', description: '收敛行高，适合宽表与密集列表' },
 ]
 
-function isTableDensityKey(value: string | null): value is TableDensityKey {
-  return value !== null && VALID_DENSITIES.includes(value as TableDensityKey)
+export function isTableDensityKey(value: string | null | undefined): value is TableDensityKey {
+  return value != null && VALID_DENSITIES.includes(value as TableDensityKey)
 }
 
 function canUseLocalStorage(): boolean {
@@ -51,6 +51,7 @@ export const useTableDensityStore = defineStore('tableDensity', () => {
       storageHintShown.value = true
     }
     apply()
+    import('@/composables/useAppearancePreferences').then((m) => m.schedulePersistUiPreferences())
   }
 
   function init() {

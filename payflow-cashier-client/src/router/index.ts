@@ -2,19 +2,43 @@
  * Vue Router 配置
  * 收银台为公开页面，无需任何登录认证
  */
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationGeneric } from 'vue-router'
+import { installPfSurface } from '@/composables/usePfSurface'
+import { buildCashierPath, resolveCashierTerminal } from '@/utils/cashierDevice'
+
+function redirectCashierByDevice(to: RouteLocationGeneric) {
+  const orderId = (to.params.orderId as string) || 'demo'
+  const query = to.query as Record<string, string | string[] | undefined>
+  const search = new URLSearchParams()
+  for (const [key, val] of Object.entries(query)) {
+    if (val === undefined) continue
+    if (Array.isArray(val)) val.forEach((v) => search.append(key, v))
+    else search.set(key, val)
+  }
+  const terminal = resolveCashierTerminal(search)
+  return buildCashierPath(orderId, terminal, query)
+}
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    // ============================================================
-    // 收银台（公开，无需登录）
-    // ============================================================
     {
       path: '/cashier/:orderId',
       name: 'cashier',
-      component: () => import('@/pages/cashier/index.vue'),
+      redirect: redirectCashierByDevice,
       meta: { title: '收银台' },
+    },
+    {
+      path: '/cashier/pc/:orderId',
+      name: 'cashier-pc',
+      component: () => import('@/pages/cashier/pc/index.vue'),
+      meta: { title: '收银台', terminal: 'PC' },
+    },
+    {
+      path: '/cashier/h5/:orderId',
+      name: 'cashier-h5',
+      component: () => import('@/pages/cashier/h5/index.vue'),
+      meta: { title: '收银台', terminal: 'H5' },
     },
 
     {
@@ -24,27 +48,25 @@ const router = createRouter({
       meta: { title: '电子收据' },
     },
 
-    // ============================================================
-    // 首页重定向到 demo 收银台
-    // ============================================================
     {
       path: '/',
       redirect: '/cashier/demo',
     },
 
-    // ============================================================
-    // 商户自助注册（公开页面）
-    // ============================================================
     {
       path: '/register',
       name: 'register',
       component: () => import('@/pages/register/index.vue'),
-      meta: { title: '商户注册' },
+      meta: { title: '商户入驻申请' },
     },
 
-    // ============================================================
-    // 兜底：所有未匹配路径都重定向到 demo 收银台
-    // ============================================================
+    {
+      path: '/onboarding/result',
+      name: 'onboarding-result',
+      component: () => import('@/pages/onboarding/result.vue'),
+      meta: { title: '入驻结果查询' },
+    },
+
     {
       path: '/:pathMatch(.*)*',
       redirect: '/cashier/demo',
@@ -52,10 +74,13 @@ const router = createRouter({
   ],
 })
 
-// 路由切换后更新页面标题
+installPfSurface()
+
 router.afterEach((to) => {
   const title = (to.meta?.title as string | undefined) ?? '小马支付'
-  document.title = `${title} - 小马支付 PonyFlux Pay`
+  const terminal = to.meta?.terminal as string | undefined
+  const suffix = terminal ? ` (${terminal})` : ''
+  document.title = `${title}${suffix} - 小马支付 PonyFlux Pay`
 })
 
 export default router

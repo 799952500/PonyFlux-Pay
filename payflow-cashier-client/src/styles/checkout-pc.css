@@ -1,0 +1,698 @@
+/* PC 收银台 — 宽屏双栏桌面布局 */
+
+.cashier-page--pc {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--pf-bg-page);
+}
+
+.cashier-page--pc .cashier-waves {
+  display: none;
+}
+
+/* ── 顶栏 ── */
+.pc-header {
+  background: var(--pf-login-header-bg);
+  flex-shrink: 0;
+}
+
+.pc-header__bar {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 60px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+
+.pc-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: start;
+}
+
+.pc-header__logo {
+  border-radius: 8px;
+}
+
+.pc-header__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pc-header__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pf-primary);
+  line-height: 1.2;
+}
+
+.pc-header__sub {
+  font-size: 11px;
+  color: var(--pf-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.pc-header__center {
+  justify-self: center;
+}
+
+.pc-header__page-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+}
+
+.pc-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-self: end;
+}
+
+.pc-header__timer {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pf-primary-hover);
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--pf-primary-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-header__timer--warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.pc-header__link {
+  font-size: 13px;
+  color: var(--pf-text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pc-header__link:hover {
+  color: var(--pf-primary-hover);
+}
+
+/* 顶栏标题行下方：邮票齿孔，半圆向下外凸，无阴影 */
+.pc-header__stamp-edge {
+  --stamp-notch: 7px;
+  --stamp-pitch: 14px;
+  display: block;
+  width: 100%;
+  height: calc(var(--stamp-notch) + 2px);
+  background-color: var(--pf-bg-page);
+  background-image: radial-gradient(
+    circle at 50% 0,
+    var(--pf-login-header-bg) var(--stamp-notch),
+    transparent calc(var(--stamp-notch) + 0.5px)
+  );
+  background-size: var(--stamp-pitch) 100%;
+  background-repeat: repeat-x;
+  background-position: center top;
+}
+
+/* ── 主内容区 ── */
+.pc-cashier__container {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 32px 40px;
+  box-sizing: border-box;
+}
+
+.pc-breadcrumb {
+  font-size: 13px;
+  color: var(--pf-text-muted);
+  margin-bottom: 20px;
+}
+
+.pc-breadcrumb__sep {
+  margin: 0 8px;
+  opacity: 0.5;
+}
+
+.pc-breadcrumb__current {
+  color: var(--pf-text-secondary);
+  font-weight: 500;
+}
+
+.pc-cashier__loading {
+  background: var(--pf-card-bg);
+  border: 1px solid var(--pf-card-border);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.pc-cashier__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+.pc-cashier__layout--ticket {
+  grid-template-columns: minmax(0, 1fr) 20px 380px;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* ── 票据撕开线 ── */
+.pc-ticket-divider {
+  position: relative;
+  align-self: stretch;
+  min-height: 200px;
+  display: flex;
+  justify-content: center;
+}
+
+.pc-ticket-divider__line {
+  width: 0;
+  border-left: 2px dashed rgba(51, 65, 85, 0.18);
+  height: 100%;
+  min-height: inherit;
+}
+
+.pc-ticket-divider__hole {
+  position: absolute;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: var(--pf-bg-page);
+  box-shadow: 0 0 0 1px rgba(51, 65, 85, 0.06);
+}
+
+.pc-ticket-divider__hole--top {
+  top: 48px;
+}
+
+.pc-ticket-divider__hole--bottom {
+  bottom: 48px;
+}
+
+/* ── 左侧订单面板 ── */
+.pc-order-panel {
+  background: var(--pf-card-bg);
+  border: 1px solid var(--pf-card-border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px var(--pf-card-shadow);
+}
+
+.pc-order-panel--ticket {
+  --pc-radius-lg: 16px;
+  --pc-radius-sm: 12px;
+  position: relative;
+  padding: 0 0 24px;
+  border: 1px solid var(--pf-card-border);
+  border-radius: var(--pc-radius-lg);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.pc-order-panel__banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--pf-primary) 0%, var(--pf-primary-hover) 100%);
+  position: relative;
+}
+
+.pc-order-panel__banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+.pc-order-panel__banner-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.06em;
+}
+
+.pc-order-panel__banner-sub {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pc-order-panel__banner-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  opacity: 0.95;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.pc-order-panel__body {
+  padding: 0 28px;
+}
+
+.pc-order-panel__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0 4px;
+  border-bottom: 1px solid var(--pf-divider);
+  margin-bottom: 20px;
+}
+
+.pc-order-panel__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  margin: 0;
+}
+
+.pc-order-panel__status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.pc-order-panel__status.is-pending {
+  background: var(--pf-primary-soft);
+  color: var(--pf-primary-hover);
+}
+
+.pc-order-panel__status.is-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pc-order-panel__merchant {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--pf-primary-muted);
+  border-radius: var(--pc-radius-sm, 12px);
+  border: 1px solid rgba(42, 168, 154, 0.1);
+}
+
+.pc-order-panel__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, var(--pf-primary-hover), var(--pf-primary));
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pc-order-panel__merchant-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  margin: 0 0 2px;
+}
+
+.pc-order-panel__merchant-label {
+  font-size: 12px;
+  color: var(--pf-text-muted);
+  margin: 0;
+}
+
+.pc-order-dl {
+  margin: 0;
+}
+
+.pc-order-dl__row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--pf-divider);
+  font-size: 14px;
+}
+
+.pc-order-dl__row:last-child {
+  border-bottom: none;
+}
+
+.pc-order-dl__row dt {
+  color: var(--pf-text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+
+.pc-order-dl__row dd {
+  color: var(--pf-text-primary);
+  margin: 0;
+  text-align: right;
+  word-break: break-all;
+}
+
+.pc-order-dl__mono {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 13px;
+}
+
+.pc-order-dl__row--amount {
+  padding-top: 16px;
+  margin-top: 4px;
+  border-bottom: none;
+}
+
+.pc-order-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.pc-order-amount__currency {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pf-amount);
+}
+
+.pc-order-amount__int {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--pf-amount);
+  letter-spacing: -0.02em;
+}
+
+.pc-order-amount__dec {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--pf-amount);
+}
+
+.pc-order-timer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pf-divider);
+}
+
+.pc-order-timer__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--pf-text-secondary);
+  margin-bottom: 8px;
+}
+
+.pc-order-timer__text {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--pf-primary-hover);
+}
+
+.pc-order-timer__track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--pf-primary-muted);
+  overflow: hidden;
+}
+
+.pc-order-timer__bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s linear, background-color 0.4s;
+}
+
+/* ── 右侧支付侧栏 ── */
+.pc-pay-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  max-height: calc(100vh - 96px);
+  min-height: 0;
+}
+
+.pc-pay-aside--ticket {
+  gap: 16px;
+}
+
+.pc-pay-aside--ticket .pc-pay-card {
+  box-shadow: none;
+}
+
+.pc-pay-card {
+  background: var(--pf-card-bg);
+  border: 1px solid var(--pf-card-border);
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 3px var(--pf-card-shadow);
+}
+
+.pc-pay-card--ticket-top {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 300px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--pc-radius-lg, 16px);
+  box-shadow: none;
+}
+
+.pc-pay-card--ticket-bottom {
+  flex-shrink: 0;
+  margin-top: 0;
+  border: 1px solid var(--pf-card-border);
+  border-radius: var(--pc-radius-lg, 16px);
+  box-shadow: none;
+  filter: none;
+  background: var(--pf-card-bg);
+}
+
+.pc-pay-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  margin: 0 0 16px;
+}
+
+.pc-pay-card--summary {
+  padding-bottom: 22px;
+}
+
+/* 桌面支付方式：纵向列表，超出视口可滚动，底部结算区始终可见 */
+.checkout-pay-methods--desktop {
+  padding: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-pay-methods--desktop .pay-options-scroller {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(360px, calc(100vh - 340px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0 -4px;
+  padding: 0 4px 2px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 168, 154, 0.35) transparent;
+}
+
+.checkout-pay-methods--desktop .pay-options-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+
+.checkout-pay-methods--desktop .pay-options-scroller::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(42, 168, 154, 0.35);
+}
+
+.checkout-pay-methods--desktop .pay-options-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.checkout-pay-methods--desktop .pay-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkout-pay-methods--desktop.checkout-pay-methods--dense .pay-option {
+  padding: 10px 14px;
+  gap: 10px;
+  border-radius: 10px;
+}
+
+.checkout-pay-methods--desktop.checkout-pay-methods--dense .pay-option__name {
+  font-size: 13px;
+}
+
+.checkout-pay-methods--desktop.checkout-pay-methods--dense .pay-option__hint {
+  font-size: 10px;
+}
+
+.checkout-pay-methods--desktop .pay-option {
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+.checkout-pay-methods--desktop .pay-option--active {
+  border-color: var(--pf-primary);
+  background: var(--pf-primary-soft);
+  box-shadow: inset 0 0 0 1px rgba(42, 168, 154, 0.15);
+}
+
+.pc-pay-summary {
+  margin-bottom: 20px;
+}
+
+.pc-pay-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--pf-text-secondary);
+  padding: 8px 0;
+}
+
+.pc-pay-summary__row--total {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pf-divider);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+}
+
+.pc-pay-summary__amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--pf-amount);
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-pay-submit {
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: var(--pf-primary-hover);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+}
+
+.pc-pay-submit:hover:not(:disabled) {
+  background: var(--pf-primary);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.32);
+}
+
+.pc-pay-submit:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.pc-pay-tips {
+  margin: 16px 0 0;
+  padding: 0 0 0 18px;
+  font-size: 12px;
+  color: var(--pf-text-muted);
+  line-height: 1.7;
+}
+
+.pc-pay-tips li {
+  margin-bottom: 4px;
+}
+
+.pc-cashier__footer {
+  flex-shrink: 0;
+  padding: 16px 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--pf-text-muted);
+  border-top: 1px solid var(--pf-card-border);
+  background: var(--pf-login-header-bg);
+}
+
+.pc-cashier__footer-sep {
+  margin: 0 8px;
+  opacity: 0.4;
+}
+
+@media (max-width: 900px) {
+  .pc-cashier__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-cashier__layout--ticket {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .pc-ticket-divider {
+    display: none;
+  }
+
+  .pc-order-panel--ticket {
+    border-radius: 16px;
+  }
+
+  .pc-header__stamp-edge {
+    --stamp-pitch: 12px;
+    --stamp-notch: 6px;
+  }
+
+  .pc-pay-card--ticket-top {
+    box-shadow: none;
+  }
+
+  .pc-pay-card--ticket-bottom {
+    box-shadow: none;
+  }
+
+  .pc-pay-aside {
+    position: static;
+  }
+
+  .pc-pay-aside--ticket {
+    gap: 16px;
+  }
+
+  .pc-header__bar {
+    grid-template-columns: 1fr auto;
+    padding: 0 20px;
+  }
+
+  .pc-header__center {
+    display: none;
+  }
+}

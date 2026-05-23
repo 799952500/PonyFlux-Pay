@@ -2,6 +2,7 @@
  * 管理后台相关接口
  */
 import request from './request'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import type {
   OrderListQuery,
   OrderListResponse,
@@ -201,12 +202,21 @@ export const getUserById = (id: number): Promise<any> =>
 export const getRefunds = (params: {
   page: number
   pageSize: number
+  merchantId?: string
   status?: string
   keyword?: string
   startDate?: string
   endDate?: string
 }): Promise<PageResult<RefundItem>> =>
-  request.get('/admin/refunds', { params })
+  request.get('/admin/refunds', { params }).then((data: unknown) => {
+    const raw = data as { list?: RefundItem[]; total?: number; page?: number; pageSize?: number }
+    return {
+      list: raw?.list ?? [],
+      total: Number(raw?.total ?? 0),
+      page: Number(raw?.page ?? params.page),
+      pageSize: Number(raw?.pageSize ?? params.pageSize),
+    }
+  })
 
 export const approveRefund = (refundId: string) =>
   request.post(`/admin/refunds/${refundId}/approve`)
@@ -560,7 +570,7 @@ export const getReconTasks = (params: {
     list: data?.list ?? [],
     total: Number(data?.total ?? 0),
     page: Number(data?.page ?? params.page ?? 1),
-    size: Number(data?.size ?? params.size ?? 20),
+    size: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export const getReconTaskDetail = (taskId: string): Promise<ReconTaskItem> =>
@@ -581,7 +591,7 @@ export const getReconDiffs = (
       list: data?.list ?? [],
       total: Number(data?.total ?? 0),
       page: Number(data?.page ?? params.page ?? 1),
-      size: Number(data?.size ?? params.size ?? 20),
+      size: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
     }))
 
 export const triggerReconManual = (body: {
@@ -623,7 +633,7 @@ export const getReconOrderResults = (params: {
     list: data?.list ?? [],
     total: Number(data?.total ?? 0),
     page: Number(data?.page ?? params.page ?? 1),
-    size: Number(data?.size ?? params.size ?? 20),
+    size: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export interface ReconSummaryData {
@@ -677,7 +687,7 @@ export const getReconAnomalies = (params: {
     list: data?.list ?? [],
     total: Number(data?.total ?? 0),
     page: Number(data?.page ?? params.page ?? 1),
-    size: Number(data?.size ?? params.size ?? 20),
+    size: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 // -------------------------------------------------------------------
@@ -686,6 +696,7 @@ export const getReconAnomalies = (params: {
 export const getInsightsFunnel = (): Promise<Record<string, unknown>> =>
   request.get('/admin/insights/funnel')
 
+/** @deprecated 请使用 @/api/onboarding */
 export const listOnboardingApplications = (): Promise<unknown[]> =>
   request.get('/admin/onboarding/applications')
 
@@ -731,7 +742,7 @@ export const getChurnAlerts = (params: {
     list: data?.data?.list ?? data?.list ?? [],
     total: Number(data?.data?.total ?? data?.total ?? 0),
     page: Number(data?.data?.page ?? params.page ?? 1),
-    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+    pageSize: Number(data?.data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export const getChurnAlertDetail = (id: number): Promise<any> =>
@@ -764,7 +775,7 @@ export const getFeeRateAuditLog = (params: {
     list: data?.records ?? data?.list ?? (Array.isArray(data) ? data : []),
     total: Number(data?.total ?? 0),
     page: Number(data?.current ?? params.page ?? 1),
-    pageSize: Number(data?.size ?? params.size ?? 20),
+    pageSize: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export const getMerchantFeeProgress = (merchantId: string): Promise<any> =>
@@ -789,7 +800,7 @@ export const getRoutingLogs = (params: {
     list: data?.data?.list ?? data?.list ?? [],
     total: Number(data?.data?.total ?? data?.total ?? 0),
     page: Number(data?.data?.page ?? params.page ?? 1),
-    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+    pageSize: Number(data?.data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export const exportRoutingLogs = (params: { startTime?: string; endTime?: string }): Promise<any[]> =>
@@ -810,7 +821,7 @@ export const getDataIsolationChecks = (params: {
     list: data?.data?.list ?? data?.list ?? [],
     total: Number(data?.data?.total ?? data?.total ?? 0),
     page: Number(data?.data?.page ?? params.page ?? 1),
-    pageSize: Number(data?.data?.size ?? params.size ?? 20),
+    pageSize: Number(data?.data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
   }))
 
 export const scanDataIsolation = (): Promise<{ updatedCount: number }> =>

@@ -23,11 +23,29 @@ public class MerchantApplicationEntity {
 
     private String status;
 
+    private String applicationSource;
+
     private String bizLicenseNo;
 
     private String contactName;
 
     private String contactPhone;
+
+    private String contactEmail;
+
+    private String allocatedMerchantId;
+
+    private String secretCipher;
+
+    private LocalDateTime secretViewedAt;
+
+    private Integer resultQueryCount;
+
+    private Long approverId;
+
+    private LocalDateTime approvedAt;
+
+    private LocalDateTime rejectedAt;
 
     private String payloadJson;
 
@@ -36,4 +54,11 @@ public class MerchantApplicationEntity {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    public static final String STATUS_SUBMITTED = "SUBMITTED";
+    public static final String STATUS_REVIEWING = "REVIEWING";
+    public static final String STATUS_APPROVED = "APPROVED";
+    public static final String STATUS_REJECTED = "REJECTED";
+
+    public static final String SOURCE_CASHIER_PUBLIC = "CASHIER_PUBLIC";
 }

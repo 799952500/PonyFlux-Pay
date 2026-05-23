@@ -141,3 +141,5 @@ INSERT INTO cashier_security_audit (
  'REFUND', 'REF-20260517-001', '10.12.0.23', 'DENIED', '5102', '资源不属于当前商户', DATE_SUB(NOW(), INTERVAL 25 MINUTE)),
 ('M100002', 'M100001', 'HMAC', 'POST', '/api/v1/cashier/payments',
  'PAYMENT', 'PAY-20260518-001', '203.0.113.9', 'DENIED', '5102', '支付记录不属于当前商户', DATE_SUB(NOW(), INTERVAL 15 MINUTE));
+
+-- 商户回调演示数据见 sql/seed/payflow_cashier_merchant_notify_demo.sql（install_demo_db 会单独执行）

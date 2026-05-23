@@ -37,12 +37,13 @@ public class AdminRefundController {
             HttpServletRequest request,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) String merchantId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
 
-        IPage<Map<String, Object>> p = adminRefundService.page(page, pageSize, status, keyword, startDate, endDate,
+        IPage<Map<String, Object>> p = adminRefundService.page(page, pageSize, merchantId, status, keyword, startDate, endDate,
                 AdminRequestContext.merchantScope(request));
         Map<String, Object> data = new HashMap<>();
         data.put("list", p.getRecords());

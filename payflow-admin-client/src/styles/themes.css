@@ -173,14 +173,19 @@
   --el-text-color-secondary: #94a3b8;
   --el-text-color-placeholder: #64748b;
   --el-text-color-disabled: #475569;
-  --el-border-color: rgba(255, 255, 255, 0.14);
+  --el-border-color: var(--pf-input-border);
   --el-border-color-light: rgba(255, 255, 255, 0.1);
   --el-border-color-lighter: rgba(255, 255, 255, 0.08);
   --el-border-color-extra-light: rgba(255, 255, 255, 0.06);
   --el-fill-color: rgba(255, 255, 255, 0.08);
   --el-fill-color-light: rgba(255, 255, 255, 0.06);
   --el-fill-color-lighter: rgba(255, 255, 255, 0.04);
-  --el-fill-color-blank: #1e293b;
+  /* 输入框背景须与卡片区分，避免「看不见框」 */
+  --pf-input-bg: #0f172a;
+  --pf-input-border: rgba(255, 255, 255, 0.22);
+  --pf-input-border-hover: rgba(45, 212, 191, 0.45);
+  --pf-input-border-focus: rgba(45, 212, 191, 0.75);
+  --el-fill-color-blank: var(--pf-input-bg);
   --el-fill-color-dark: rgba(0, 0, 0, 0.2);
   --el-mask-color: rgba(0, 0, 0, 0.72);
   --el-color-info: #94a3b8;

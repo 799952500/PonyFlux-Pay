@@ -53,10 +53,6 @@
                 <el-icon class="menu-icon"><Message /></el-icon>
                 <span class="menu-text">{{ t('menu.notifications') }}</span>
               </el-menu-item>
-              <el-menu-item index="/admin/preferences">
-                <el-icon class="menu-icon"><Brush /></el-icon>
-                <span class="menu-text">外观与显示</span>
-              </el-menu-item>
             </el-sub-menu>
 
             <el-sub-menu index="trade-group">
@@ -192,19 +188,19 @@
         </el-menu>
 
         <!-- 底部用户 -->
-        <div class="sidebar-user shrink-0">
+        <div class="sidebar-user shrink-0" role="button" tabindex="0" @click="goProfile" @keyup.enter="goProfile">
           <el-avatar :size="28" class="sidebar-user__avatar">{{ adminName?.charAt(0) }}</el-avatar>
           <div v-show="!themeStore.sidebarCollapsed" class="sidebar-user__info">
             <p class="sidebar-user__name">{{ adminName }}</p>
-            <p class="sidebar-user__role">管理员</p>
+            <p class="sidebar-user__role">个人中心</p>
           </div>
           <el-tooltip v-if="themeStore.sidebarCollapsed" content="退出登录" placement="right">
-            <button class="logout-btn" @click="handleLogout" title="退出登录">
+            <button class="logout-btn" @click.stop="handleLogout" title="退出登录">
               <el-icon><SwitchButton /></el-icon>
             </button>
           </el-tooltip>
           <el-tooltip v-else content="退出登录" placement="top">
-            <button class="logout-btn" @click="handleLogout" title="退出登录">
+            <button class="logout-btn" @click.stop="handleLogout" title="退出登录">
               <el-icon><SwitchButton /></el-icon>
             </button>
           </el-tooltip>
@@ -242,33 +238,23 @@
               </el-button>
             </el-badge>
 
-            <!-- 主题切换 -->
-            <el-dropdown trigger="click" placement="bottom-end" @command="onThemeCommand">
-              <el-button circle class="topbar-theme-btn" title="切换主题">
-                <el-icon><Brush /></el-icon>
-              </el-button>
+            <el-dropdown trigger="click" placement="bottom-end" @command="onUserMenuCommand">
+              <button type="button" class="topbar-avatar-btn" title="个人中心">
+                <el-avatar :size="32" class="topbar-avatar">{{ adminName?.charAt(0) }}</el-avatar>
+              </button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-for="preset in THEME_PRESETS"
-                    :key="preset.key"
-                    :command="preset.key"
-                  >
-                    <span class="theme-swatch" :style="{ background: preset.color }" />
-                    <span :class="{ 'theme-swatch-active': themeStore.themeKey === preset.key }">
-                      {{ preset.label }}
-                    </span>
-                    <el-icon v-if="themeStore.themeKey === preset.key" class="theme-check"><Check /></el-icon>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>
+                    个人中心
                   </el-dropdown-item>
-                  <el-dropdown-item divided command="__preferences">
-                    <el-icon><Setting /></el-icon>
-                    外观与显示…
+                  <el-dropdown-item divided command="logout">
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-
-            <el-avatar :size="32" class="topbar-avatar">{{ adminName?.charAt(0) }}</el-avatar>
           </div>
         </div>
       </div>
@@ -302,9 +288,8 @@ import {
   Fold,
   Expand,
   Bell,
-  Brush,
-  Check,
   SwitchButton,
+  User,
   Odometer,
   TrendCharts,
   Search,
@@ -334,7 +319,7 @@ import {
   Lock,
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '@/stores/admin'
-import { useThemeStore, THEME_PRESETS, type ThemeKey } from '@/stores/theme'
+import { useThemeStore } from '@/stores/theme'
 import { getAdminProfile } from '@/api/auth'
 import AdminSidebarMenu from '@/components/AdminSidebarMenu.vue'
 import OrderDetailDrawer from '@/components/orders/OrderDetailDrawer.vue'
@@ -354,12 +339,18 @@ const sidebarLogoSrc = computed(() =>
 
 const topSearchQ = ref('')
 
-function onThemeCommand(key: ThemeKey | '__preferences') {
-  if (key === '__preferences') {
-    router.push('/admin/preferences')
+function goProfile() {
+  router.push('/admin/profile')
+}
+
+function onUserMenuCommand(cmd: string) {
+  if (cmd === 'profile') {
+    goProfile()
     return
   }
-  themeStore.setTheme(key)
+  if (cmd === 'logout') {
+    handleLogout()
+  }
 }
 
 function filterMenusForSidebar(menus: SysMenu[] | undefined): SysMenu[] {
@@ -410,6 +401,7 @@ const menuDefaultOpeneds = computed(() => {
     || path.startsWith('/admin/insights')
     || path.startsWith('/admin/notifications')
     || path.startsWith('/admin/search')
+    || path.startsWith('/admin/profile')
     || path.startsWith('/admin/preferences')
   ) {
     return ['workspace-group']
@@ -664,6 +656,12 @@ async function handleLogout() {
   gap: 10px;
   padding: 12px;
   border-top: 1px solid var(--pf-bg-sidebar-border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sidebar-user:hover {
+  background: var(--pf-sidebar-hover-bg);
 }
 
 .admin-sidebar--collapsed .sidebar-user {
@@ -743,8 +741,8 @@ async function handleLogout() {
 }
 
 .topbar-search :deep(.el-input__wrapper) {
-  background: var(--pf-card-bg);
-  box-shadow: 0 0 0 1px var(--pf-card-border) inset;
+  background: var(--pf-input-bg, var(--pf-bg-page));
+  box-shadow: 0 0 0 1px var(--pf-input-border, var(--pf-card-border)) inset;
 }
 
 .topbar-notify-btn,
@@ -754,10 +752,18 @@ async function handleLogout() {
   color: var(--pf-primary) !important;
 }
 
+.topbar-avatar-btn {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
 .topbar-avatar {
   background: linear-gradient(135deg, var(--pf-primary-hover), var(--pf-primary));
   color: #fff;
-  cursor: pointer;
 }
 
 .theme-swatch {

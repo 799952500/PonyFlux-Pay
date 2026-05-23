@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { AdminLoginResponse } from '@/types'
+import { applyUiPreferencesFromServer } from '@/composables/useAppearancePreferences'
 
 export const useAdminStore = defineStore('admin', () => {
   const stored = localStorage.getItem('adminUser')
@@ -14,6 +15,7 @@ export const useAdminStore = defineStore('admin', () => {
     user.value = { ...loginData, token: tok }
     localStorage.setItem('adminToken', tok)
     localStorage.setItem('adminUser', JSON.stringify(user.value))
+    applyUiPreferencesFromServer(loginData.uiPreferences)
   }
 
   function clearAuth() {
@@ -36,12 +38,15 @@ export const useAdminStore = defineStore('admin', () => {
       scopeMode: profile.scopeMode ?? prev?.scopeMode,
       authorizedMerchantIds: profile.authorizedMerchantIds ?? prev?.authorizedMerchantIds,
       menus: profile.menus ?? prev?.menus,
+      nickname: profile.nickname ?? prev?.nickname,
+      uiPreferences: profile.uiPreferences ?? prev?.uiPreferences,
       token: nextToken,
     }
     token.value = nextToken
     user.value = merged
     localStorage.setItem('adminToken', nextToken)
     localStorage.setItem('adminUser', JSON.stringify(merged))
+    applyUiPreferencesFromServer(profile.uiPreferences ?? merged.uiPreferences)
   }
 
   function isLoggedIn() {

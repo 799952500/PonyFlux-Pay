@@ -133,5 +133,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/009-dual-theme-ui/plan.md
+at specs/010-merchant-callback-query/plan.md
 <!-- SPECKIT END -->

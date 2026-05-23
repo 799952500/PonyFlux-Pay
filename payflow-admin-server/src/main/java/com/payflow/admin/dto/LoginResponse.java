@@ -26,4 +26,7 @@ public class LoginResponse {
     private List<String> authorizedMerchantIds;
     private LocalDateTime expireTime;
     private List<SysMenu> menus;
+    private String nickname;
+    private Long adminId;
+    private AdminUiPreferencesDto uiPreferences;
 }

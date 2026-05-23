@@ -59,6 +59,9 @@ CREATE TABLE `admin_users` (
   `nickname` VARCHAR(64) DEFAULT NULL,
   `status` VARCHAR(16) DEFAULT NULL COMMENT 'ACTIVE/DISABLED',
   `data_merchant_ids` VARCHAR(512) DEFAULT NULL COMMENT '数据权限商户号，逗号分隔',
+  `ui_theme` VARCHAR(16) NOT NULL DEFAULT 'mint' COMMENT '主题：mint/ocean/violet/dark',
+  `ui_table_density` VARCHAR(16) NOT NULL DEFAULT 'standard' COMMENT '表格密度：standard/compact',
+  `ui_sidebar_collapsed` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '侧栏是否折叠',
   `created_at` DATETIME DEFAULT NULL,
   `updated_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -68,14 +71,23 @@ CREATE TABLE `admin_users` (
 CREATE TABLE `admin_audit_logs` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `username` VARCHAR(64) DEFAULT NULL,
+  `operator_type` VARCHAR(32) DEFAULT NULL COMMENT 'SYSTEM_ADMIN/MERCHANT_ADMIN/SYSTEM_TASK',
+  `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '操作涉及商户号',
   `action` VARCHAR(32) DEFAULT NULL,
   `resource_path` VARCHAR(512) DEFAULT NULL,
+  `resource_type` VARCHAR(64) DEFAULT NULL COMMENT '资源类型',
+  `resource_id` VARCHAR(128) DEFAULT NULL COMMENT '资源标识',
   `detail` VARCHAR(1024) DEFAULT NULL,
+  `result` VARCHAR(32) DEFAULT NULL COMMENT 'SUCCESS/FAILED/DENIED',
+  `deny_reason` VARCHAR(256) DEFAULT NULL COMMENT '拒绝原因',
   `client_ip` VARCHAR(64) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_audit_created` (`created_at`),
-  KEY `idx_audit_username` (`username`)
+  KEY `idx_audit_username` (`username`),
+  KEY `idx_audit_merchant_created` (`merchant_id`, `created_at`),
+  KEY `idx_audit_resource` (`resource_type`, `resource_id`),
+  KEY `idx_audit_result_created` (`result`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理端操作审计';
 
 CREATE TABLE `admin_channels` (
@@ -574,16 +586,28 @@ CREATE TABLE `merchant_application` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `application_no` VARCHAR(64) NOT NULL,
   `merchant_name` VARCHAR(128) NOT NULL,
-  `status` VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'SUBMITTED',
+  `application_source` VARCHAR(32) NOT NULL DEFAULT 'CASHIER_PUBLIC',
   `biz_license_no` VARCHAR(64) DEFAULT NULL,
   `contact_name` VARCHAR(64) DEFAULT NULL,
   `contact_phone` VARCHAR(32) DEFAULT NULL,
+  `contact_email` VARCHAR(128) DEFAULT NULL,
+  `allocated_merchant_id` VARCHAR(64) DEFAULT NULL,
+  `secret_cipher` VARCHAR(512) DEFAULT NULL,
+  `secret_viewed_at` DATETIME DEFAULT NULL,
+  `result_query_count` INT NOT NULL DEFAULT 0,
+  `approver_id` BIGINT DEFAULT NULL,
+  `approved_at` DATETIME DEFAULT NULL,
+  `rejected_at` DATETIME DEFAULT NULL,
   `payload_json` TEXT,
   `reject_reason` VARCHAR(512) DEFAULT NULL,
   `created_at` DATETIME DEFAULT NULL,
   `updated_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_app_no` (`application_no`)
+  UNIQUE KEY `uk_app_no` (`application_no`),
+  KEY `idx_status` (`status`),
+  KEY `idx_contact_phone` (`contact_phone`),
+  KEY `idx_contact_email` (`contact_email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户进件';
 
 CREATE TABLE `merchant_contract` (

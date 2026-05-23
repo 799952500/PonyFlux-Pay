@@ -192,14 +192,15 @@ INSERT INTO recon_routing_decision_log (
 ('ORD-20260515-0008', 2, '[{"code":"ALIPAY","rate":0.0052,"available":true}]', 'ALIPAY', 'lowest_cost', 11, 0, DATE_SUB(NOW(), INTERVAL 3 DAY));
 
 INSERT INTO merchant_application (
-  application_no, merchant_name, status, biz_license_no, contact_name, contact_phone, payload_json, created_at, updated_at
+  application_no, merchant_name, status, application_source, biz_license_no, contact_name, contact_phone, contact_email,
+  allocated_merchant_id, payload_json, created_at, updated_at
 ) VALUES
-('KYB-20260518-001', '晨曦便利店', 'SUBMITTED', '91310000MA1XXXX001', '赵晨曦', '13900001111',
- '{"bizType":"retail","stores":12}', DATE_SUB(NOW(), INTERVAL 2 DAY), NOW()),
-('KYB-20260510-002', '悦动健身工作室', 'APPROVED', '91310000MA1YYYY002', '孙悦', '13900002222',
- '{"bizType":"service","plan":"premium"}', DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY)),
-('KYB-20260505-003', '快送同城物流', 'REJECTED', '91310000MA1ZZZZ003', '周快', '13900003333',
- '{"bizType":"logistics"}', DATE_SUB(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL 12 DAY));
+('KYB-20260518-001', '晨曦便利店', 'SUBMITTED', 'CASHIER_PUBLIC', '91310000MA1XXXX001', '赵晨曦', '13900001111', 'chenxi@demo.local',
+ NULL, '{"businessScope":"retail","stores":12}', DATE_SUB(NOW(), INTERVAL 2 DAY), NOW()),
+('KYB-20260510-002', '悦动健身工作室', 'APPROVED', 'CASHIER_PUBLIC', '91310000MA1YYYY002', '孙悦', '13900002222', 'yuedong@demo.local',
+ 'M100002', '{"businessScope":"service","plan":"premium"}', DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY)),
+('KYB-20260505-003', '快送同城物流', 'REJECTED', 'CASHIER_PUBLIC', '91310000MA1ZZZZ003', '周快', '13900003333', 'zhoukuai@demo.local',
+ NULL, '{"businessScope":"logistics"}', DATE_SUB(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL 12 DAY));
 
 UPDATE merchant_application SET reject_reason = '资质照片不清晰，请重新上传营业执照' WHERE application_no = 'KYB-20260505-003';
 
@@ -235,6 +236,7 @@ INSERT INTO sys_menus (
 (10, NULL, 'grp_trade', '交易与订单', 'MENU', NULL, NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
 (11, 10, 'orders', '订单管理', 'MENU', '/admin/orders', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
 (12, 10, 'refunds', '退款管理', 'MENU', '/admin/refunds', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
+(13, 10, 'merchant_notifies', '回调记录', 'MENU', '/admin/merchant-notifies', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
 -- 3 对账管理
 (60, NULL, 'grp_reconcile', '对账管理', 'MENU', NULL, NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
 (61, 60, 'reconcile_tasks', '对账任务', 'MENU', '/admin/reconcile/tasks', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
@@ -271,7 +273,7 @@ INSERT INTO sys_menus (
 
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 1, id, NOW() FROM sys_menus;
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 2, id, NOW() FROM sys_menus WHERE id NOT IN (51, 52, 53, 54, 64);
-INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 3, id, NOW() FROM sys_menus WHERE id IN (1, 2, 3, 4, 101, 104, 10, 11, 12, 60, 61, 62, 63);
+INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 3, id, NOW() FROM sys_menus WHERE id IN (1, 2, 3, 4, 101, 104, 10, 11, 12, 13, 60, 61, 62, 63);
 INSERT INTO sys_role_menus (role_id, menu_id, created_at) SELECT 4, id, NOW() FROM sys_menus WHERE id IN (1, 2, 10, 11, 30, 31, 32, 64, 68, 103, 67, 65, 66);
 
 INSERT INTO sys_users (id, username, password, nickname, phone, email, status, created_at, updated_at) VALUES

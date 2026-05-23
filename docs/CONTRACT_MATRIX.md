@@ -31,6 +31,9 @@
 | `getOrders` | GET | `/admin/orders` | [`AdminOrderController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminOrderController.java) |
 | `getOrderDetail` | GET | `/admin/orders/{orderId}` | 同上 |
 | `closeOrder` | POST | `/admin/orders/{orderId}/close` | 同上 |
+| `listMerchantNotifies` | GET | `/admin/merchant-notifies` | [`AdminMerchantNotifyController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminMerchantNotifyController.java) |
+| `getMerchantNotifyDetail` | GET | `/admin/merchant-notifies/{notifyId}` | 同上 |
+| `getMerchantNotifyByOrder` | GET | `/admin/merchant-notifies/by-order/{orderId}` | 同上 |
 | `getRefunds` | GET | `/admin/refunds` | [`AdminRefundController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminRefundController.java) |
 | `approveRefund` / `rejectRefund` | POST | `/admin/refunds/{refundId}/approve` / `reject` | 同上 |
 | `getChannels` 等 | * | `/admin/channels` | [`AdminChannelController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminChannelController.java) |

@@ -1,0 +1,53 @@
+/**
+ * PonyFlux 收银台全站主题 — 与运管 mint 主题同源
+ */
+:root,
+html {
+  --pf-primary: #2aa89a;
+  --pf-primary-hover: #0d9488;
+  --pf-primary-soft: #e8f6f3;
+  --pf-primary-muted: rgba(42, 168, 154, 0.08);
+  --pf-bg-page: #f2f5f4;
+  --pf-login-header-bg: #fafbfb;
+  --pf-card-bg: #fcfdfd;
+  --pf-card-border: rgba(51, 65, 85, 0.08);
+  --pf-card-shadow: rgba(15, 23, 42, 0.06);
+  --pf-text-primary: #3d4a59;
+  --pf-text-secondary: #5c6b7a;
+  --pf-text-muted: #7a8a99;
+  --pf-amount: #a16207;
+  --pf-divider: rgba(51, 65, 85, 0.08);
+  --pf-nav-border: rgba(51, 65, 85, 0.08);
+  --pf-wave-1: #99f6e4;
+  --pf-wave-2: #5eead4;
+  --pf-wave-3: #14b8a6;
+
+  --el-color-primary: #0d9488;
+  --el-color-primary-light-3: #2aa89a;
+  --el-color-primary-light-5: #5eead4;
+  --el-color-primary-light-7: #99f6e4;
+  --el-color-primary-light-8: #ccfbf1;
+  --el-color-primary-light-9: #e8f6f3;
+  --el-color-primary-dark-2: #0f766e;
+
+  --brand-primary: var(--pf-primary-hover);
+  --brand-primary-dark: #065f46;
+  --brand-primary-soft: var(--pf-primary-soft);
+  --brand-bg: var(--pf-bg-page);
+  --brand-border: var(--pf-card-border);
+  --brand-text: var(--pf-text-primary);
+  --brand-text-muted: var(--pf-text-secondary);
+}
+
+html,
+html[data-pf-surface='portal'],
+html[data-pf-surface='immersive'] {
+  /* 统一为 portal，immersive 保留属性名兼容旧代码 */
+}
+
+html body {
+  background: var(--pf-bg-page);
+  background-image: none;
+  color: var(--pf-text-primary);
+  min-height: 100vh;
+}

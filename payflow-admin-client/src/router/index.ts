@@ -96,6 +96,12 @@ const router = createRouter({
           meta: { title: '退款管理', requiresAuth: true },
         },
         {
+          path: 'merchant-notifies',
+          name: 'MerchantNotifies',
+          component: () => import('@/pages/admin/merchant-notifies/index.vue'),
+          meta: { title: '回调记录', requiresAuth: true },
+        },
+        {
           path: 'reconcile',
           name: 'Reconcile',
           component: () => import('@/pages/admin/reconcile/index.vue'),
@@ -163,10 +169,14 @@ const router = createRouter({
           meta: { title: '商户管理', requiresAuth: true },
         },
         {
+          path: 'profile',
+          name: 'Profile',
+          component: () => import('@/pages/admin/profile.vue'),
+          meta: { title: '个人中心', requiresAuth: true },
+        },
+        {
           path: 'preferences',
-          name: 'Preferences',
-          component: () => import('@/pages/admin/preferences.vue'),
-          meta: { title: '外观与显示', requiresAuth: true },
+          redirect: { path: '/admin/profile', query: { tab: 'appearance' } },
         },
         {
           path: 'settings',

@@ -2,14 +2,17 @@ package com.payflow.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.config.JwtProperties;
+import com.payflow.admin.dto.AdminUiPreferencesDto;
 import com.payflow.admin.dto.LoginRequest;
 import com.payflow.admin.dto.LoginResponse;
 import com.payflow.admin.dto.MerchantScopeDTO;
+import com.payflow.admin.dto.UpdateAdminUiPreferencesRequest;
 import com.payflow.admin.entity.AdminUser;
 import com.payflow.admin.entity.SysMenu;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.service.AdminAuthService;
 import com.payflow.admin.service.AdminMerchantScopeService;
+import com.payflow.admin.service.AdminUserPreferenceService;
 import com.payflow.admin.service.AuditLogService;
 import com.payflow.admin.service.CaptchaService;
 import com.payflow.admin.service.LoginProtectionService;
@@ -41,6 +44,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private final LoginProtectionService loginProtectionService;
     private final AuditLogService auditLogService;
     private final AdminMerchantScopeService adminMerchantScopeService;
+    private final AdminUserPreferenceService adminUserPreferenceService;
 
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
@@ -89,16 +93,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         auditLogService.recordLogin(user.getUsername(), true, ip);
 
-        return LoginResponse.builder()
-                .token(token)
-                .username(user.getUsername())
-                .role(user.getRole())
-                .platformAdmin(merchantScope.isPlatformAdmin())
-                .scopeMode(merchantScope.getScopeMode())
-                .authorizedMerchantIds(merchantScope.getAuthorizedMerchantIds())
-                .expireTime(expireTime)
-                .menus(menus)
-                .build();
+        return buildLoginResponse(user, token, expireTime, menus, merchantScope);
     }
 
     @Override
@@ -120,16 +115,39 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         LocalDateTime expireTime = LocalDateTime.ofInstant(
                 java.time.Instant.ofEpochMilli(System.currentTimeMillis() + jwtProperties.getExpiration()),
                 ZoneId.of("+08:00"));
+        return buildLoginResponse(user, null, expireTime, menus, merchantScope);
+    }
+
+    @Override
+    public AdminUiPreferencesDto updateUiPreferences(HttpServletRequest httpRequest,
+                                                     UpdateAdminUiPreferencesRequest request) {
+        String username = requireUsername(httpRequest);
+        return adminUserPreferenceService.updateCurrentUser(username, request);
+    }
+
+    private LoginResponse buildLoginResponse(AdminUser user, String token, LocalDateTime expireTime,
+                                             List<SysMenu> menus, MerchantScopeDTO merchantScope) {
         return LoginResponse.builder()
-                .token(null)
+                .token(token)
+                .adminId(user.getId())
                 .username(user.getUsername())
+                .nickname(user.getNickname())
                 .role(user.getRole())
                 .platformAdmin(merchantScope.isPlatformAdmin())
                 .scopeMode(merchantScope.getScopeMode())
                 .authorizedMerchantIds(merchantScope.getAuthorizedMerchantIds())
                 .expireTime(expireTime)
                 .menus(menus)
+                .uiPreferences(adminUserPreferenceService.fromUser(user))
                 .build();
+    }
+
+    private static String requireUsername(HttpServletRequest httpRequest) {
+        Object u = httpRequest.getAttribute("username");
+        if (u == null || !StringUtils.hasText(u.toString())) {
+            throw new IllegalStateException("未登录或令牌无效");
+        }
+        return u.toString();
     }
 
     private static String clientIp(HttpServletRequest request) {

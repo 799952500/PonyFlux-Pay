@@ -25,10 +25,16 @@ SQL_FILES = [
     ROOT / "sql/schema/payflow_admin.sql",
     ROOT / "sql/schema/payflow_cashier.sql",
     ROOT / "sql/seed/payflow_cashier_seed.sql",
+    ROOT / "sql/seed/payflow_cashier_merchant_notify_demo.sql",
     ROOT / "sql/seed/payflow_admin_seed.sql",
     ROOT / "sql/migrations/2026-05-20_hide-merchant-payments-menu.sql",
     ROOT / "sql/migrations/2026-05-20_hide-channel-routes-menu.sql",
     ROOT / "sql/migrations/2026-05-20_merchant_risk_config.sql",
+    ROOT / "sql/migrations/2026-05-21_merchant_data_isolation_governance.sql",
+    ROOT / "sql/migrations/2026-05-22_fix_admin_user_roles.sql",
+    ROOT / "sql/migrations/2026-05-22_rename_merchant_notify_menu.sql",
+    ROOT / "sql/migrations/2026-05-23_admin_user_ui_preferences.sql",
+    ROOT / "sql/migrations/2026-05-23_merchant_onboarding.sql",
 ]
 
 

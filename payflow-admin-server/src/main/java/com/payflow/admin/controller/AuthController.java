@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.dto.AdminUiPreferencesDto;
 import com.payflow.admin.dto.LoginRequest;
 import com.payflow.admin.dto.LoginResponse;
+import com.payflow.admin.dto.UpdateAdminUiPreferencesRequest;
 import com.payflow.admin.service.AdminAuthService;
 import com.payflow.admin.service.CaptchaService;
 import com.payflow.admin.service.LoginProtectionService;
@@ -87,6 +89,18 @@ public class AuthController {
     @GetMapping("/profile")
     public ResponseEntity<Map<String, Object>> profile(HttpServletRequest httpRequest) {
         LoginResponse data = adminAuthService.profile(httpRequest);
+        return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
+    }
+
+    /**
+     * 更新当前登录用户的 UI 外观偏好（主题、表格密度、侧栏状态）。
+     */
+    @Operation(summary = "更新当前用户 UI 偏好")
+    @PutMapping("/ui-preferences")
+    public ResponseEntity<Map<String, Object>> updateUiPreferences(
+            HttpServletRequest httpRequest,
+            @RequestBody UpdateAdminUiPreferencesRequest request) {
+        AdminUiPreferencesDto data = adminAuthService.updateUiPreferences(httpRequest, request);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
     }
 
