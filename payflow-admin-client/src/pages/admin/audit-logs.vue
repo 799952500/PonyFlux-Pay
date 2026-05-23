@@ -111,6 +111,7 @@ import { getAuditLogs, getMerchantsSimple } from '@/api/admin'
 import { useMerchantScope } from '@/composables/useMerchantScope'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   AUDIT_ACTION_LABEL,
   AUDIT_ACTION_TAG,
@@ -129,7 +130,7 @@ const merchantOptions = ref<Array<{ merchantId: string; merchantName: string }>>
 const dateRange = ref<[string, string] | null>(null)
 const queryForm = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   username: '',
   action: '',
   merchantId: '',
@@ -160,7 +161,7 @@ function handleSearch() {
 }
 
 function handleReset() {
-  Object.assign(queryForm, { page: 1, pageSize: 20, username: '', action: '', merchantId: '' })
+  Object.assign(queryForm, { page: 1, pageSize: DEFAULT_PAGE_SIZE, username: '', action: '', merchantId: '' })
   applyDefaultMerchantFilter(queryForm)
   dateRange.value = null
   loadData()

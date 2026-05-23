@@ -30,8 +30,8 @@ public class EncryptedStringTypeHandler extends BaseTypeHandler<String> {
     /** 主密钥持有器，由 Spring 启动时通过 CryptoProperties 注入 */
     private static volatile String masterKey;
 
-    private EncryptedStringTypeHandler() {
-        // MyBatis 通过反射创建实例
+    /** MyBatis 反射实例化需要 public 无参构造 */
+    public EncryptedStringTypeHandler() {
     }
 
     /**

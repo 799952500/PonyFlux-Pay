@@ -85,6 +85,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getDataIsolationChecks, scanDataIsolation, updateDataIsolationRemediation } from '@/api/admin'
 import { useMerchantScope } from '@/composables/useMerchantScope'
 import type { DataIsolationCheckItem } from '@/types'
@@ -98,7 +99,7 @@ const total = ref(0)
 
 const query = reactive({
   page: 1,
-  size: 20,
+  size: DEFAULT_PAGE_SIZE,
   classification: '',
   riskLevel: '',
   remediationStatus: '',
@@ -156,7 +157,7 @@ function handleSearch() {
 function handleReset() {
   Object.assign(query, {
     page: 1,
-    size: 20,
+    size: DEFAULT_PAGE_SIZE,
     classification: '',
     riskLevel: '',
     remediationStatus: '',

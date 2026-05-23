@@ -198,6 +198,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'
 import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import { channelLabel, channelTagType, formatDateTime, maskSecret } from '@/utils/format'
@@ -221,7 +222,7 @@ const channelOptions = ref<any[]>([])
 
 const queryForm = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   channel: '',
   name: '',
   status: '',
@@ -311,7 +312,7 @@ function handleSearch() {
 
 function handleReset() {
   selectedChannel.value = ''
-  Object.assign(queryForm, { page: 1, pageSize: 20, channel: '', name: '', status: '' })
+  Object.assign(queryForm, { page: 1, pageSize: DEFAULT_PAGE_SIZE, channel: '', name: '', status: '' })
   if (activeChannelIdFromQuery.value != null) {
     clearChannelQuery()
     return

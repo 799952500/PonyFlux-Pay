@@ -251,6 +251,7 @@ import { useMerchantInsightOverlay } from '@/composables/useMerchantInsightOverl
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getMerchants, getPaymentMethods, getPaymentAccounts, getMerchantPaymentRoutes, replaceMerchantPaymentRoutes, updateMerchant } from '@/api/admin'
 import { useMerchantScope } from '@/composables/useMerchantScope'
 import type { Merchant, PaymentMethod, PaymentAccount, MerchantPaymentRoute } from '@/types'
@@ -280,7 +281,7 @@ const editSubmitting = ref(false)
 const currentMerchant = ref<Merchant | null>(null)
 const editFormRef = ref<FormInstance>()
 const isEdit = ref(false)
-const queryForm = reactive({ page: 1, pageSize: 20, keyword: '', status: '' })
+const queryForm = reactive({ page: 1, pageSize: DEFAULT_PAGE_SIZE, keyword: '', status: '' })
 
 // 支付方式配置相关状态
 const paymentConfigVisible = ref(false)
@@ -321,7 +322,7 @@ async function loadMerchants() {
 }
 
 function handleSearch() { queryForm.page = 1; loadMerchants() }
-function handleReset() { Object.assign(queryForm, { page: 1, pageSize: 20, keyword: '', status: '' }); loadMerchants() }
+function handleReset() { Object.assign(queryForm, { page: 1, pageSize: DEFAULT_PAGE_SIZE, keyword: '', status: '' }); loadMerchants() }
 
 async function openDetail(merchant: Merchant) {
   currentMerchant.value = merchant

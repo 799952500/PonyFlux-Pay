@@ -2,9 +2,11 @@
   <el-dialog
     :model-value="modelValue"
     title="扫码支付"
-    width="340px"
+    :width="fullscreen ? 'min(360px, 92vw)' : '340px'"
+    :class="{ 'qr-dialog--fullscreen': fullscreen }"
     :show-close="false"
     :close-on-click-modal="false"
+    align-center
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <!-- 金额 -->
@@ -75,12 +77,16 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 
-const props = defineProps<{
-  modelValue: boolean
-  qrUrl: string
-  amount?: number
-  confirming?: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean
+    qrUrl: string
+    amount?: number
+    confirming?: boolean
+    fullscreen?: boolean
+  }>(),
+  { fullscreen: false }
+)
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: boolean): void

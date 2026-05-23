@@ -1,36 +1,12 @@
 @import './brand-tokens.css';
+@import './portal-theme.css';
+@import './checkout.css';
+@import './checkout-h5.css';
+@import './checkout-pc.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 品牌色 — 与管理端统一的深绿沉稳 */
-:root {
-  --el-color-primary: var(--brand-primary, #047857);
-  --el-color-primary-light-3: #059669;
-  --el-color-primary-light-5: #0d9488;
-  --el-color-primary-light-7: #14b8a6;
-  --el-color-primary-light-8: #5eead4;
-  --el-color-primary-light-9: #ccfbf1;
-  --el-color-primary-dark-2: #065f46;
-
-  --brand-primary: #047857;
-  --brand-primary-dark: #065f46;
-  --brand-primary-soft: #ccfbf1;
-  --brand-success: #047857;
-  --brand-warning: #f59e0b;
-  --brand-bg: #021a18;
-  --brand-border: rgba(255, 255, 255, 0.14);
-  --brand-text: #f8fafc;
-  --brand-text-muted: rgba(226, 232, 240, 0.72);
-  --el-transition-duration: .22s;
-  --el-transition-function-ease-in-out-bezier: cubic-bezier(.32, .72, 0, 1);
-  --scrollbar-size: 6px;
-  --scrollbar-thumb-light: rgba(4, 120, 87, 0.28);
-  --scrollbar-thumb-light-hover: rgba(4, 120, 87, 0.48);
-  --scrollbar-thumb-dark: rgba(148, 236, 220, 0.22);
-  --scrollbar-thumb-dark-hover: rgba(148, 236, 220, 0.42);
-}
 
 @layer base {
   * {
@@ -43,18 +19,6 @@
     font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #021a18;
-    background-image:
-      radial-gradient(ellipse 92% 72% at 0% 0%, rgba(3, 42, 36, 0.78) 0%, transparent 56%),
-      radial-gradient(ellipse 90% 52% at 50% 0%, rgba(2, 44, 36, 0.62) 0%, transparent 52%),
-      radial-gradient(ellipse 88% 52% at 100% 14%, rgba(2, 32, 28, 0.62) 0%, transparent 50%),
-      radial-gradient(ellipse 120% 58% at 50% 100%, rgba(1, 16, 14, 0.78) 0%, transparent 55%),
-      linear-gradient(180deg, rgba(2, 36, 32, 0.88) 0%, rgba(4, 58, 48, 0.68) 48%, rgba(1, 22, 20, 0.9) 100%),
-      url('/forest-hero.png');
-    background-attachment: fixed;
-    background-size: cover;
-    background-position: center;
-    min-height: 100vh;
   }
 }
 
@@ -64,163 +28,104 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    background: var(--pf-bg-page);
   }
 
   .cashier-nav {
-    background: rgba(2, 22, 20, 0.72);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28);
-  }
-
-  .nav-brand-name {
-    color: #ffffff;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .nav-brand-en {
-    color: rgba(209, 250, 229, 0.85);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 1.5px;
+    background: var(--pf-login-header-bg);
+    border-bottom: 1px solid var(--pf-nav-border);
+    flex-shrink: 0;
+    z-index: 2;
   }
 
   .nav-link {
-    color: rgba(226, 232, 240, 0.75);
-    font-size: 14px;
+    color: var(--pf-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
     transition: color 0.2s;
   }
 
   .nav-link:hover {
-    color: #ffffff;
+    color: var(--pf-primary-hover);
   }
 
-  .order-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s;
+  .pf-text-title {
+    color: var(--pf-text-primary);
   }
 
-  .order-card:hover {
-    border-color: rgba(13, 148, 136, 0.42);
-    box-shadow: 0 12px 48px rgba(4, 120, 87, 0.14);
+  .pf-text-body {
+    color: var(--pf-text-secondary);
   }
 
-  .channel-card {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    padding: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
+  .pf-text-muted {
+    color: var(--pf-text-muted);
   }
 
-  .channel-card:hover,
-  .channel-card.selected {
-    border-color: rgba(13, 148, 136, 0.55);
-    background: rgba(4, 120, 87, 0.18);
-    box-shadow: 0 4px 20px rgba(2, 44, 34, 0.25);
-  }
-
-  .pay-btn {
-    background: linear-gradient(180deg, #0d9488 0%, #047857 50%, #065f46 100%);
-    border: 1px solid rgba(6, 95, 70, 0.85);
-    color: white;
-    border-radius: 9999px;
-    width: 100%;
-    padding: 16px;
-    font-size: 17px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s;
-    letter-spacing: 0.12em;
-    text-transform: none;
-  }
-
-  .pay-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 32px rgba(2, 44, 34, 0.5);
-  }
-
-  .pay-btn:disabled {
-    background: rgba(148, 163, 184, 0.35);
-    color: rgba(248, 250, 252, 0.65);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-    letter-spacing: normal;
-  }
-
-  .amount-display {
-    font-size: 48px;
-    font-weight: 800;
-    color: #ffffff;
-    font-family: 'Inter', 'DM Sans', monospace;
-    letter-spacing: -1px;
-  }
-
-  .security-badge {
+  .receipt-shell {
+    min-height: 100vh;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    color: rgba(226, 232, 240, 0.85);
-    font-size: 13px;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    flex-direction: column;
+    background: var(--pf-bg-page);
+  }
+
+  .receipt-card {
+    background: var(--pf-card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--pf-card-border);
+    box-shadow: 0 12px 40px var(--pf-card-shadow);
+    padding: 24px;
+  }
+
+  .result-overlay {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+  }
+
+  .result-card {
+    background: var(--pf-card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--pf-card-border);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+    padding: 32px;
+    text-align: center;
   }
 }
 
 @layer utilities {
   .card-shadow {
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 12px 40px var(--pf-card-shadow);
   }
 }
 
-/* =============================================
-   全局微交互动画
-   ============================================= */
-
 @keyframes glow-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(94, 234, 212, 0.55),
-                0 0 0 0 rgba(13, 148, 136, 0.35) inset;
+    box-shadow: 0 0 0 0 rgba(42, 168, 154, 0.35);
   }
   60% {
-    box-shadow: 0 0 0 8px rgba(94, 234, 212, 0),
-                0 0 22px 0 rgba(13, 148, 136, 0.42) inset;
+    box-shadow: 0 0 0 6px rgba(42, 168, 154, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(94, 234, 212, 0),
-                0 0 0 0 rgba(13, 148, 136, 0) inset;
+    box-shadow: 0 0 0 0 rgba(42, 168, 154, 0);
   }
 }
 
 .is-glow-pulse {
-  animation: glow-pulse .55s cubic-bezier(.4, 0, .2, 1);
+  animation: glow-pulse 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .el-button:not(.is-link):active,
 .pay-btn:active,
 .channel-card:active {
-  transform: scale(.97);
-  transition: transform 80ms cubic-bezier(.4, 0, .2, 1);
+  transform: scale(0.98);
+  transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-zoom-enter-active {
-  transition: opacity .52s cubic-bezier(.32, .72, 0, 1),
-              transform .52s cubic-bezier(.32, .72, 0, 1),
-              filter .52s cubic-bezier(.32, .72, 0, 1);
+  transition:
+    opacity 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
   transform-origin: 50% 28%;
-  will-change: transform, opacity, filter;
 }
 
 .page-zoom-leave-active {
@@ -229,63 +134,39 @@
 
 .page-zoom-enter-from {
   opacity: 0;
-  transform: scale(.94) translateY(12px);
-  filter: blur(6px);
+  transform: translateY(8px);
 }
 
 .page-zoom-leave-to {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: .01ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-/* 自定义滚动条 */
 .scrollbar-light {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-light) transparent;
+  scrollbar-color: rgba(13, 148, 136, 0.28) transparent;
 }
 
-.scrollbar-dark {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-dark) transparent;
-}
-
-.scrollbar-light::-webkit-scrollbar,
-.scrollbar-dark::-webkit-scrollbar {
-  width: var(--scrollbar-size);
-  height: var(--scrollbar-size);
-}
-
-.scrollbar-light::-webkit-scrollbar-track,
-.scrollbar-dark::-webkit-scrollbar-track {
-  background: transparent;
+.scrollbar-light::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
 .scrollbar-light::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb-light);
+  background-color: rgba(13, 148, 136, 0.28);
   border-radius: 999px;
 }
 
 .scrollbar-light::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-light-hover);
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb-dark);
-  border-radius: 999px;
-}
-
-.scrollbar-dark::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-dark-hover);
+  background-color: rgba(13, 148, 136, 0.45);
 }

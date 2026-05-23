@@ -139,6 +139,7 @@ import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   formatMoneyFen,
   channelLabel,
@@ -171,7 +172,7 @@ const queryForm = reactive({
   orderKeyword: '',
   onlyAbnormal: false,
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
 })
 
 async function load() {

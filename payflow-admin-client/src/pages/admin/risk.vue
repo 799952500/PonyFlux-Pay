@@ -365,6 +365,7 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   createRiskRule,
   getMerchantsSimple,
@@ -417,12 +418,12 @@ function canEditRule(row: RiskRule) {
   if (isPlatformAdmin.value) {
     return row.ownerType === 'PLATFORM'
   }
-  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId)
+  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId ?? undefined)
 }
 
 function canToggle(row: RiskRule) {
   if (isPlatformAdmin.value) return true
-  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId)
+  return row.ownerType === 'MERCHANT' && isMerchantAllowed(row.ownerMerchantId ?? undefined)
 }
 
 const loading = ref(false)
@@ -432,7 +433,7 @@ const merchantOptions = ref<Array<{ merchantId: string; merchantName: string }>>
 
 const queryForm = reactive({
   page: 1,
-  pageSize: 10,
+  pageSize: DEFAULT_PAGE_SIZE,
   keyword: '',
   ownerType: '' as '' | 'PLATFORM' | 'MERCHANT',
   scopeType: '' as '' | RiskRuleScopeType,
@@ -790,7 +791,7 @@ const hitList = ref<RiskHitRecord[]>([])
 const hitTotal = ref(0)
 const hitQuery = reactive({
   page: 1,
-  pageSize: 10,
+  pageSize: DEFAULT_PAGE_SIZE,
   merchantId: '',
   decision: '' as '' | 'REJECTED' | 'REVIEW_REQUIRED' | 'WARN_ONLY',
 })

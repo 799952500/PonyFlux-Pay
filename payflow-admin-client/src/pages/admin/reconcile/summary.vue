@@ -174,6 +174,7 @@ import {
   type ReconSummaryData,
   type ReconAnomalyItem,
 } from '@/api/admin'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 
 const { open: openOrderDetail } = useOrderDetailOverlay()
 const loading = ref(false)
@@ -200,7 +201,7 @@ const queryForm = reactive({
 
 const detailQuery = reactive({
   page: 1,
-  pageSize: 15,
+  pageSize: DEFAULT_PAGE_SIZE,
   handleStatus: '',
 })
 

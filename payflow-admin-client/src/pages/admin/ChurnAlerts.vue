@@ -114,6 +114,7 @@ import { ElMessage } from 'element-plus'
 import { getChurnAlerts, updateChurnAlertStatus } from '@/api/admin'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   CHURN_LEVEL_LABEL,
   CHURN_LEVEL_TAG,
@@ -131,7 +132,7 @@ const dialogVisible = ref(false)
 const dialogForm = reactive({ id: 0, status: '', note: '', assignee: '' })
 
 const filters = reactive({ status: 'pending', merchantId: '' })
-const pagination = reactive({ page: 1, size: 20, total: 0 })
+const pagination = reactive({ page: 1, size: DEFAULT_PAGE_SIZE, total: 0 })
 
 async function loadAlerts() {
   loading.value = true

@@ -32,6 +32,8 @@
 </template>
 
 <script setup lang="ts">
+import { PAGE_SIZE_OPTIONS } from '@/constants/pagination'
+
 const currentPage = defineModel<number>('currentPage', { required: true })
 const pageSize = defineModel<number>('pageSize', { required: true })
 
@@ -42,7 +44,7 @@ withDefaults(
     hideOnSinglePage?: boolean
   }>(),
   {
-    pageSizes: () => [10, 20, 50, 100],
+    pageSizes: () => [...PAGE_SIZE_OPTIONS],
     hideOnSinglePage: false,
   },
 )

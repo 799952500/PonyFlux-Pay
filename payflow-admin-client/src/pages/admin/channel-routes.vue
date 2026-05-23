@@ -149,6 +149,7 @@ import {
 } from '@/api/admin'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   channelLabel,
   channelTagType,
@@ -201,7 +202,7 @@ const allAccounts = ref<ChannelAccount[]>([])
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const total = ref(0)
 
 const queryForm = reactive({ merchantId: '' })

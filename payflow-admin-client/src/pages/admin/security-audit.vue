@@ -96,6 +96,7 @@ import { ElMessage } from 'element-plus'
 import { getSecurityAuditList, type SecurityAuditItem } from '@/api/securityAudit'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
@@ -104,7 +105,7 @@ const total = ref(0)
 const dateRange = ref<[string, string] | null>(null)
 const queryForm = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   merchantId: '',
   outcome: '',
   reasonCode: '',

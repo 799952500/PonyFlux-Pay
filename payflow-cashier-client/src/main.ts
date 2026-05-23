@@ -7,6 +7,9 @@ import zhCn from 'element-plus/dist/locale/zh-cn.js'
 import App from './App.vue'
 import router from './router'
 import './styles/main.css'
+import { installPfSurface } from '@/composables/usePfSurface'
+
+installPfSurface()
 
 const app = createApp(App)
 

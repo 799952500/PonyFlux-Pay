@@ -77,13 +77,14 @@ import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getFeeRateAuditLog } from '@/api/admin'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { FEE_TRIGGER_LABEL, formatDateTime, formatRatePercent, labelOf } from '@/utils/format'
 
 const loading = ref(false)
 const logs = ref<any[]>([])
 
 const filters = reactive({ merchantId: '' })
-const pagination = reactive({ page: 1, size: 20, total: 0 })
+const pagination = reactive({ page: 1, size: DEFAULT_PAGE_SIZE, total: 0 })
 
 function handleSearch() {
   pagination.page = 1

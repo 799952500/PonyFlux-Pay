@@ -16,8 +16,8 @@
         <el-table-column label="昵称" prop="nickname" min-width="120">
           <template #default="{ row }">{{ row.nickname ?? '—' }}</template>
         </el-table-column>
-        <el-table-column label="手机" prop="mobile" min-width="130">
-          <template #default="{ row }">{{ row.mobile ?? '—' }}</template>
+        <el-table-column label="手机" prop="phone" min-width="130">
+          <template #default="{ row }">{{ row.phone ?? row.mobile ?? '—' }}</template>
         </el-table-column>
         <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">{{ row.email ?? '—' }}</template>
@@ -57,6 +57,15 @@
       <el-form ref="formRef" :model="form" :rules="formRules" label-width="90px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" :disabled="isEdit" />
+        </el-form-item>
+        <el-form-item v-if="!isEdit" label="初始密码" prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="至少 6 位"
+            show-password
+            autocomplete="new-password"
+          />
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
           <el-input v-model="form.nickname" placeholder="请输入昵称" />
@@ -140,10 +149,10 @@ interface SysUser {
   id: number
   username: string
   nickname?: string
-  mobile?: string
   phone?: string
+  mobile?: string
   email?: string
-  roleId: number
+  roleId?: number | null
   status: 'ACTIVE' | 'DISABLED'
   createdAt: string
   updatedAt: string
@@ -165,6 +174,7 @@ const editId = ref<number | null>(null)
 
 const form = reactive({
   username: '',
+  password: '',
   nickname: '',
   mobile: '',
   email: '',
@@ -174,6 +184,22 @@ const form = reactive({
 
 const formRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [
+    {
+      validator: (_rule, value, callback) => {
+        if (isEdit.value) {
+          callback()
+          return
+        }
+        if (!value || String(value).length < 6) {
+          callback(new Error('请输入至少 6 位初始密码'))
+          return
+        }
+        callback()
+      },
+      trigger: 'blur',
+    },
+  ],
   roleId: [{ required: true, message: '请选择角色', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }],
 }
@@ -215,9 +241,28 @@ async function loadRoles() {
   }
 }
 
-function getRoleName(roleId: number): string {
+function getRoleName(roleId?: number | null): string {
+  if (roleId == null) return '—'
   const role = roleList.value.find((r) => r.id === roleId)
   return role?.roleName ?? '—'
+}
+
+function normalizeRoleId(roleId: unknown): number | '' {
+  if (roleId === null || roleId === undefined || roleId === '') return ''
+  const n = Number(roleId)
+  return Number.isFinite(n) ? n : ''
+}
+
+function fillFormFromUser(user: Partial<SysUser>) {
+  Object.assign(form, {
+    username: user.username ?? '',
+    password: '',
+    nickname: user.nickname ?? '',
+    mobile: user.phone ?? user.mobile ?? '',
+    email: user.email ?? '',
+    roleId: normalizeRoleId(user.roleId),
+    status: (user.status ?? 'ACTIVE') as 'ACTIVE' | 'DISABLED',
+  })
 }
 
 async function openUserDetail(row: SysUser) {
@@ -226,7 +271,7 @@ async function openUserDetail(row: SysUser) {
   detailUser.value = null
   try {
     const full = await getUserById(row.id)
-    detailUser.value = { ...row, ...full, roleId: full.roleId ?? row.roleId }
+    detailUser.value = { ...row, ...full, roleId: full.roleId ?? row.roleId ?? null }
   } catch {
     ElMessage.error('加载用户详情失败')
     detailVisible.value = false
@@ -238,6 +283,7 @@ async function openUserDetail(row: SysUser) {
 function resetForm() {
   Object.assign(form, {
     username: '',
+    password: '',
     nickname: '',
     mobile: '',
     email: '',
@@ -256,15 +302,16 @@ function openCreate() {
 function openEdit(row: SysUser) {
   isEdit.value = true
   editId.value = row.id
-  Object.assign(form, {
-    username: row.username,
-    nickname: row.nickname ?? '',
-    mobile: row.mobile ?? '',
-    email: row.email ?? '',
-    roleId: row.roleId,
-    status: row.status,
-  })
   formVisible.value = true
+  void (async () => {
+    try {
+      const full = await getUserById(row.id)
+      fillFormFromUser({ ...row, ...full })
+    } catch {
+      ElMessage.error('加载用户信息失败')
+      formVisible.value = false
+    }
+  })()
 }
 
 async function handleSubmit() {
@@ -273,11 +320,17 @@ async function handleSubmit() {
     if (!valid) return
     submitting.value = true
     try {
-      const data: any = {
+      const roleId = normalizeRoleId(form.roleId)
+      if (roleId === '') {
+        ElMessage.warning('请选择角色')
+        submitting.value = false
+        return
+      }
+      const data: Record<string, unknown> = {
         nickname: form.nickname || undefined,
-        mobile: form.mobile || undefined,
+        phone: form.mobile || undefined,
         email: form.email || undefined,
-        roleId: form.roleId,
+        roleId,
         status: form.status,
       }
       if (isEdit.value && editId.value !== null) {
@@ -285,6 +338,7 @@ async function handleSubmit() {
         ElMessage.success('用户已更新')
       } else {
         data.username = form.username
+        data.password = form.password
         await createUser(data)
         ElMessage.success('用户已创建')
       }

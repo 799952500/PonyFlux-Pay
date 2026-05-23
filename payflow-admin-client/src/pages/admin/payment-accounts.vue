@@ -143,6 +143,7 @@ import { getPaymentAccounts, createPaymentAccount, updatePaymentAccount, deleteP
 import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { formatDateTime } from '@/utils/format'
 import type { PaymentAccount, Channel } from '@/types'
 import { useMerchantScope } from '@/composables/useMerchantScope'
@@ -155,7 +156,7 @@ const channelList = ref<Channel[]>([])
 
 const queryForm = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   channelId: undefined as number | undefined,
   keyword: '',
 })
@@ -217,7 +218,7 @@ function handleSearch() {
 }
 
 function handleReset() {
-  Object.assign(queryForm, { page: 1, pageSize: 20, channelId: undefined, keyword: '' })
+  Object.assign(queryForm, { page: 1, pageSize: DEFAULT_PAGE_SIZE, channelId: undefined, keyword: '' })
   loadAccounts()
 }
 

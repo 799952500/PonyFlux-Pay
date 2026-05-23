@@ -1,51 +1,26 @@
 <template>
   <header class="cashier-nav">
-    <div class="max-w-[560px] w-full mx-auto px-6 h-[60px] flex items-center justify-between">
-      <!-- Logo & 商户名 -->
-      <div class="flex items-center gap-3">
-        <!-- 品牌徽标区 -->
-        <div class="flex flex-col leading-none">
-          <span class="nav-brand-name">小马支付</span>
-          <span class="nav-brand-en">PonyFlux Pay</span>
-        </div>
-
-        <!-- 分隔符 + 商户名 -->
-        <template v-if="merchantName">
-          <span class="text-emerald-200/50 text-lg font-light mx-1">|</span>
-          <span class="text-emerald-100/90 text-sm font-medium">{{ merchantName }}</span>
-        </template>
+    <div class="cashier-nav__inner">
+      <div class="cashier-nav__brand">
+        <img src="/ponyflux-logo.svg" width="32" height="32" alt="" class="cashier-nav__logo" />
+        <span class="cashier-nav__name">PonyFlux Pay</span>
       </div>
 
-      <!-- 右侧操作 -->
-      <div class="flex items-center gap-4">
-        <!-- 倒计时 -->
+      <div class="cashier-nav__actions">
         <span
           v-if="expireCountdown"
-          class="text-xs px-2.5 py-1 rounded-full"
-          :class="isExpiringSoon
-            ? 'bg-amber-500/20 text-amber-300 font-semibold'
-            : 'bg-white/10 text-slate-400'"
+          class="nav-countdown"
+          :class="{ 'nav-countdown--warn': isExpiringSoon }"
         >
+          <svg class="nav-countdown__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2" />
+            <path d="M8 4.5V8l2.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
           {{ expireCountdown }}
         </span>
-
-        <!-- 客服电话 -->
-        <a
-          href="tel:4008888888"
-          class="nav-link flex items-center gap-1"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-            />
-          </svg>
-          客服
-        </a>
+        <a href="tel:4008888888" class="nav-link">帮助</a>
       </div>
     </div>
-
-    <!-- 底部紫色光晕线 -->
-    <div class="h-px bg-gradient-to-r from-transparent via-emerald-400/35 to-transparent" />
   </header>
 </template>
 
@@ -55,9 +30,6 @@ import { useCashierStore } from '@/stores/cashier'
 
 const cashierStore = useCashierStore()
 
-const merchantName = computed(() => cashierStore.orderInfo?.merchantName ?? '')
-
-// 超时倒计时
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | null = null
 
@@ -68,10 +40,9 @@ const expireCountdown = computed(() => {
   if (diff <= 0) return '已过期'
   const min = Math.floor(diff / 60000)
   const sec = Math.floor((diff % 60000) / 1000)
-  return `剩余 ${min}:${sec.toString().padStart(2, '0')}`
+  return `${min}:${sec.toString().padStart(2, '0')}`
 })
 
-// 剩余 3 分钟内高亮警示
 const isExpiringSoon = computed(() => {
   const info = cashierStore.orderInfo
   if (!info?.expireTime) return false
@@ -89,3 +60,61 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 </script>
+
+<style scoped>
+.cashier-nav__inner {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cashier-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cashier-nav__logo {
+  border-radius: 8px;
+}
+
+.cashier-nav__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pf-primary);
+  letter-spacing: 0.02em;
+}
+
+.cashier-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--pf-primary-soft);
+  color: var(--pf-primary-hover);
+}
+
+.nav-countdown__icon {
+  width: 14px;
+  height: 14px;
+}
+
+.nav-countdown--warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+</style>

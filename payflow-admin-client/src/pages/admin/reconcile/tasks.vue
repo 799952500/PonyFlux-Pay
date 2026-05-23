@@ -238,6 +238,7 @@ import { ElMessage } from 'element-plus'
 import request from '@/api/request'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   formatDate,
   formatDateTime,
@@ -265,7 +266,7 @@ const total = ref(0)
 
 const queryForm = reactive({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   billDate: '' as string | undefined,
   channel: '',
   status: '',
@@ -281,7 +282,7 @@ const diffList = ref<ReconDiffItem[]>([])
 const diffTotal = ref(0)
 const diffQuery = reactive({
   page: 1,
-  pageSize: 10,
+  pageSize: DEFAULT_PAGE_SIZE,
   diffType: '',
   handleStatus: '',
 })

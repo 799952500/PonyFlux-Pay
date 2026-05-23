@@ -155,6 +155,7 @@ import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getRoutingLogs, exportRoutingLogs } from '@/api/admin'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   channelLabel,
   channelTagType,
@@ -178,7 +179,7 @@ const filters = reactive({
   timeRange: null as [string, string] | null,
 })
 
-const pagination = reactive({ page: 1, size: 20, total: 0 })
+const pagination = reactive({ page: 1, size: DEFAULT_PAGE_SIZE, total: 0 })
 
 function parseChannels(raw: unknown) {
   return parseChannelOptions(raw)

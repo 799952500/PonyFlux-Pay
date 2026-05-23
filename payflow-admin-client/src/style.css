@@ -170,12 +170,199 @@ body {
   flex-wrap: wrap;
 }
 
-/* Dialog 弹窗按钮区域 */
-.el-dialog__footer {
+/* 弹层统一主题（Dialog / Drawer）— 克制协调，随 --pf-* 变量切换 */
+
+/* ── Dialog 外壳 ── */
+.el-dialog {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--pf-card-border);
+  background: var(--pf-card-bg);
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.el-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--pf-primary) 70%, transparent) 50%,
+    transparent
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── Drawer 外壳（RTL 从右侧滑出；勿改 position，否则会脱离 fixed+right 锚定） ── */
+.el-drawer.rtl {
+  overflow: hidden;
+  border-left: 1px solid var(--pf-card-border);
+  background: var(--pf-card-bg);
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  box-shadow:
+    -12px 0 32px rgba(15, 23, 42, 0.08),
+    -2px 0 8px rgba(15, 23, 42, 0.04);
+}
+
+.el-drawer.rtl::before {
+  content: '';
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--pf-primary) 70%, transparent) 50%,
+    transparent
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.el-drawer.ltr {
+  border-right: 1px solid var(--pf-card-border);
+  background: var(--pf-card-bg);
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  box-shadow:
+    12px 0 32px rgba(15, 23, 42, 0.08),
+    2px 0 8px rgba(15, 23, 42, 0.04);
+}
+
+/* ── 头部 / 标题（Dialog + Drawer 共用） ── */
+.el-dialog__header,
+.el-drawer__header {
+  margin-right: 0;
+  margin-bottom: 0;
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--pf-primary-soft) 38%, var(--pf-card-bg));
+  border-bottom: 1px solid var(--pf-card-border);
+}
+
+.el-dialog__title,
+.el-drawer__title {
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+.el-dialog__title::before,
+.el-drawer__title::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 3px;
+  height: 14px;
+  margin-right: 10px;
+  border-radius: 2px;
+  background: var(--pf-primary);
+  box-shadow: none;
+}
+
+.el-dialog__headerbtn {
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+}
+
+.el-dialog__headerbtn .el-dialog__close,
+.el-drawer__close-btn {
+  color: var(--pf-text-secondary);
+  transition: color 0.2s;
+}
+
+.el-dialog__headerbtn:hover .el-dialog__close,
+.el-drawer__close-btn:hover {
+  color: var(--pf-primary);
+}
+
+/* ── 内容区 ── */
+.el-dialog__body {
+  padding: 20px 24px 4px;
+  color: var(--pf-text-primary);
+}
+
+.el-drawer__body {
+  padding: 20px 24px;
+  color: var(--pf-text-primary);
+}
+
+/* ── 底部操作区 ── */
+.el-dialog__footer,
+.el-drawer__footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--pf-card-border);
+  background: var(--pf-card-bg);
+}
+
+.el-dialog .el-form-item.is-required:not(.is-no-asterisk) > .el-form-item__label::before,
+.el-dialog
+  .el-form-item.is-required:not(.is-no-asterisk)
+  > .el-form-item__label-wrap
+  > .el-form-item__label::before,
+.el-drawer .el-form-item.is-required:not(.is-no-asterisk) > .el-form-item__label::before,
+.el-drawer
+  .el-form-item.is-required:not(.is-no-asterisk)
+  > .el-form-item__label-wrap
+  > .el-form-item__label::before {
+  color: var(--pf-primary);
+}
+
+.el-dialog__footer .el-button--primary,
+.el-drawer__footer .el-button--primary {
+  box-shadow: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.el-dialog__footer .el-button--primary:hover,
+.el-drawer__footer .el-button--primary:hover {
+  transform: none;
+}
+
+/* Drawer 内分区小标题（与弹窗标题 accent 一致） */
+.el-drawer .detail-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pf-text-primary);
+  border-bottom: 1px solid var(--pf-card-border);
+}
+
+.el-drawer .detail-section__title::before {
+  content: '';
+  display: inline-block;
+  flex-shrink: 0;
+  width: 3px;
+  height: 12px;
+  margin-right: 8px;
+  border-radius: 2px;
+  background: var(--pf-primary);
 }
 
 /* Table 表格单元格：flex 纵向居中，并按列 align 恢复水平对齐（避免覆盖 is-right 表头/数字列） */

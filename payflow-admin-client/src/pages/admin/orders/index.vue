@@ -142,6 +142,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getOrders, getOrderStats, exportOrdersCsv } from '@/api/admin'
 import type { Order, OrderListQuery, OrderStats } from '@/types'
 import {
@@ -170,7 +171,7 @@ const dateRange = ref<[string, string] | null>(null)
 
 const queryForm = reactive<OrderListQuery>({
   page: 1,
-  pageSize: 20,
+  pageSize: DEFAULT_PAGE_SIZE,
   status: undefined,
   channel: undefined,
   keyword: undefined,
@@ -247,7 +248,7 @@ function handleSearch() {
 function handleReset() {
   Object.assign(queryForm, {
     page: 1,
-    pageSize: 20,
+    pageSize: DEFAULT_PAGE_SIZE,
     status: undefined,
     channel: undefined,
     keyword: undefined,
