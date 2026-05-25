@@ -54,20 +54,36 @@ public class CashierPaymentConfigServiceImpl implements CashierPaymentConfigServ
             return List.of();
         }
 
-        return merchantPaymentRouteService.listByMerchantId(merchantId).stream()
+        Map<String, Map<String, Object>> byCode = new LinkedHashMap<>();
+        merchantPaymentRouteService.listByMerchantId(merchantId).stream()
                 .filter(r -> Boolean.TRUE.equals(r.getEnabled()))
                 .filter(r -> methodById.containsKey(r.getPaymentMethodId()))
-                .map(r -> {
+                .forEach(r -> {
                     PaymentMethod pm = methodById.get(r.getPaymentMethodId());
+                    String code = pm.getMethodCode();
+                    int priority = r.getPriority() != null ? r.getPriority() : 0;
+                    Map<String, Object> existing = byCode.get(code);
+                    if (existing != null) {
+                        int existingPri = existing.get("priority") instanceof Number n ? n.intValue() : 0;
+                        if (priority <= existingPri) {
+                            return;
+                        }
+                    }
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("methodCode", pm.getMethodCode());
+                    row.put("methodCode", code);
                     row.put("methodName", pm.getMethodName());
                     row.put("description", pm.getDescription());
-                    row.put("priority", r.getPriority());
+                    row.put("priority", priority);
                     row.put("clientScopes", ClientScopesKit.parseToList(r.getClientScopes()));
-                    return row;
+                    byCode.put(code, row);
+                });
+        return byCode.values().stream()
+                .sorted((a, b) -> {
+                    int pa = a.get("priority") instanceof Number n ? n.intValue() : 0;
+                    int pb = b.get("priority") instanceof Number n ? n.intValue() : 0;
+                    return Integer.compare(pb, pa);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

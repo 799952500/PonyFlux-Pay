@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("sys_user_roles")
+@TableName("admin_sys_user_roles")
 /**
  * @author Lucas
  */

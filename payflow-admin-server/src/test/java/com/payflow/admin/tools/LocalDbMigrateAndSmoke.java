@@ -70,7 +70,7 @@ public final class LocalDbMigrateAndSmoke {
         if (s.contains("cashier_")) {
             return true;
         }
-        if (s.contains("payment_link")) {
+        if (s.contains("cashier_payment_link")) {
             return true;
         }
         return false;
@@ -139,8 +139,8 @@ public final class LocalDbMigrateAndSmoke {
 
     private static void seedPaymentLinkForPublicSmoke(Connection cashier) throws SQLException {
         String sql = """
-                INSERT IGNORE INTO payment_link (link_id, merchant_id, title, amount, currency, max_use, used_count, expire_at, status, created_at)
-                VALUES ('LNKSMOKE01', 'M2024040001', '冒烟测试链接', 100, 'CNY', 10, 0, NULL, 'ACTIVE', NOW())
+                INSERT IGNORE INTO cashier_payment_link (link_id, merchant_id, title, amount, currency, max_use, used_count, expire_at, status, created_at)
+                VALUES ('PLK-DEMO-001', 'M100001', '冒烟测试链接', 100, 'CNY', 10, 0, NULL, 'ACTIVE', NOW())
                 """;
         execOne(cashier, sql);
     }

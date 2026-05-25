@@ -2,6 +2,7 @@ package com.payflow.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.dto.onboarding.MerchantApplicationRejectRequest;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.entity.MerchantApplicationEntity;
 import com.payflow.admin.mapper.AdminUserMapper;
 import com.payflow.admin.entity.AdminUser;
@@ -56,6 +57,7 @@ public class AdminMerchantOnboardingController {
         return ok(merchantOnboardingService.getDetail(id));
     }
 
+    @RequirePermission("onboarding:approve")
     @PostMapping("/applications/{id}/approve")
     public ResponseEntity<Map<String, Object>> approve(@PathVariable Long id, HttpServletRequest request) {
         String username = (String) request.getAttribute("username");
@@ -66,6 +68,7 @@ public class AdminMerchantOnboardingController {
         return ok(data);
     }
 
+    @RequirePermission("onboarding:reject")
     @PostMapping("/applications/{id}/reject")
     public ResponseEntity<Map<String, Object>> reject(@PathVariable Long id,
                                                       @Valid @RequestBody MerchantApplicationRejectRequest body,

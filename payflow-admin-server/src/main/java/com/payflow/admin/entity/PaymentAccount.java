@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("payment_accounts")
+@TableName("admin_payment_accounts")
 /**
  * @author Lucas
  */

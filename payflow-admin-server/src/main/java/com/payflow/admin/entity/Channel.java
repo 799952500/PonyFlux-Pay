@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 /**
  * @author Lucas
  */
-@TableName("channels")
+@TableName("admin_channels")
 public class Channel {
 
     @TableId(type = IdType.AUTO)

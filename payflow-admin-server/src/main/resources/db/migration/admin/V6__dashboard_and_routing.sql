@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS admin_fee_rate_audit_log (
     INDEX idx_merchant_time (merchant_id, change_time)
 ) COMMENT '费率变更审计日志';
 
-CREATE TABLE IF NOT EXISTS recon_routing_decision_log (
+CREATE TABLE IF NOT EXISTS admin_routing_decision_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     trade_no VARCHAR(64) NOT NULL COMMENT '交易流水号',
     merchant_id BIGINT NOT NULL,

@@ -142,4 +142,12 @@ INSERT INTO cashier_security_audit (
 ('M100002', 'M100001', 'HMAC', 'POST', '/api/v1/cashier/payments',
  'PAYMENT', 'PAY-20260518-001', '203.0.113.9', 'DENIED', '5102', '支付记录不属于当前商户', DATE_SUB(NOW(), INTERVAL 15 MINUTE));
 
+INSERT INTO cashier_payment_link (link_id, merchant_id, title, amount, currency, max_use, used_count, expire_at, status, created_at) VALUES
+('PLK-DEMO-001', 'M100001', '星云零售-活动收款', 9900, 'CNY', 100, 23, DATE_ADD(NOW(), INTERVAL 30 DAY), 'ACTIVE', NOW()),
+('PLK-DEMO-002', 'M100002', '蓝海餐饮-任意金额', NULL, 'CNY', NULL, 5, DATE_ADD(NOW(), INTERVAL 7 DAY), 'ACTIVE', NOW());
+
+INSERT INTO cashier_risk_blacklist (entry_type, entry_value, enabled, remark, created_at, updated_at) VALUES
+('IP', '203.0.113.99', 1, '恶意刷单 IP', NOW(), NOW()),
+('MOBILE', '17000000000', 1, '虚拟号段', NOW(), NOW());
+
 -- 商户回调演示数据见 sql/seed/payflow_cashier_merchant_notify_demo.sql（install_demo_db 会单独执行）

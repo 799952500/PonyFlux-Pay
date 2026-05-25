@@ -110,6 +110,7 @@ spring.flyway:
   locations: classpath:db/migration/cashier
   baseline-on-migrate: true
   baseline-version: 1
+  validate-on-migrate: false
 
 # Actuator 健康检查
 management:

@@ -31,6 +31,10 @@ import type {
   DataIsolationCheckItem,
   OrderStats,
   AdminSearchOrderHit,
+  OrderDetailResponse,
+  OrderPayment,
+  PaymentChannelQueryResult,
+  OrderRefundRequestResult,
 } from '@/types'
 
 // -------------------------------------------------------------------
@@ -99,21 +103,43 @@ export const getOrders = (params: OrderListQuery): Promise<OrderListResponse> =>
   }))
 }
 
-/** 订单详情接口返回结构（与 AdminOrderController#getOrder 一致） */
-interface OrderDetailPayload {
-  order?: Order
-  payments?: unknown[]
-}
-
-export const getOrderDetail = async (orderId: string): Promise<Order> => {
+/** 订单详情（含支付子单） */
+export const getOrderDetailFull = async (orderId: string): Promise<OrderDetailResponse> => {
   const data = (await request.get(
     `/admin/orders/${encodeURIComponent(orderId)}`
-  )) as OrderDetailPayload
+  )) as OrderDetailResponse
   if (!data?.order) {
     throw new Error('订单不存在')
   }
-  return data.order
+  return {
+    order: data.order,
+    payments: (data.payments ?? []) as OrderPayment[],
+  }
 }
+
+export const getOrderDetail = async (orderId: string): Promise<Order> => {
+  const { order } = await getOrderDetailFull(orderId)
+  return order
+}
+
+/** 发起退款申请（待退款管理审批，不会立即调渠道） */
+export const createOrderRefundRequest = (
+  orderId: string,
+  body: { paymentId: string; refundAmount: number; reason?: string }
+): Promise<OrderRefundRequestResult> =>
+  request.post(`/admin/orders/${encodeURIComponent(orderId)}/refund-requests`, body)
+
+/** 向支付机构查单；sync=true 时尝试同步本地状态 */
+export const queryOrderPaymentChannel = (
+  orderId: string,
+  paymentId: string,
+  sync = false
+): Promise<PaymentChannelQueryResult> =>
+  request.post(
+    `/admin/orders/${encodeURIComponent(orderId)}/payments/${encodeURIComponent(paymentId)}/query-channel`,
+    null,
+    { params: { sync } }
+  )
 
 export const closeOrder = (orderId: string) =>
   request.post(`/admin/orders/${orderId}/close`)

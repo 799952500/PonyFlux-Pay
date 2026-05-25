@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SysMenu;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.SysMenuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +56,7 @@ public class SysMenuController {
      * @return 新增的菜单
      */
     @Operation(summary = "新增菜单")
+    @RequirePermission("menu:create")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SysMenu menu) {
         SysMenu created = sysMenuService.create(menu);
@@ -69,6 +71,7 @@ public class SysMenuController {
      * @return 更新后的菜单
      */
     @Operation(summary = "更新菜单信息")
+    @RequirePermission("menu:edit")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
                                                         @RequestBody SysMenu menu) {
@@ -84,6 +87,7 @@ public class SysMenuController {
      * @return 操作结果
      */
     @Operation(summary = "删除菜单")
+    @RequirePermission("menu:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         sysMenuService.delete(id);

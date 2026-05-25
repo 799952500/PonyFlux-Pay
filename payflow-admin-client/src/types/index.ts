@@ -33,6 +33,42 @@ export interface Order {
   updatedAt: string
 }
 
+/** 订单关联支付子单（cashier_payments） */
+export interface OrderPayment {
+  paymentId: string
+  orderId: string
+  payChannel?: string
+  payMethod?: string
+  channelTransactionId?: string
+  amount: number
+  status: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface OrderDetailResponse {
+  order: Order
+  payments: OrderPayment[]
+}
+
+export interface PaymentChannelQueryResult {
+  paymentId: string
+  orderId: string
+  payChannel?: string
+  localStatus: string
+  channelPaid?: boolean | null
+  synced?: boolean
+  channelQuerySupported?: boolean
+  message?: string
+}
+
+export interface OrderRefundRequestResult {
+  refundId: string
+  paymentId: string
+  status: string
+  refundAmount: number
+}
+
 // ============================================================
 // 管理后台 - Dashboard
 // ============================================================
@@ -477,6 +513,8 @@ export interface AdminLoginResponse {
   scopeMode?: 'PLATFORM' | 'MERCHANT' | 'NONE'
   authorizedMerchantIds?: string[]
   menus?: SysMenu[]
+  /** 扁平按钮权限码列表 */
+  permissions?: string[]
   uiPreferences?: AdminUiPreferences
 }
 
@@ -509,6 +547,8 @@ export interface SysMenu {
   menuCode: string
   menuName: string
   menuType: 'MENU' | 'BUTTON'
+  permCode?: string
+  apiPattern?: string
   path?: string
   icon?: string
   sortOrder: number

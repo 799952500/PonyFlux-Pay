@@ -3,7 +3,7 @@ package com.payflow.admin.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.payflow.admin.client.CashierInternalRefundClient;
+import com.payflow.admin.client.CashierInternalClient;
 import com.payflow.admin.entity.cashier.Order;
 import com.payflow.admin.entity.cashier.Refund;
 import com.payflow.admin.kit.AdminRequestContext;
@@ -31,7 +31,7 @@ public class AdminRefundService {
 
     private final RefundMapper refundMapper;
     private final OrderMapper orderMapper;
-    private final CashierInternalRefundClient cashierInternalRefundClient;
+    private final CashierInternalClient cashierInternalClient;
 
     /**
      * 分页查询退款列表（可选关键词、状态、日期）。
@@ -96,7 +96,7 @@ public class AdminRefundService {
         if (!Refund.STATUS_REFUNDING.equals(r.getStatus())) {
             throw new IllegalStateException("当前状态不允许审批通过: " + r.getStatus());
         }
-        cashierInternalRefundClient.executeRefund(refundId);
+        cashierInternalClient.executeRefund(refundId);
     }
 
     private void assertRefundMerchantAllowed(Refund r, List<String> merchantScopeIds) {

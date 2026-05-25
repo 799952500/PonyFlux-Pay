@@ -1,5 +1,13 @@
 <template>
   <div class="page-table-shell">
+    <el-alert
+      class="mb-4"
+      type="info"
+      :closable="false"
+      show-icon
+      title="支付方式与支付账号"
+      description="支付方式只定义「用什么能力收款」（如 WECHAT_H5、ALIPAY_WAP）。appId、商户号、密钥、证书等渠道凭证请在「支付账号」维护，并在「商户管理 → 支付路由」里绑定到对应支付方式。"
+    />
     <div class="filter-bar filter-bar--stacked">
       <div class="filter-row">
         <span class="filter-label">渠道快筛</span>
@@ -46,7 +54,7 @@
           </span>
           <span v-else class="table-toolbar__hint">共 {{ total }} 条记录</span>
         </div>
-        <el-button v-if="platformAdmin" type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
+        <el-button v-permission="'payment_method:create'" type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
       </div>
 
       <el-table table-layout="auto" v-loading="loading" :data="tableData" stripe size="small" class="data-table">
@@ -65,8 +73,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="appId" prop="appId" min-width="160">
-          <template #default="{ row }"><span class="cell-mono">{{ maskSecret(row.appId) }}</span></template>
+        <el-table-column label="优先级" prop="priority" width="88" align="center">
+          <template #default="{ row }">{{ row.priority ?? 0 }}</template>
+        </el-table-column>
+        <el-table-column label="描述" prop="description" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.description ?? row.remark ?? '—' }}</template>
         </el-table-column>
         <el-table-column label="状态" prop="status" width="88" align="center">
           <template #default="{ row }">
@@ -80,10 +91,10 @@
             <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="platformAdmin" label="操作" width="140" fixed="right" align="center">
+        <el-table-column v-if="canManagePaymentMethods" label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'payment_method:edit'" link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
+            <el-button v-permission="'payment_method:delete'" link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -127,23 +138,13 @@
         <el-form-item label="支付方式名称" prop="methodName">
           <el-input v-model="form.methodName" placeholder="如: 微信扫码支付" />
         </el-form-item>
-        <el-form-item label="appId" prop="appId">
-          <el-input v-model="form.appId" placeholder="渠道分配的 appId" />
-        </el-form-item>
-        <el-form-item label="appSecret" prop="appSecret">
-          <el-input v-model="form.appSecret" placeholder="渠道分配的 appSecret" />
-        </el-form-item>
-        <el-form-item label="mchId" prop="mchId">
-          <el-input v-model="form.mchId" placeholder="商户号 mchId" />
-        </el-form-item>
-        <el-form-item label="证书路径" prop="certPath">
-          <el-input v-model="form.certPath" placeholder="如: /cert/apiclient_cert.p12" />
-        </el-form-item>
-        <el-form-item label="证书密码" prop="certPassword">
-          <el-input v-model="form.certPassword" placeholder="证书密码" show-password />
-        </el-form-item>
         <el-form-item label="扩展配置" prop="extraConfig">
-          <el-input v-model="form.extraConfig" type="textarea" :rows="3" placeholder='JSON 格式，如: {"key": "value"}' />
+          <el-input
+            v-model="form.extraConfig"
+            type="textarea"
+            :rows="3"
+            placeholder='场景参数 JSON，如: {"tradeType":"MWEB"}；勿填写 appId/密钥'
+          />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="可选备注信息" />
@@ -170,14 +171,12 @@
           </dl>
         </section>
         <section>
-          <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">渠道配置</h3>
-          <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-            <dt class="text-gray-400">appId</dt><dd class="text-gray-800 font-mono">{{ currentRow.appId ?? '—' }}</dd>
-            <dt class="text-gray-400">mchId</dt><dd class="text-gray-800 font-mono">{{ currentRow.mchId ?? '—' }}</dd>
-            <dt class="text-gray-400">appSecret</dt><dd class="text-gray-800">{{ currentRow.appSecret ? '******' : '—' }}</dd>
-            <dt class="text-gray-400">证书路径</dt><dd class="text-gray-800">{{ currentRow.certPath ?? '—' }}</dd>
-            <dt class="text-gray-400">证书密码</dt><dd class="text-gray-800">{{ currentRow.certPassword ? '******' : '—' }}</dd>
-          </dl>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">说明</h3>
+          <p class="text-sm text-gray-600 leading-relaxed">
+            渠道凭证（appId、商户号、密钥、证书）在
+            <router-link to="/admin/payment-accounts" class="text-primary">支付账号</router-link>
+            中配置，并通过商户支付路由关联到本支付方式。
+          </p>
         </section>
         <section v-if="currentRow.extraConfig">
           <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">扩展配置</h3>
@@ -201,10 +200,15 @@ import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'
 import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
-import { channelLabel, channelTagType, formatDateTime, maskSecret } from '@/utils/format'
+import { channelLabel, channelTagType, formatDateTime } from '@/utils/format'
 import { isPlatformAdmin } from '@/utils/adminAccess'
+import { usePermission } from '@/composables/usePermission'
 
 const platformAdmin = isPlatformAdmin()
+const { hasPermission } = usePermission()
+const canManagePaymentMethods = computed(() =>
+  hasPermission(['payment_method:create', 'payment_method:edit', 'payment_method:delete'], 'OR'),
+)
 const route = useRoute()
 const router = useRouter()
 
@@ -234,11 +238,6 @@ const form = reactive({
   channelType: '',
   methodCode: '',
   methodName: '',
-  appId: '',
-  appSecret: '',
-  mchId: '',
-  certPath: '',
-  certPassword: '',
   extraConfig: '',
   remark: '',
 })
@@ -329,9 +328,7 @@ function handleChannelChange() {
 function openAdd() {
   isEdit.value = false
   Object.assign(form, {
-    id: '', channelType: '', methodCode: '', methodName: '',
-    appId: '', appSecret: '', mchId: '',
-    certPath: '', certPassword: '', extraConfig: '', remark: '',
+    id: '', channelType: '', methodCode: '', methodName: '', extraConfig: '', remark: '',
   })
   dialogVisible.value = true
 }
@@ -343,13 +340,8 @@ function openEdit(row: any) {
     channelType: row.channelType,
     methodCode: row.methodCode,
     methodName: row.methodName,
-    appId: row.appId ?? '',
-    appSecret: '',
-    mchId: row.mchId ?? '',
-    certPath: row.certPath ?? '',
-    certPassword: '',
-    extraConfig: row.extraConfig ?? '',
-    remark: row.remark ?? '',
+    extraConfig: row.extraConfig ?? row.configJson ?? '',
+    remark: row.remark ?? row.description ?? '',
   })
   dialogVisible.value = true
 }
@@ -374,16 +366,16 @@ async function handleSubmit() {
     if (!valid) return
     submitLoading.value = true
     try {
-      const payload: Record<string, any> = { ...form }
-      // channelType 字符串转 channelId 数字（channelOptions 来自 getChannels）
+      const payload: Record<string, unknown> = {
+        methodCode: form.methodCode,
+        methodName: form.methodName,
+        configJson: form.extraConfig || undefined,
+        description: form.remark || undefined,
+      }
       const selected = channelOptions.value.find(c => c.channelType === form.channelType)
       if (selected) {
         payload.channelId = selected.id
       }
-      delete payload.channelType
-      // 不传空字符串的敏感字段
-      if (!payload.appSecret) delete payload.appSecret
-      if (!payload.certPassword) delete payload.certPassword
 
       if (isEdit.value) {
         await updatePaymentMethod(Number(form.id), payload)

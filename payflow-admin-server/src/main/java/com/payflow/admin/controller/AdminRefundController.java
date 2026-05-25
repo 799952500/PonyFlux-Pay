@@ -2,6 +2,7 @@ package com.payflow.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.AdminRefundService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,6 +58,7 @@ public class AdminRefundController {
      * 审批通过。
      */
     @Operation(summary = "审批通过退款")
+    @RequirePermission("refund:approve")
     @PostMapping("/{refundId}/approve")
     public ResponseEntity<Map<String, Object>> approve(HttpServletRequest request, @PathVariable String refundId) {
         try {
@@ -73,6 +75,7 @@ public class AdminRefundController {
      * 审批拒绝。
      */
     @Operation(summary = "审批拒绝退款")
+    @RequirePermission("refund:reject")
     @PostMapping("/{refundId}/reject")
     public ResponseEntity<Map<String, Object>> reject(HttpServletRequest request, @PathVariable String refundId) {
         try {

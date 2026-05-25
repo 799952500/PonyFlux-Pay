@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("payment_link")
+@TableName("cashier_payment_link")
 public class PaymentLinkEntity {
 
     @TableId(type = IdType.AUTO)

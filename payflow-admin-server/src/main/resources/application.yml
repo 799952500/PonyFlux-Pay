@@ -64,10 +64,10 @@ jwt:
 
 payflow:
   cors:
-    allowed-origins:
-      - http://localhost:3001
+    allowed-origins: http://localhost:3001,http://127.0.0.1:3001
   crypto:
-    master-key: ${MASTER_KEY:dGVzdC1rZXktMzItYnl0ZXMtbG9uZy0xMjM0NTY=}
+    # Base64 编码的 32 字节 AES-256 密钥（生产请 export MASTER_KEY=$(openssl rand -base64 32)）
+    master-key: ${MASTER_KEY:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=}
   onboarding:
     admin-login-url: http://localhost:3001/login
     result-query-url: http://127.0.0.1:5173/onboarding/result
@@ -81,6 +81,9 @@ payflow:
     login-captcha-enabled: true
     login-max-failures: 5
     login-lock-seconds: 900
+  permission:
+    enforce-button: true
+    cache-ttl-seconds: 300
 
 management:
   endpoints:

@@ -18,7 +18,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("sys_menus")
+@TableName("admin_sys_menus")
 /**
  * @author Lucas
  */
@@ -37,6 +37,10 @@ public class SysMenu {
     private Integer sortOrder;
     private Boolean visible;
     private String status;
+    /** 按钮权限码，仅 menuType=BUTTON 时使用 */
+    private String permCode;
+    /** 关联 API 路径模式，文档化用途 */
+    private String apiPattern;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

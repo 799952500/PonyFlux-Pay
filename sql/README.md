@@ -10,7 +10,7 @@ sql/
 ├── install_demo.sql          # 安装指引（供 DataGrip 手动执行时参考顺序）
 ├── schema/                   # 第一部分：建库 + 建表（DDL）
 │   ├── 00_create_databases.sql
-│   ├── payflow_admin.sql     # 运营库：admin_* / sys_* / recon_* + 兼容视图
+│   ├── payflow_admin.sql     # 运营库：admin_* / recon_* + 兼容视图
 │   └── payflow_cashier.sql   # 收银台库：cashier_* + 安全审计表
 ├── seed/                     # 第二部分：演示数据（DML）
 │   ├── payflow_cashier_seed.sql
@@ -24,13 +24,17 @@ sql/
 python scripts/install_demo_db.py
 ```
 
-等价于按顺序执行：
+等价于按顺序执行（见 `scripts/install_demo_db.py` 内 `SQL_FILES`）：
 
 1. `schema/00_create_databases.sql`
 2. `schema/payflow_admin.sql`
 3. `schema/payflow_cashier.sql`
-4. `seed/payflow_cashier_seed.sql`
+4. `seed/payflow_cashier_seed.sql` + `payflow_cashier_merchant_notify_demo.sql`
 5. `seed/payflow_admin_seed.sql`
+
+安装后校验：`python scripts/validate_table_prefixes.py`
+
+**升级本特性前**建议清库：`DROP DATABASE payflow_admin; DROP DATABASE payflow_cashier;`
 
 ## 演示账号
 

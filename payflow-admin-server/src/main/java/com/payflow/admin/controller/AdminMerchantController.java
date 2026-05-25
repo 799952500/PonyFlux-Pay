@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.dto.UpdateMerchantRequest;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.MerchantService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -122,6 +123,7 @@ public class AdminMerchantController {
      * @return 更新后的商户信息
      */
     @Operation(summary = "更新商户信息")
+    @RequirePermission("merchant:edit")
     @PutMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> updateMerchant(
             @PathVariable String merchantId,
@@ -168,6 +170,7 @@ public class AdminMerchantController {
      * @return 操作结果
      */
     @Operation(summary = "删除商户")
+    @RequirePermission("merchant:delete")
     @DeleteMapping("/{merchantId}")
     public ResponseEntity<Map<String, Object>> deleteMerchant(@PathVariable String merchantId) {
         Merchant existing = merchantService.getByMerchantId(merchantId);

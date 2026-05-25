@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * @author PayFlow Team
  */
 @Data
-@TableName("webhook_delivery_log")
+@TableName("cashier_webhook_delivery_log")
 public class WebhookDeliveryLog {
 
     @TableId(type = IdType.AUTO)

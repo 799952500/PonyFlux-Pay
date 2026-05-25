@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("risk_rules")
+@TableName("admin_risk_rules")
 public class RiskRule {
 
     @TableId(type = IdType.AUTO)

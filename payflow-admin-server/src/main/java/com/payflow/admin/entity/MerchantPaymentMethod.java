@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(onlyExplicitlyIncluded = true)
-@TableName("merchant_payment_methods")
+@TableName("admin_merchant_payment_methods")
 /**
  * @author Lucas
  */

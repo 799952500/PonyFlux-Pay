@@ -5,6 +5,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import registerElementPlusIcons from '@element-plus/icons-vue/global'
 import router from './router'
+import { registerPermissionDirective } from './directives/permission'
 import App from './App.vue'
 import './style.css'
 import zhCN from './locales/zh-CN'
@@ -27,4 +28,5 @@ app.use(createPinia())
 app.use(router)
 app.use(i18n)
 app.use(ElementPlus)
+registerPermissionDirective(app)
 app.mount('#app')

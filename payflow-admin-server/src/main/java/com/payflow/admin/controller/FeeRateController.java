@@ -3,6 +3,7 @@ package com.payflow.admin.controller;
 import com.payflow.admin.entity.FeeRateConfig;
 import com.payflow.admin.entity.FeeRateAuditLog;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.FeeRateService;
 import jakarta.servlet.http.HttpServletRequest;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -37,6 +38,7 @@ public class FeeRateController {
     }
 
     @Operation(summary = "创建费率规则")
+    @RequirePermission("fee_rate:write")
     @PostMapping("")
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody FeeRateConfig config) {
         FeeRateConfig created = feeRateService.createRule(config);
@@ -44,6 +46,7 @@ public class FeeRateController {
     }
 
     @Operation(summary = "更新费率规则")
+    @RequirePermission("fee_rate:write")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @Valid @RequestBody FeeRateConfig config) {
         boolean ok = feeRateService.updateRule(id, config);
@@ -51,6 +54,7 @@ public class FeeRateController {
     }
 
     @Operation(summary = "删除费率规则")
+    @RequirePermission("fee_rate:write")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         boolean ok = feeRateService.deleteRule(id);

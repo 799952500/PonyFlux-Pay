@@ -7,6 +7,7 @@ import com.payflow.admin.entity.recon.ReconHandlerAuditEntity;
 import com.payflow.admin.entity.recon.ReconMerchantTaskEntity;
 import com.payflow.admin.entity.recon.ReconTaskEntity;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
 import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
 import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
@@ -251,6 +252,7 @@ public class AdminReconController {
     }
 
     @Operation(summary = "手动触发对账")
+    @RequirePermission("recon:manual_run")
     @PostMapping("/tasks/manual-run")
     public ResponseEntity<Map<String, Object>> manualRun(@Valid @RequestBody ManualReconRequest request) {
         String channel = request.getReconChannel().trim().toLowerCase();
@@ -287,6 +289,7 @@ public class AdminReconController {
     }
 
     @Operation(summary = "处理对账差异")
+    @RequirePermission("recon:diff:handle")
     @PostMapping("/diffs/{id}/handle")
     public ResponseEntity<Map<String, Object>> handleDiff(
             HttpServletRequest http,

@@ -29,7 +29,9 @@
 | `getRoutingLogs` | GET | `/admin/routing-logs` | [`RoutingLogController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/RoutingLogController.java) |
 | `exportRoutingLogs` | GET | `/admin/routing-logs/export` | 同上 |
 | `getOrders` | GET | `/admin/orders` | [`AdminOrderController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminOrderController.java) |
-| `getOrderDetail` | GET | `/admin/orders/{orderId}` | 同上 |
+| `getOrderDetail` / `getOrderDetailFull` | GET | `/admin/orders/{orderId}` | 返回 `order` + `payments` |
+| `createOrderRefundRequest` | POST | `/admin/orders/{orderId}/refund-requests` | 创建待审批退款（body: paymentId, refundAmount, reason） |
+| `queryOrderPaymentChannel` | POST | `/admin/orders/{orderId}/payments/{paymentId}/query-channel?sync=` | 向支付机构查单；`sync=true` 时回写本地（当前仅微信） |
 | `closeOrder` | POST | `/admin/orders/{orderId}/close` | 同上 |
 | `listMerchantNotifies` | GET | `/admin/merchant-notifies` | [`AdminMerchantNotifyController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminMerchantNotifyController.java) |
 | `getMerchantNotifyDetail` | GET | `/admin/merchant-notifies/{notifyId}` | 同上 |
@@ -53,7 +55,8 @@
 | 支付账号（旧路径） | * | `/admin/payment-accounts` | [`PaymentAccountController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentAccountController.java) |
 | 角色/菜单/用户 | * | `/admin/roles`、`/admin/menus`、`/admin/users` | [`SysRoleController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysRoleController.java)、[`SysMenuController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysMenuController.java)、[`SysUserController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysUserController.java) |
 | 系统配置 | * | `/admin/system-configs` | [`SystemConfigController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SystemConfigController.java) |
-| 登录 | POST | `/admin/auth/login` | [`AuthController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AuthController.java) |
+| 登录 | POST | `/admin/auth/login` | [`AuthController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AuthController.java)；`data.permissions` 为扁平 `perm_code` 列表 |
+| 刷新按钮权限 | GET | `/admin/auth/permissions` | 同上；`data.permissions` |
 | 字典枚举 | GET | `/admin/dicts` | [`AdminDictController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminDictController.java) |
 | 订单导出 CSV | GET | `/admin/orders/export` | [`AdminOrderController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminOrderController.java) |
 | 全局搜索 | GET | `/admin/search` | [`AdminSearchController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSearchController.java) |
@@ -73,7 +76,8 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-req
 | 前端方法 | HTTP | 路径 | 后端 |
 |----------|------|------|------|
 | `merchantLogin` | POST | `/auth/login` | [`MerchantAuthController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/MerchantAuthController.java) |
-| `getCashierInfo` | GET | `/cashier/{orderId}` | [`CashierController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/CashierController.java) |
+| `getCashierInfo` | GET | `/cashier/{orderId}?sig=&client=` | 返回订单 + `paymentMethods`；`client=PC\|H5\|APP` 按商户路由 `client_scopes` 过滤；收银台经内部接口拉取管理端配置 |
+| （内部）收银台支付方式 | GET | `/internal/cashier/payment-methods?merchantId=&orderChannel=` | [`InternalCashierPaymentController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/InternalCashierPaymentController.java) → 商户支付路由 + 平台支付方式 |
 | `createPayment` | POST | `/payments` | [`PaymentController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/PaymentController.java) |
 | `pollPaymentStatus` | GET | `/payments/status/{paymentId}` | 同上（无需商户签名） |
 
@@ -116,7 +120,7 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-req
 - [ ] GET `/admin/refunds`、审批通过/拒绝（与收银台内部退款衔接）
 - [ ] GET `/admin/merchants`、`/admin/channels`、`/admin/channels/accounts`
 - [ ] GET `/admin/dicts`、`/admin/meta/version`、`/admin/search?q=`
-- [ ] GET `/admin/orders/export` 下载 CSV（权限：登录即可，生产建议加角色）
+- [ ] GET `/admin/orders/export` 下载 CSV（权限：`order:export`，见 `@RequirePermission`）
 - [ ] GET `/admin/security/audit` — 安全审计（`RISK`/`SUPER_ADMIN`），筛选 merchantId/reasonCode
 
 ### 收银台客户端
@@ -152,6 +156,14 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-req
 | `MerchantPaymentMethodController` | `POST` (saveBatch) | `Map<String, Object>`（`paymentMethodIds` 为 `List<Number>`） | `SavePaymentMethodRequest` DTO（`paymentMethodIds` 为 `List<Long>`） |
 
 > **前端适配提示**：DTO 校验失败时后端返回 400 + `{ "code": 1, "message": "校验失败详情..." }`，前端需处理新的错误格式。
+
+### 按钮级权限（perm_code）
+
+- 数据：`sys_menus.menu_type=BUTTON`，字段 `perm_code`、`api_pattern`；角色绑定仍用 `sys_role_menus`
+- 后端：`@RequirePermission("perm:code")` + [`PermissionInterceptor`](payflow-admin-server/src/main/java/com/payflow/admin/interceptor/PermissionInterceptor.java)；`SUPER_ADMIN` JWT 角色放行
+- 前端：`v-permission` / `usePermission()`；登录响应 `permissions[]`
+- 字典与接入说明：[`docs/BUTTON_PERMISSIONS.md`](BUTTON_PERMISSIONS.md)
+- 配置：`payflow.permission.enforce-button`（默认 true）
 
 ### RBAC 角色管控收紧
 

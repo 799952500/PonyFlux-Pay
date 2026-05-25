@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * @author PayFlow Team
  */
 @Data
-@TableName("recon_routing_decision_log")
+@TableName("cashier_routing_decision_log")
 public class RoutingDecisionLog {
 
     @TableId(type = IdType.AUTO)

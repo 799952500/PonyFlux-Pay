@@ -2,7 +2,7 @@ package com.payflow.admin.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.payflow.admin.client.CashierInternalRefundClient;
+import com.payflow.admin.client.CashierInternalClient;
 import com.payflow.admin.entity.cashier.Order;
 import com.payflow.admin.entity.cashier.Payment;
 import com.payflow.admin.entity.cashier.Refund;
@@ -39,7 +39,7 @@ class PaymentRefundMerchantIsolationTest {
     private OrderMapper orderMapper;
 
     @Mock
-    private CashierInternalRefundClient cashierInternalRefundClient;
+    private CashierInternalClient cashierInternalClient;
 
     @Test
     @DisplayName("支付详情按支付单号查询后保留原始订单归属信息")
@@ -87,7 +87,7 @@ class PaymentRefundMerchantIsolationTest {
     @Test
     @DisplayName("退款列表使用商户范围过滤")
     void refundPageAppliesMerchantScope() {
-        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalRefundClient);
+        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalClient);
         Refund refund = refund("REF-1", "ORD-1", Refund.STATUS_REFUNDING);
         Order order = order("ORD-1", "M100001");
         Page<Refund> page = new Page<>();
@@ -105,9 +105,7 @@ class PaymentRefundMerchantIsolationTest {
     @Test
     @DisplayName("空商户授权范围查询退款返回空结果")
     void refundPageWithEmptyScopeReturnsEmptyResult() {
-        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalRefundClient);
-        Page<Refund> page = new Page<>();
-        when(refundMapper.selectPage(any(), any())).thenReturn(page);
+        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalClient);
 
         IPage<Map<String, Object>> result = service.page(1, 20, null, null, null, null, null, List.of());
 
@@ -117,7 +115,7 @@ class PaymentRefundMerchantIsolationTest {
     @Test
     @DisplayName("审批授权外退款时拒绝且不调用收银台")
     void approveRejectsRefundOutsideMerchantScope() {
-        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalRefundClient);
+        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalClient);
         Refund refund = refund("REF-1", "ORD-2", Refund.STATUS_REFUNDING);
         when(refundMapper.selectOne(any())).thenReturn(refund);
         when(orderMapper.selectOne(any())).thenReturn(order("ORD-2", "M100002"));
@@ -126,13 +124,13 @@ class PaymentRefundMerchantIsolationTest {
                 () -> service.approve("REF-1", List.of("M100001")));
 
         assertEquals("无权操作该退款", ex.getMessage());
-        verify(cashierInternalRefundClient, never()).executeRefund(any());
+        verify(cashierInternalClient, never()).executeRefund(any());
     }
 
     @Test
     @DisplayName("拒绝授权外退款时不更新退款状态")
     void rejectDoesNotUpdateRefundOutsideMerchantScope() {
-        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalRefundClient);
+        AdminRefundService service = new AdminRefundService(refundMapper, orderMapper, cashierInternalClient);
         Refund refund = refund("REF-1", "ORD-2", Refund.STATUS_REFUNDING);
         when(refundMapper.selectOne(any())).thenReturn(refund);
         when(orderMapper.selectOne(any())).thenReturn(order("ORD-2", "M100002"));

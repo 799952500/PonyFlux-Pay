@@ -6,12 +6,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 路由决策日志实体（管理后台查询用，对应 recon_routing_decision_log 表）。
+ * 路由决策日志实体（管理后台查询用，对应 admin_routing_decision_log 表）。
  *
  * @author PayFlow Team
  */
 @Data
-@TableName("recon_routing_decision_log")
+@TableName("admin_routing_decision_log")
 public class RoutingDecisionLog {
 
     @TableId(type = IdType.AUTO)

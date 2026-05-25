@@ -67,3 +67,19 @@ init-local-database-dev.sh
 *.lock.db
 *.db-shm
 *.db-wal
+
+# Redis 运行时 dump
+dump.rdb
+
+# Playwright 测试产物
+**/test-results/
+**/playwright-report/
+**/.playwright-artifacts*/
+
+# 日志目录
+logs/
+
+# Python
+**/__pycache__/
+*.pyc
+scripts/__pycache__/

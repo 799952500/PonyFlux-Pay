@@ -20,10 +20,10 @@ class ReconMerchantIsolationTest {
     @Test
     @DisplayName("支付查询 SQL 通过订单关联商户号")
     void paymentMapperJoinsOrderForMerchantId() throws NoSuchMethodException {
-        String sql = CashierReconPaymentMapper.class
+        String sql = String.join("\n", CashierReconPaymentMapper.class
                 .getDeclaredMethod("listSuccessByBillDate", String.class, java.time.LocalDate.class)
                 .getAnnotation(org.apache.ibatis.annotations.Select.class)
-                .value();
+                .value());
         assertTrue(sql.contains("merchant_id"));
         assertTrue(sql.contains("cashier_orders"));
     }

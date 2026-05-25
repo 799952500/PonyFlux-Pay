@@ -15,6 +15,11 @@ DROP TABLE IF EXISTS `cashier_orders`;
 DROP TABLE IF EXISTS `cashier_channel_merchant_routes`;
 DROP TABLE IF EXISTS `cashier_channel_accounts`;
 DROP TABLE IF EXISTS `cashier_channels`;
+DROP TABLE IF EXISTS `cashier_webhook_delivery_log`;
+DROP TABLE IF EXISTS `cashier_merchant_webhook_endpoint`;
+DROP TABLE IF EXISTS `cashier_payment_link`;
+DROP TABLE IF EXISTS `cashier_routing_decision_log`;
+DROP TABLE IF EXISTS `cashier_risk_blacklist`;
 DROP TABLE IF EXISTS `cashier_merchants`;
 
 CREATE TABLE `cashier_merchants` (
@@ -174,6 +179,34 @@ CREATE TABLE `cashier_security_audit` (
   KEY `idx_reason_created` (`reason_code`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户安全审计（越权拒绝）';
 
+CREATE TABLE `cashier_risk_blacklist` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `entry_type` VARCHAR(32) NOT NULL,
+  `entry_value` VARCHAR(256) NOT NULL,
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `remark` VARCHAR(512) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT NULL,
+  `updated_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_type_value` (`entry_type`, `entry_value`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控黑名单';
+
+CREATE TABLE `cashier_routing_decision_log` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `trade_no` VARCHAR(64) NOT NULL,
+  `merchant_id` BIGINT NOT NULL,
+  `available_channels` JSON DEFAULT NULL,
+  `selected_channel` VARCHAR(32) NOT NULL,
+  `selection_reason` VARCHAR(32) NOT NULL,
+  `decision_cost_ms` INT DEFAULT NULL,
+  `fallback_count` INT DEFAULT 0,
+  `deleted` TINYINT DEFAULT 0,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_trade_no` (`trade_no`),
+  KEY `idx_merchant_time` (`merchant_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='路由决策日志';
+
 CREATE TABLE `cashier_merchant_notify` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
   `notify_id` VARCHAR(64) NOT NULL COMMENT '业务主键',
@@ -217,5 +250,49 @@ CREATE TABLE `cashier_merchant_notify_attempt` (
   UNIQUE KEY `uk_notify_attempt` (`notify_id`, `attempt_no`),
   KEY `idx_notify_id` (`notify_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户回调明细';
+
+CREATE TABLE `cashier_payment_link` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `link_id` VARCHAR(32) NOT NULL,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `title` VARCHAR(256) NOT NULL,
+  `amount` BIGINT DEFAULT NULL,
+  `currency` VARCHAR(8) NOT NULL DEFAULT 'CNY',
+  `max_use` INT DEFAULT NULL,
+  `used_count` INT NOT NULL DEFAULT 0,
+  `expire_at` DATETIME DEFAULT NULL,
+  `status` VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+  `created_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_link` (`link_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收款链接';
+
+CREATE TABLE `cashier_merchant_webhook_endpoint` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `url` VARCHAR(512) NOT NULL,
+  `secret` VARCHAR(256) NOT NULL,
+  `event_codes` VARCHAR(512) NOT NULL COMMENT '逗号分隔事件',
+  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_merchant` (`merchant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `cashier_webhook_delivery_log` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `endpoint_id` BIGINT NOT NULL,
+  `event_code` VARCHAR(64) NOT NULL,
+  `payload_json` MEDIUMTEXT NULL,
+  `http_status` INT NULL,
+  `response_body` VARCHAR(2048) NULL,
+  `attempt` INT NOT NULL DEFAULT 0,
+  `status` VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  `created_at` DATETIME NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_merchant_event` (`merchant_id`, `event_code`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

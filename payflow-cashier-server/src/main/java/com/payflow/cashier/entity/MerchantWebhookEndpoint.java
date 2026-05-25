@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * @author PayFlow Team
  */
 @Data
-@TableName("merchant_webhook_endpoint")
+@TableName("cashier_merchant_webhook_endpoint")
 public class MerchantWebhookEndpoint {
 
     @TableId(type = IdType.AUTO)

@@ -2,6 +2,7 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SysMenu;
 import com.payflow.admin.entity.SysRole;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SysRoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,6 +61,7 @@ public class SysRoleController {
      * @return 新增的角色
      */
     @Operation(summary = "新增角色")
+    @RequirePermission("role:create")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SysRole role) {
@@ -75,6 +77,7 @@ public class SysRoleController {
      * @return 更新后的角色
      */
     @Operation(summary = "更新角色信息")
+    @RequirePermission("role:edit")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
                                                        @RequestBody SysRole role) {
@@ -90,6 +93,7 @@ public class SysRoleController {
      * @return 操作结果
      */
     @Operation(summary = "删除角色")
+    @RequirePermission("role:delete")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
@@ -118,6 +122,7 @@ public class SysRoleController {
      * @return 操作结果
      */
     @Operation(summary = "分配菜单权限")
+    @RequirePermission("role:assign_menu")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/{id}/menus")
     public ResponseEntity<Map<String, Object>> assignMenus(@PathVariable Long id,

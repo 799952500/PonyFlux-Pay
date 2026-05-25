@@ -4,6 +4,7 @@ import com.payflow.admin.dto.RiskRuleQueryRequest;
 import com.payflow.admin.dto.RiskRuleStatusRequest;
 import com.payflow.admin.dto.RiskRuleUpsertRequest;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.RiskHitRecordQueryService;
 import jakarta.servlet.http.HttpServletRequest;
 import com.payflow.admin.service.RiskRuleAdminService;
@@ -50,6 +51,7 @@ public class AdminRiskController {
     }
 
     @Operation(summary = "创建风控规则")
+    @RequirePermission("risk:rule:write")
     @PostMapping("/rules")
     public ResponseEntity<Map<String, Object>> createRule(
             HttpServletRequest request,
@@ -58,6 +60,7 @@ public class AdminRiskController {
     }
 
     @Operation(summary = "更新风控规则")
+    @RequirePermission("risk:rule:write")
     @PutMapping("/rules/{ruleId}")
     public ResponseEntity<Map<String, Object>> updateRule(
             HttpServletRequest request,
@@ -67,6 +70,7 @@ public class AdminRiskController {
     }
 
     @Operation(summary = "启用或停用风控规则")
+    @RequirePermission("risk:rule:write")
     @PutMapping("/rules/{ruleId}/status")
     public ResponseEntity<Map<String, Object>> updateStatus(
             HttpServletRequest request,
@@ -82,6 +86,7 @@ public class AdminRiskController {
     }
 
     @Operation(summary = "替换平台定向规则商户范围")
+    @RequirePermission("risk:rule:write")
     @PutMapping("/rules/{ruleId}/scopes")
     public ResponseEntity<Map<String, Object>> replaceScopes(@PathVariable Long ruleId,
                                                              @RequestBody Map<String, List<String>> request) {

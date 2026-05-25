@@ -1,13 +1,43 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { AdminLoginResponse } from '@/types'
 import { applyUiPreferencesFromServer } from '@/composables/useAppearancePreferences'
+import type { PermissionLogical } from '@/composables/usePermission'
 
 export const useAdminStore = defineStore('admin', () => {
   const stored = localStorage.getItem('adminUser')
   const user = ref<AdminLoginResponse | null>(stored ? JSON.parse(stored) : null)
 
   const token = ref(localStorage.getItem('adminToken') ?? '')
+
+  const permissionSet = computed(() => {
+    const perms = user.value?.permissions ?? []
+    return new Set(perms)
+  })
+
+  function hasPermission(code: string | string[], logical: PermissionLogical = 'AND'): boolean {
+    if (user.value?.role === 'SUPER_ADMIN') {
+      return true
+    }
+    const owned = permissionSet.value
+    if (typeof code === 'string') {
+      return owned.has(code)
+    }
+    if (code.length === 0) {
+      return true
+    }
+    return logical === 'OR'
+      ? code.some((c) => owned.has(c))
+      : code.every((c) => owned.has(c))
+  }
+
+  function setPermissions(permissions: string[]) {
+    if (!user.value) {
+      return
+    }
+    user.value = { ...user.value, permissions: [...permissions] }
+    localStorage.setItem('adminUser', JSON.stringify(user.value))
+  }
 
   function setAuth(loginData: AdminLoginResponse) {
     const tok = loginData.token != null && String(loginData.token) ? String(loginData.token) : ''
@@ -38,6 +68,7 @@ export const useAdminStore = defineStore('admin', () => {
       scopeMode: profile.scopeMode ?? prev?.scopeMode,
       authorizedMerchantIds: profile.authorizedMerchantIds ?? prev?.authorizedMerchantIds,
       menus: profile.menus ?? prev?.menus,
+      permissions: profile.permissions ?? prev?.permissions ?? [],
       nickname: profile.nickname ?? prev?.nickname,
       uiPreferences: profile.uiPreferences ?? prev?.uiPreferences,
       token: nextToken,
@@ -53,5 +84,15 @@ export const useAdminStore = defineStore('admin', () => {
     return !!token.value
   }
 
-  return { user, token, setAuth, clearAuth, applyProfile, isLoggedIn }
+  return {
+    user,
+    token,
+    permissionSet,
+    hasPermission,
+    setPermissions,
+    setAuth,
+    clearAuth,
+    applyProfile,
+    isLoggedIn,
+  }
 })

@@ -9,6 +9,7 @@ import com.payflow.admin.mapper.SysMenuMapper;
 import com.payflow.admin.mapper.SysRoleMapper;
 import com.payflow.admin.mapper.SysRoleMenuMapper;
 import com.payflow.admin.mapper.SysUserRoleMapper;
+import com.payflow.admin.service.PermissionQueryService;
 import com.payflow.admin.service.SysRoleService;
 import com.payflow.admin.service.guard.ResourceDeleteGuardService;
 import com.payflow.admin.service.guard.ResourceType;
@@ -32,6 +33,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     private final SysMenuMapper sysMenuMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
     private final ResourceDeleteGuardService resourceDeleteGuardService;
+    private final PermissionQueryService permissionQueryService;
 
     @Override
     public List<SysRole> list() {
@@ -91,5 +93,6 @@ public class SysRoleServiceImpl implements SysRoleService {
                 sysRoleMenuMapper.insert(rm);
             }
         }
+        permissionQueryService.evictByRoleId(roleId);
     }
 }

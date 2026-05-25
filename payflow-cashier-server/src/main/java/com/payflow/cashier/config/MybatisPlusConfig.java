@@ -22,8 +22,7 @@ import java.util.Set;
 public class MybatisPlusConfig {
 
     private static final Set<String> MERCHANT_SCOPED_TABLES = Set.of(
-            "cashier_orders",
-            "cashier_payment_link"
+            "cashier_orders"
     );
 
     @Bean

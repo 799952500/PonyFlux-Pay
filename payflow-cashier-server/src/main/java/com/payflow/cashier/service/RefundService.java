@@ -24,4 +24,12 @@ public interface RefundService {
      * 仅处理 {@code REFUNDING} 状态的记录。
      */
     RefundResponse executeApprovedRefund(String refundId);
+
+    /**
+     * 管理端发起退款申请：仅创建 {@code REFUNDING} 记录，不调渠道；须在退款管理审批后执行。
+     *
+     * @param orderId 平台订单号（用于校验 payment 归属）
+     * @param request 退款参数
+     */
+    RefundResponse createPendingRefundForOps(String orderId, RefundRequest request);
 }

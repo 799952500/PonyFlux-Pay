@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentMethod;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.kit.GlobalResourceKit;
 import com.payflow.admin.service.PaymentMethodService;
 import lombok.RequiredArgsConstructor;
@@ -87,6 +88,7 @@ public class PaymentMethodController {
      * @param method 支付方式信息
      * @return 新增的支付方式
      */
+    @RequirePermission("payment_method:create")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody PaymentMethod method) {
         paymentMethodService.create(method);
@@ -104,6 +106,7 @@ public class PaymentMethodController {
      * @param method 支付方式信息
      * @return 更新后的支付方式
      */
+    @RequirePermission("payment_method:edit")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable Long id,
@@ -123,6 +126,7 @@ public class PaymentMethodController {
      * @param id 支付方式ID
      * @return 无
      */
+    @RequirePermission("payment_method:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         paymentMethodService.delete(id);

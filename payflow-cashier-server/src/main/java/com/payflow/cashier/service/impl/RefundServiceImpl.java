@@ -132,6 +132,59 @@ public class RefundServiceImpl implements RefundService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public RefundResponse createPendingRefundForOps(String orderId, RefundRequest request) {
+        String paymentId = request.getPaymentId();
+        Long refundAmount = request.getRefundAmount();
+
+        Payment payment = paymentMapper.selectOne(
+                new LambdaQueryWrapper<Payment>().eq(Payment::getPaymentId, paymentId));
+        if (payment == null) {
+            throw new BizException(6004, "支付记录不存在: " + paymentId);
+        }
+        if (!orderId.equals(payment.getOrderId())) {
+            throw new BizException(6005, "支付记录不属于该订单");
+        }
+
+        validatePaymentRefundable(payment);
+        validateRefundAmount(payment, paymentId, refundAmount);
+        assertNoPendingRefund(paymentId);
+
+        Order order = orderMapper.selectOne(
+                new LambdaQueryWrapper<Order>().eq(Order::getOrderId, payment.getOrderId()));
+        if (order == null) {
+            throw new BizException(6001, "关联订单不存在: " + payment.getOrderId());
+        }
+
+        Merchant merchant = merchantMapper.selectOne(
+                new LambdaQueryWrapper<Merchant>()
+                        .eq(Merchant::getMerchantId, order.getMerchantId())
+                        .select(Merchant::getStatus));
+        if (merchant == null) {
+            throw new BizException(6004, "商户不存在: " + order.getMerchantId());
+        }
+        if (!Merchant.STATUS_ACTIVE.equals(merchant.getStatus())) {
+            throw new BizException(5001, "商户已暂停服务（" + merchant.getStatus() + "）");
+        }
+
+        String refundId = SignUtils.generatePaymentId();
+        String reason = request.getReason() != null && !request.getReason().isBlank()
+                ? request.getReason().trim()
+                : "运营申请退款";
+        createRefundRecord(refundId, payment, refundAmount, reason);
+
+        log.info("运营创建待审批退款: orderId={}, paymentId={}, refundId={}, amount={}",
+                orderId, paymentId, refundId, refundAmount);
+
+        return RefundResponse.builder()
+                .refundId(refundId)
+                .paymentId(paymentId)
+                .status(Refund.STATUS_REFUNDING)
+                .refundAmount(refundAmount)
+                .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public RefundResponse executeApprovedRefund(String refundId) {
         Refund refund = refundMapper.selectOne(
                 new LambdaQueryWrapper<Refund>().eq(Refund::getRefundId, refundId));
@@ -191,6 +244,16 @@ public class RefundServiceImpl implements RefundService {
      * @param paymentId    支付ID
      * @param refundAmount 本次退款金额
      */
+    private void assertNoPendingRefund(String paymentId) {
+        Long pending = refundMapper.selectCount(
+                new LambdaQueryWrapper<Refund>()
+                        .eq(Refund::getPaymentId, paymentId)
+                        .eq(Refund::getStatus, Refund.STATUS_REFUNDING));
+        if (pending != null && pending > 0) {
+            throw new BizException(6014, "该支付单已有待审批退款，请至退款管理处理后再申请");
+        }
+    }
+
     private void validateRefundAmount(Payment payment, String paymentId, Long refundAmount) {
         if (refundAmount > payment.getAmount()) {
             throw new BizException(6011,

@@ -115,8 +115,8 @@
             <div class="table-actions">
               <el-button link type="primary" size="small" @click.stop="openRefundDetail(row)">详情</el-button>
               <template v-if="row.status === 'PENDING'">
-                <el-button link type="success" size="small" @click.stop="handleApprove(row)">审批通过</el-button>
-                <el-button link type="danger" size="small" @click.stop="handleReject(row)">拒绝</el-button>
+                <el-button v-permission="'refund:approve'" link type="success" size="small" @click.stop="handleApprove(row)">审批通过</el-button>
+                <el-button v-permission="'refund:reject'" link type="danger" size="small" @click.stop="handleReject(row)">拒绝</el-button>
               </template>
             </div>
           </template>
@@ -159,6 +159,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
 import { useMerchantScope } from '@/composables/useMerchantScope'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -176,6 +177,7 @@ import {
   tagTypeOf,
 } from '@/utils/format'
 
+const route = useRoute()
 const { open: openOrderDetail } = useOrderDetailOverlay()
 const { merchantFilterLocked, authorizedMerchantIds, defaultMerchantId } = useMerchantScope()
 
@@ -274,6 +276,10 @@ async function handleReject(row: RefundItem) {
 onMounted(() => {
   if (merchantFilterLocked.value && defaultMerchantId.value) {
     queryForm.merchantId = defaultMerchantId.value
+  }
+  const kw = route.query.keyword
+  if (typeof kw === 'string' && kw.trim()) {
+    queryForm.keyword = kw.trim()
   }
   loadRefunds()
 })

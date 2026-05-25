@@ -133,6 +133,16 @@ public final class AesEncryptor {
     }
 
     /**
+     * 校验 Base64 主密钥是否为 AES-256 要求的 32 字节（应用启动时调用）。
+     *
+     * @param base64Key Base64 编码密钥
+     * @throws IllegalArgumentException 解码后长度不是 32 字节
+     */
+    public static void validateMasterKey(String base64Key) {
+        decodeKey(base64Key.trim());
+    }
+
+    /**
      * 解码 Base64 密钥为 SecretKeySpec。
      *
      * @param base64Key Base64 编码的密钥

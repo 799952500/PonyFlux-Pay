@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.Channel;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.kit.GlobalResourceKit;
 import com.payflow.admin.redis.CashierConfigRefreshPublisher;
 import com.payflow.admin.service.ChannelService;
@@ -71,6 +72,7 @@ public class AdminChannelController {
      * @return 创建的渠道
      */
     @Operation(summary = "创建渠道")
+    @RequirePermission("channel:create")
     @PostMapping
     public ResponseEntity<Map<String, Object>> createChannel(@RequestBody Channel channel) {
         channelService.create(channel);
@@ -88,6 +90,7 @@ public class AdminChannelController {
      * @return 更新后的渠道
      */
     @Operation(summary = "更新渠道信息")
+    @RequirePermission("channel:edit")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateChannel(@PathVariable Long id, @RequestBody Channel channel) {
         channelService.update(id, channel);
@@ -104,6 +107,7 @@ public class AdminChannelController {
      * @return 操作结果
      */
     @Operation(summary = "删除渠道")
+    @RequirePermission("channel:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteChannel(@PathVariable Long id) {
         channelService.delete(id);
@@ -120,6 +124,7 @@ public class AdminChannelController {
      * @return 操作后的渠道
      */
     @Operation(summary = "启用/禁用渠道")
+    @RequirePermission("channel:edit")
     @PutMapping("/{id}/toggle")
     public ResponseEntity<Map<String, Object>> toggleChannel(@PathVariable Long id) {
         Channel channel = channelService.getById(id);

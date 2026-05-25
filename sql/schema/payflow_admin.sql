@@ -1,6 +1,6 @@
 -- =============================================================================
 -- PonyFlux Pay — 运营库 payflow_admin 建表（全量 DDL）
--- 物理表 admin_* / sys_* / recon_*；兼容视图 channels、merchants 等
+-- 物理表 admin_* / recon_*；兼容视图 channels、merchants 等
 -- =============================================================================
 USE payflow_admin;
 SET NAMES utf8mb4;
@@ -13,14 +13,12 @@ DROP VIEW IF EXISTS `payment_methods`;
 DROP VIEW IF EXISTS `merchants`;
 DROP VIEW IF EXISTS `channels`;
 
-DROP TABLE IF EXISTS `webhook_delivery_log`;
-DROP TABLE IF EXISTS `merchant_webhook_endpoint`;
-DROP TABLE IF EXISTS `merchant_open_app`;
-DROP TABLE IF EXISTS `merchant_contract`;
-DROP TABLE IF EXISTS `merchant_application`;
-DROP TABLE IF EXISTS `payment_link`;
-DROP TABLE IF EXISTS `cashier_risk_blacklist`;
-DROP TABLE IF EXISTS `recon_routing_decision_log`;
+DROP TABLE IF EXISTS `admin_merchant_webhook_endpoint`;
+DROP TABLE IF EXISTS `admin_merchant_open_app`;
+DROP TABLE IF EXISTS `admin_merchant_contract`;
+DROP TABLE IF EXISTS `admin_merchant_application`;
+DROP TABLE IF EXISTS `admin_payment_link`;
+DROP TABLE IF EXISTS `admin_routing_decision_log`;
 DROP TABLE IF EXISTS `admin_fee_rate_audit_log`;
 DROP TABLE IF EXISTS `admin_merchant_fee_snapshot`;
 DROP TABLE IF EXISTS `admin_fee_rate_config`;
@@ -31,11 +29,11 @@ DROP TABLE IF EXISTS `recon_diff`;
 DROP TABLE IF EXISTS `recon_bill_record`;
 DROP TABLE IF EXISTS `recon_merchant_task`;
 DROP TABLE IF EXISTS `recon_task`;
-DROP TABLE IF EXISTS `sys_user_roles`;
-DROP TABLE IF EXISTS `sys_role_menus`;
-DROP TABLE IF EXISTS `sys_users`;
-DROP TABLE IF EXISTS `sys_menus`;
-DROP TABLE IF EXISTS `sys_roles`;
+DROP TABLE IF EXISTS `admin_sys_user_roles`;
+DROP TABLE IF EXISTS `admin_sys_role_menus`;
+DROP TABLE IF EXISTS `admin_sys_users`;
+DROP TABLE IF EXISTS `admin_sys_menus`;
+DROP TABLE IF EXISTS `admin_sys_roles`;
 DROP TABLE IF EXISTS `admin_channel_routes`;
 DROP TABLE IF EXISTS `admin_merchant_payment_routes`;
 DROP TABLE IF EXISTS `admin_merchant_payment_methods`;
@@ -46,7 +44,7 @@ DROP TABLE IF EXISTS `admin_channels`;
 DROP TABLE IF EXISTS `admin_risk_rule_audit_log`;
 DROP TABLE IF EXISTS `admin_risk_hit_record`;
 DROP TABLE IF EXISTS `admin_risk_rule_merchant_scope`;
-DROP TABLE IF EXISTS `risk_rules`;
+DROP TABLE IF EXISTS `admin_risk_rules`;
 DROP TABLE IF EXISTS `admin_system_configs`;
 DROP TABLE IF EXISTS `admin_audit_logs`;
 DROP TABLE IF EXISTS `admin_users`;
@@ -228,7 +226,7 @@ CREATE TABLE `admin_system_configs` (
   KEY `idx_category` (`category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置';
 
-CREATE TABLE `risk_rules` (
+CREATE TABLE `admin_risk_rules` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `rule_code` VARCHAR(64) NOT NULL,
   `rule_name` VARCHAR(128) NOT NULL,
@@ -250,8 +248,8 @@ CREATE TABLE `risk_rules` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_rule_code` (`rule_code`),
-  KEY `idx_risk_rules_owner` (`owner_type`, `owner_merchant_id`),
-  KEY `idx_risk_rules_scope` (`scope_type`, `enabled`, `priority`)
+  KEY `idx_admin_risk_rules_owner` (`owner_type`, `owner_merchant_id`),
+  KEY `idx_admin_risk_rules_scope` (`scope_type`, `enabled`, `priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则';
 
 CREATE TABLE `admin_risk_rule_merchant_scope` (
@@ -307,7 +305,7 @@ CREATE TABLE `admin_risk_rule_audit_log` (
   KEY `idx_audit_merchant_created` (`merchant_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控规则变更审计';
 
-CREATE TABLE `sys_roles` (
+CREATE TABLE `admin_sys_roles` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `role_code` VARCHAR(64) NOT NULL,
   `role_name` VARCHAR(128) NOT NULL,
@@ -319,7 +317,7 @@ CREATE TABLE `sys_roles` (
   UNIQUE KEY `uk_role_code` (`role_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色';
 
-CREATE TABLE `sys_menus` (
+CREATE TABLE `admin_sys_menus` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `parent_id` BIGINT DEFAULT NULL,
   `menu_code` VARCHAR(64) NOT NULL,
@@ -330,13 +328,16 @@ CREATE TABLE `sys_menus` (
   `sort_order` INT DEFAULT 0,
   `visible` TINYINT(1) DEFAULT 1,
   `status` VARCHAR(16) DEFAULT 'ACTIVE',
+  `perm_code` VARCHAR(128) DEFAULT NULL COMMENT '按钮权限码,仅 BUTTON 类型使用',
+  `api_pattern` VARCHAR(256) DEFAULT NULL COMMENT '关联 API,格式 METHOD:/path/**',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_menu_code` (`menu_code`)
+  UNIQUE KEY `uk_menu_code` (`menu_code`),
+  KEY `idx_admin_sys_menus_perm_code` (`perm_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单';
 
-CREATE TABLE `sys_role_menus` (
+CREATE TABLE `admin_sys_role_menus` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `role_id` BIGINT NOT NULL,
   `menu_id` BIGINT NOT NULL,
@@ -345,7 +346,7 @@ CREATE TABLE `sys_role_menus` (
   UNIQUE KEY `uk_role_menu` (`role_id`, `menu_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色菜单';
 
-CREATE TABLE `sys_users` (
+CREATE TABLE `admin_sys_users` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `username` VARCHAR(64) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
@@ -359,7 +360,7 @@ CREATE TABLE `sys_users` (
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统用户';
 
-CREATE TABLE `sys_user_roles` (
+CREATE TABLE `admin_sys_user_roles` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT NOT NULL,
   `role_id` BIGINT NOT NULL,
@@ -554,7 +555,7 @@ CREATE TABLE `admin_fee_rate_audit_log` (
   KEY `idx_merchant_time` (`merchant_id`, `change_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='费率变更审计';
 
-CREATE TABLE `recon_routing_decision_log` (
+CREATE TABLE `admin_routing_decision_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `trade_no` VARCHAR(64) NOT NULL,
   `merchant_id` BIGINT NOT NULL,
@@ -570,19 +571,7 @@ CREATE TABLE `recon_routing_decision_log` (
   KEY `idx_merchant_time` (`merchant_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='路由决策日志';
 
-CREATE TABLE `cashier_risk_blacklist` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `entry_type` VARCHAR(32) NOT NULL,
-  `entry_value` VARCHAR(256) NOT NULL,
-  `enabled` TINYINT(1) NOT NULL DEFAULT 1,
-  `remark` VARCHAR(512) DEFAULT NULL,
-  `created_at` DATETIME DEFAULT NULL,
-  `updated_at` DATETIME DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_type_value` (`entry_type`, `entry_value`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='风控黑名单';
-
-CREATE TABLE `merchant_application` (
+CREATE TABLE `admin_merchant_application` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `application_no` VARCHAR(64) NOT NULL,
   `merchant_name` VARCHAR(128) NOT NULL,
@@ -610,7 +599,7 @@ CREATE TABLE `merchant_application` (
   KEY `idx_contact_email` (`contact_email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户进件';
 
-CREATE TABLE `merchant_contract` (
+CREATE TABLE `admin_merchant_contract` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `merchant_id` VARCHAR(64) NOT NULL,
   `version` INT NOT NULL DEFAULT 1,
@@ -622,7 +611,7 @@ CREATE TABLE `merchant_contract` (
   KEY `idx_merchant` (`merchant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户合同';
 
-CREATE TABLE `merchant_open_app` (
+CREATE TABLE `admin_merchant_open_app` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `merchant_id` VARCHAR(64) NOT NULL,
   `app_id` VARCHAR(64) NOT NULL,
@@ -637,7 +626,7 @@ CREATE TABLE `merchant_open_app` (
   UNIQUE KEY `uk_app` (`app_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='开放平台应用';
 
-CREATE TABLE `merchant_webhook_endpoint` (
+CREATE TABLE `admin_merchant_webhook_endpoint` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `merchant_id` VARCHAR(64) NOT NULL,
   `url` VARCHAR(512) NOT NULL,
@@ -649,22 +638,7 @@ CREATE TABLE `merchant_webhook_endpoint` (
   KEY `idx_merchant` (`merchant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Webhook 端点';
 
-CREATE TABLE `webhook_delivery_log` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `merchant_id` VARCHAR(64) NOT NULL,
-  `endpoint_id` BIGINT NOT NULL,
-  `event_code` VARCHAR(64) NOT NULL,
-  `payload_json` MEDIUMTEXT,
-  `http_status` INT DEFAULT NULL,
-  `response_body` VARCHAR(2048) DEFAULT NULL,
-  `attempt` INT NOT NULL DEFAULT 0,
-  `status` VARCHAR(16) NOT NULL DEFAULT 'PENDING',
-  `created_at` DATETIME DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_merchant_event` (`merchant_id`, `event_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Webhook 投递日志';
-
-CREATE TABLE `payment_link` (
+CREATE TABLE `admin_payment_link` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `link_id` VARCHAR(32) NOT NULL,
   `merchant_id` VARCHAR(64) NOT NULL,

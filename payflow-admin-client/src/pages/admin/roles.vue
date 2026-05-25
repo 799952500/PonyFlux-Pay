@@ -3,7 +3,7 @@
     <div class="content-card">
       <TableToolbar title="角色列表" :total="roleList.length">
         <template #actions>
-          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增角色</el-button>
+          <el-button v-permission="'role:create'" type="primary" class="btn-primary" icon="Plus" @click="openCreate">新增角色</el-button>
         </template>
       </TableToolbar>
 
@@ -35,9 +35,9 @@
         </el-table-column>
         <el-table-column label="操作" min-width="220" class-name="col-actions" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="success" size="small" @click="openPermission(row)">分配权限</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'role:edit'" link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button v-permission="'role:assign_menu'" link type="success" size="small" @click="openPermission(row)">分配权限</el-button>
+            <el-button v-permission="'role:delete'" link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -68,35 +68,21 @@
       </template>
     </el-dialog>
 
-    <!-- 分配权限弹窗 -->
-    <el-dialog v-model="permVisible" :title="`分配权限 - ${currentRole?.roleName || ''}`" width="480px" destroy-on-close>
-      <div v-if="permLoading" class="p-4"><el-skeleton animated :rows="5" /></div>
-      <div v-else>
-        <el-tree
-          ref="menuTreeRef"
-          :data="menuTree"
-          :props="{ label: 'menuName', children: 'children' }"
-          node-key="id"
-          show-checkbox
-          default-expand-all
-          :default-checked-keys="checkedMenuIds"
-        />
-      </div>
-      <template #footer>
-        <el-button @click="permVisible = false">取消</el-button>
-        <el-button type="primary" class="btn-primary" :loading="permSaving" @click="handleSavePermission">保存权限</el-button>
-      </template>
-    </el-dialog>
+    <RolePermissionDrawer
+      v-model:visible="permVisible"
+      :role="currentRole"
+      @saved="loadRoles"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import type { ElTree } from 'element-plus'
-import { getRoles, createRole, updateRole, deleteRole, getRoleMenus, assignRoleMenus, getMenuTree } from '@/api/admin'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { getRoles, createRole, updateRole, deleteRole } from '@/api/admin'
 import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import TableToolbar from '@/components/admin/TableToolbar.vue'
+import RolePermissionDrawer from '@/components/admin/RolePermissionDrawer.vue'
 import {
   ENABLE_STATUS_LABEL,
   ENABLE_STATUS_TAG,
@@ -104,7 +90,7 @@ import {
   labelOf,
   tagTypeOf,
 } from '@/utils/format'
-import type { SysRole, SysMenu } from '@/types'
+import type { SysRole } from '@/types'
 
 const loading = ref(false)
 const roleList = ref<SysRole[]>([])
@@ -129,18 +115,13 @@ const formRules: FormRules = {
 }
 
 const permVisible = ref(false)
-const permLoading = ref(false)
-const permSaving = ref(false)
 const currentRole = ref<SysRole | null>(null)
-const menuTree = ref<SysMenu[]>([])
-const checkedMenuIds = ref<number[]>([])
-const menuTreeRef = ref<InstanceType<typeof ElTree>>()
 
 async function loadRoles() {
   loading.value = true
   try {
     const resp = await getRoles()
-    roleList.value = Array.isArray(resp) ? resp : (resp as any)?.list ?? []
+    roleList.value = Array.isArray(resp) ? resp : (resp as { list?: SysRole[] })?.list ?? []
   } catch {
     ElMessage.error('加载角色列表失败')
   } finally {
@@ -192,8 +173,9 @@ async function handleSubmit() {
       }
       formVisible.value = false
       loadRoles()
-    } catch (e: any) {
-      ElMessage.error(e?.message || '操作失败')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      ElMessage.error(msg)
     } finally {
       submitting.value = false
     }
@@ -210,49 +192,9 @@ async function handleDelete(row: SysRole) {
   })
 }
 
-function collectLeafIds(menus: SysMenu[]): number[] {
-  const ids: number[] = []
-  for (const m of menus) {
-    if (m.children && m.children.length > 0) {
-      ids.push(...collectLeafIds(m.children))
-    } else {
-      ids.push(m.id)
-    }
-  }
-  return ids
-}
-
-async function openPermission(role: SysRole) {
+function openPermission(role: SysRole) {
   currentRole.value = role
   permVisible.value = true
-  permLoading.value = true
-  try {
-    const [tree, roleMenuList] = await Promise.all([getMenuTree(), getRoleMenus(role.id)])
-    menuTree.value = Array.isArray(tree) ? tree : []
-    const menus = Array.isArray(roleMenuList) ? roleMenuList : []
-    checkedMenuIds.value = collectLeafIds(menus)
-  } catch {
-    ElMessage.error('加载菜单数据失败')
-  } finally {
-    permLoading.value = false
-  }
-}
-
-async function handleSavePermission() {
-  if (!currentRole.value || !menuTreeRef.value) return
-  permSaving.value = true
-  try {
-    const checkedKeys = menuTreeRef.value.getCheckedKeys(false) as number[]
-    const halfCheckedKeys = menuTreeRef.value.getHalfCheckedKeys() as number[]
-    const allKeys = [...checkedKeys, ...halfCheckedKeys]
-    await assignRoleMenus(currentRole.value.id, allKeys)
-    ElMessage.success('权限已保存')
-    permVisible.value = false
-  } catch (e: any) {
-    ElMessage.error(e?.message || '保存权限失败')
-  } finally {
-    permSaving.value = false
-  }
 }
 
 onMounted(() => {

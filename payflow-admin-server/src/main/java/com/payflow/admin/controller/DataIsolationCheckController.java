@@ -5,6 +5,7 @@ import com.payflow.admin.dto.DataIsolationCheckDTO;
 import com.payflow.admin.dto.DataIsolationCheckQueryDTO;
 import com.payflow.admin.dto.MerchantScopeDTO;
 import com.payflow.admin.service.AdminMerchantScopeService;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.DataIsolationCheckService;
 import com.payflow.admin.service.DataIsolationInventoryScanService;
 import com.payflow.common.exception.BizException;
@@ -64,6 +65,7 @@ public class DataIsolationCheckController {
                 "data", Map.of("updatedCount", updated)));
     }
 
+    @RequirePermission("data_isolation:remediate")
     @PutMapping("/checks/{checkId}/remediation")
     public ResponseEntity<Map<String, Object>> updateRemediation(
             HttpServletRequest request,

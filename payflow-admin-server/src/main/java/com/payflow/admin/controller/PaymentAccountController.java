@@ -1,6 +1,7 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentAccount;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.PaymentAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -96,6 +97,7 @@ public class PaymentAccountController {
      * @param account 账号信息
      * @return 新增的账号信息（敏感字段已脱敏）
      */
+    @RequirePermission("payment_account:create")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody PaymentAccount account) {
         PaymentAccount created = service.create(account);
@@ -113,6 +115,7 @@ public class PaymentAccountController {
      * @param account 账号信息
      * @return 更新后的账号信息（敏感字段已脱敏）
      */
+    @RequirePermission("payment_account:edit")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable Long id,
@@ -139,6 +142,7 @@ public class PaymentAccountController {
      * @param id 账号ID
      * @return 操作结果
      */
+    @RequirePermission("payment_account:delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
         service.delete(id);

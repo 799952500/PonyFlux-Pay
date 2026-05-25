@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -26,6 +27,9 @@ public class LoginResponse {
     private List<String> authorizedMerchantIds;
     private LocalDateTime expireTime;
     private List<SysMenu> menus;
+    /** 扁平按钮权限码列表，供前端 v-permission 使用 */
+    @Builder.Default
+    private List<String> permissions = new ArrayList<>();
     private String nickname;
     private Long adminId;
     private AdminUiPreferencesDto uiPreferences;

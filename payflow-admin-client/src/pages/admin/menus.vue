@@ -3,7 +3,7 @@
     <div class="content-card">
       <div class="flex items-center justify-between px-5 pt-4 pb-2">
         <span class="dashboard-section-title text-base">菜单管理</span>
-        <el-button type="primary" class="btn-primary" icon="Plus" @click="openAdd()">新增菜单</el-button>
+        <el-button v-permission="'menu:create'" type="primary" class="btn-primary" icon="Plus" @click="openAdd()">新增菜单</el-button>
       </div>
 
       <el-table
@@ -30,6 +30,12 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="权限码" prop="permCode" min-width="140">
+          <template #default="{ row }">
+            <code v-if="row.permCode" class="text-xs text-primary">{{ row.permCode }}</code>
+            <span v-else class="text-sm text-gray-400">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="路由路径" prop="path" min-width="160">
           <template #default="{ row }"><span class="text-sm text-gray-500">{{ row.path ?? '—' }}</span></template>
         </el-table-column>
@@ -45,9 +51,9 @@
         <el-table-column label="操作" min-width="240" class-name="col-actions" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button link type="primary" size="small" @click="openAdd(row.id)">添加子菜单</el-button>
-              <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-              <el-button link type="danger" size="small" :disabled="!!row.children?.length" @click="handleDelete(row)">删除</el-button>
+              <el-button v-permission="'menu:create'" link type="primary" size="small" @click="openAdd(row.id)">添加子菜单</el-button>
+              <el-button v-permission="'menu:edit'" link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+              <el-button v-permission="'menu:delete'" link type="danger" size="small" :disabled="!!row.children?.length" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -82,6 +88,14 @@
         <el-form-item label="路由路径" v-if="editForm.menuType === 'MENU'">
           <el-input v-model="editForm.path" placeholder="如 /admin/dashboard" />
         </el-form-item>
+        <template v-if="editForm.menuType === 'BUTTON'">
+          <el-form-item label="权限码" prop="permCode">
+            <el-input v-model="editForm.permCode" placeholder="如 refund:approve" />
+          </el-form-item>
+          <el-form-item label="关联 API">
+            <el-input v-model="editForm.apiPattern" placeholder="如 POST:/api/v1/admin/refunds/*/approve" />
+          </el-form-item>
+        </template>
         <el-form-item label="图标">
           <el-input v-model="editForm.icon" placeholder="图标名称" />
         </el-form-item>
@@ -123,15 +137,39 @@ const editForm = reactive({
   menuName: '',
   menuType: 'MENU' as 'MENU' | 'BUTTON',
   path: '',
+  permCode: '',
+  apiPattern: '',
   icon: '',
   sortOrder: 0,
   visible: true,
 })
 
+const PERM_CODE_PATTERN = /^[a-z][a-z0-9_]*(:[a-z][a-z0-9_]*){1,2}$/
+
 const editRules: FormRules = {
   menuCode: [{ required: true, message: '请输入菜单编码', trigger: 'blur' }],
   menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   menuType: [{ required: true, message: '请选择类型', trigger: 'change' }],
+  permCode: [
+    {
+      validator: (_rule, value, callback) => {
+        if (editForm.menuType !== 'BUTTON') {
+          callback()
+          return
+        }
+        if (!value || !String(value).trim()) {
+          callback(new Error('按钮类型必须填写权限码'))
+          return
+        }
+        if (!PERM_CODE_PATTERN.test(String(value).trim())) {
+          callback(new Error('格式示例：refund:approve 或 order:export'))
+          return
+        }
+        callback()
+      },
+      trigger: 'blur',
+    },
+  ],
 }
 
 // 级联选择器数据源（复用菜单树）
@@ -158,6 +196,8 @@ function openAdd(parentId?: number) {
     menuName: '',
     menuType: 'MENU',
     path: '',
+    permCode: '',
+    apiPattern: '',
     icon: '',
     sortOrder: 0,
     visible: true,
@@ -174,6 +214,8 @@ function openEdit(row: SysMenu) {
     menuName: row.menuName,
     menuType: row.menuType,
     path: row.path ?? '',
+    permCode: row.permCode ?? '',
+    apiPattern: row.apiPattern ?? '',
     icon: row.icon ?? '',
     sortOrder: row.sortOrder,
     visible: row.visible,
@@ -192,7 +234,9 @@ async function handleEditSubmit() {
         menuCode: editForm.menuCode,
         menuName: editForm.menuName,
         menuType: editForm.menuType,
-        path: editForm.path || undefined,
+        path: editForm.menuType === 'MENU' ? (editForm.path || undefined) : undefined,
+        permCode: editForm.menuType === 'BUTTON' ? (editForm.permCode?.trim() || undefined) : undefined,
+        apiPattern: editForm.menuType === 'BUTTON' ? (editForm.apiPattern?.trim() || undefined) : undefined,
         icon: editForm.icon || undefined,
         sortOrder: editForm.sortOrder,
         visible: editForm.visible,

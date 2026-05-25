@@ -85,6 +85,22 @@ export const ORDER_STATUS_TAG: Record<string, string> = {
   CLOSED: 'info',
 }
 
+export const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  PROCESSING: '处理中',
+  SUCCESS: '支付成功',
+  FAILED: '失败',
+  REFUNDED: '已全额退款',
+  PARTIAL_REFUND: '部分退款',
+}
+
+export const PAYMENT_STATUS_TAG: Record<string, string> = {
+  PROCESSING: 'warning',
+  SUCCESS: 'success',
+  FAILED: 'danger',
+  REFUNDED: 'info',
+  PARTIAL_REFUND: 'warning',
+}
+
 export const REFUND_STATUS_LABEL: Record<string, string> = {
   PENDING: '申请中',
   APPROVED: '审批通过',

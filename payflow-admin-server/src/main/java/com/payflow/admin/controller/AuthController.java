@@ -7,6 +7,7 @@ import com.payflow.admin.dto.UpdateAdminUiPreferencesRequest;
 import com.payflow.admin.service.AdminAuthService;
 import com.payflow.admin.service.CaptchaService;
 import com.payflow.admin.service.LoginProtectionService;
+import com.payflow.admin.service.PermissionQueryService;
 import com.payflow.admin.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ public class AuthController {
     private final LoginProtectionService loginProtectionService;
     private final JwtUtils jwtUtils;
     private final StringRedisTemplate stringRedisTemplate;
+    private final PermissionQueryService permissionQueryService;
 
     /**
      * 签发算术验证码（密码错误后登录需携带 captchaId 与 captchaAnswer）。
@@ -90,6 +93,20 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> profile(HttpServletRequest httpRequest) {
         LoginResponse data = adminAuthService.profile(httpRequest);
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", data));
+    }
+
+    /**
+     * 刷新当前用户按钮权限码列表。
+     */
+    @Operation(summary = "获取当前用户按钮权限")
+    @GetMapping("/permissions")
+    public ResponseEntity<Map<String, Object>> permissions(HttpServletRequest httpRequest) {
+        Object usernameAttr = httpRequest.getAttribute("username");
+        String username = usernameAttr != null ? usernameAttr.toString() : "";
+        return ResponseEntity.ok(Map.of(
+                "code", 0,
+                "message", "success",
+                "data", Map.of("permissions", new ArrayList<>(permissionQueryService.getPermCodesByUsername(username)))));
     }
 
     /**

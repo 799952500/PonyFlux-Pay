@@ -8,6 +8,7 @@ import com.payflow.admin.service.guard.ResourceDeleteGuardService;
 import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,7 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     private final SysMenuMapper sysMenuMapper;
     private final AdminUserMapper adminUserMapper;
+    private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysRoleMapper sysRoleMapper;
@@ -43,14 +45,42 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public SysMenu create(SysMenu menu) {
+        validateButtonMenu(menu, null);
         sysMenuMapper.insert(menu);
         return menu;
     }
 
     @Override
     public SysMenu update(SysMenu menu) {
+        validateButtonMenu(menu, menu.getId());
         sysMenuMapper.updateById(menu);
         return menu;
+    }
+
+    /**
+     * BUTTON 类型必须填写唯一 perm_code。
+     */
+    private void validateButtonMenu(SysMenu menu, Long excludeId) {
+        if (!"BUTTON".equals(menu.getMenuType())) {
+            return;
+        }
+        if (!StringUtils.hasText(menu.getPermCode())) {
+            throw new IllegalArgumentException("按钮类型菜单必须填写权限码 perm_code");
+        }
+        String permCode = menu.getPermCode().trim();
+        menu.setPermCode(permCode);
+        if (!permCode.matches("^[a-z][a-z0-9_]*(:[a-z][a-z0-9_]*){1,2}$")) {
+            throw new IllegalArgumentException("权限码格式无效，示例：refund:approve 或 order:export");
+        }
+        LambdaQueryWrapper<SysMenu> q = new LambdaQueryWrapper<SysMenu>()
+                .eq(SysMenu::getPermCode, permCode);
+        if (excludeId != null) {
+            q.ne(SysMenu::getId, excludeId);
+        }
+        Long count = sysMenuMapper.selectCount(q);
+        if (count != null && count > 0) {
+            throw new IllegalArgumentException("权限码已存在: " + permCode);
+        }
     }
 
     @Override
@@ -67,46 +97,72 @@ public class SysMenuServiceImpl implements SysMenuService {
 
     @Override
     public List<SysMenu> getMenusByUsername(String username) {
-        // 1. 查用户
-        AdminUser user = adminUserMapper.selectOne(
-                new LambdaQueryWrapper<AdminUser>().eq(AdminUser::getUsername, username)
+        if (!StringUtils.hasText(username)) {
+            return Collections.emptyList();
+        }
+        String normalized = username.trim();
+
+        SysUser sysUser = sysUserMapper.selectOne(
+                new LambdaQueryWrapper<SysUser>()
+                        .eq(SysUser::getUsername, normalized)
+                        .eq(SysUser::getStatus, "ACTIVE")
         );
-        if (user == null) {
+        if (sysUser != null) {
+            return menusForSysUser(sysUser.getId());
+        }
+
+        AdminUser adminUser = adminUserMapper.selectOne(
+                new LambdaQueryWrapper<AdminUser>()
+                        .eq(AdminUser::getUsername, normalized)
+                        .eq(AdminUser::getStatus, "ACTIVE")
+        );
+        if (adminUser == null || !StringUtils.hasText(adminUser.getRole())) {
             return Collections.emptyList();
         }
 
-        // 2. 查用户角色
+        SysRole role = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>()
+                        .eq(SysRole::getRoleCode, adminUser.getRole().trim())
+                        .eq(SysRole::getStatus, "ACTIVE")
+        );
+        if (role == null) {
+            return Collections.emptyList();
+        }
+        return menusForRoleIds(List.of(role.getId()));
+    }
+
+    private List<SysMenu> menusForSysUser(Long sysUserId) {
         List<SysUserRole> userRoles = sysUserRoleMapper.selectList(
-                new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getUserId, user.getId())
+                new LambdaQueryWrapper<SysUserRole>().eq(SysUserRole::getUserId, sysUserId)
         );
         if (userRoles.isEmpty()) {
             return Collections.emptyList();
         }
-
         List<Long> roleIds = userRoles.stream().map(SysUserRole::getRoleId).collect(Collectors.toList());
+        return menusForRoleIds(roleIds);
+    }
 
-        // 3. 查角色关联的菜单ID
+    private List<SysMenu> menusForRoleIds(List<Long> roleIds) {
         List<SysRoleMenu> roleMenus = sysRoleMenuMapper.selectList(
                 new LambdaQueryWrapper<SysRoleMenu>().in(SysRoleMenu::getRoleId, roleIds)
         );
         if (roleMenus.isEmpty()) {
             return Collections.emptyList();
         }
-
         List<Long> menuIds = roleMenus.stream()
                 .map(SysRoleMenu::getMenuId)
                 .distinct()
                 .collect(Collectors.toList());
-
-        // 4. 查菜单
         List<SysMenu> menus = sysMenuMapper.selectBatchIds(menuIds);
         menus.sort((a, b) -> {
-            if (a.getSortOrder() == null) return 1;
-            if (b.getSortOrder() == null) return -1;
+            if (a.getSortOrder() == null) {
+                return 1;
+            }
+            if (b.getSortOrder() == null) {
+                return -1;
+            }
             return a.getSortOrder().compareTo(b.getSortOrder());
         });
-
-        // 5. 构建树形（确保父菜单也包含）
         return buildTree(ensureParents(menus));
     }
 

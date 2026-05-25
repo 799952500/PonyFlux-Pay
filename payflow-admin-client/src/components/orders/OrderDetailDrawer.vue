@@ -3,7 +3,7 @@
     v-model="visible"
     title="订单详情"
     direction="rtl"
-    size="520px"
+    size="640px"
     destroy-on-close
     class="pf-order-detail-drawer"
     @closed="close"

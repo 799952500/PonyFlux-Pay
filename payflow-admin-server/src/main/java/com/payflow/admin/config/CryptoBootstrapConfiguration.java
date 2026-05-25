@@ -1,5 +1,6 @@
 package com.payflow.admin.config;
 
+import com.payflow.common.crypto.AesEncryptor;
 import com.payflow.common.crypto.CryptoProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,15 @@ public class CryptoBootstrapConfiguration {
         if (!StringUtils.hasText(key)) {
             throw new IllegalStateException("请配置 payflow.crypto.master-key（生产环境通过 MASTER_KEY 注入）");
         }
-        EncryptedStringTypeHandler.setMasterKey(key.trim());
+        String trimmed = key.trim();
+        try {
+            AesEncryptor.validateMasterKey(trimmed);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalStateException(
+                    "payflow.crypto.master-key / MASTER_KEY 无效：须为 Base64 编码的 32 字节随机数（可用 openssl rand -base64 32 生成）。"
+                            + " " + ex.getMessage(), ex);
+        }
+        EncryptedStringTypeHandler.setMasterKey(trimmed);
         log.info("AES 主密钥已加载（入驻密钥与敏感字段加解密）");
     }
 }

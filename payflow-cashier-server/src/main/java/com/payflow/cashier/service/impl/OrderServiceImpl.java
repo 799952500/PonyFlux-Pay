@@ -13,6 +13,7 @@ import com.payflow.cashier.mapper.PaymentMapper;
 import com.payflow.cashier.service.OrderCacheService;
 import com.payflow.cashier.service.OrderMqProducer;
 import com.payflow.cashier.service.OrderService;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.service.RiskCheckService;
 import com.payflow.cashier.util.SignUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -152,8 +153,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public CashierResponse getCashierInfo(String orderId, String clientType) {
-        // 1. 先查 Redis 缓存
-        Order order = orderCacheService.getOrderWithFallback(orderId);
+        // 收银台为公开页面，绕过商户租户过滤
+        Order order = MerchantScopeHolder.callInSystemMode(
+                () -> orderCacheService.getOrderWithFallback(orderId));
         if (order == null) {
             throw new BizException(6001, "订单不存在: " + orderId);
         }

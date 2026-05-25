@@ -1,6 +1,7 @@
 package com.payflow.cashier.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.entity.WebhookDeliveryLog;
 import com.payflow.cashier.mapper.WebhookDeliveryLogMapper;
 import com.payflow.cashier.service.WebhookDeliveryService;
@@ -32,6 +33,10 @@ public class WebhookRetryTask {
 
     @Scheduled(fixedDelay = 60_000, initialDelay = 120_000)
     public void retryPendingDeliveries() {
+        MerchantScopeHolder.runInSystemMode(this::retryPendingDeliveriesInternal);
+    }
+
+    private void retryPendingDeliveriesInternal() {
         log.debug("Webhook重试扫描开始...");
         try {
             List<WebhookDeliveryLog> pending = deliveryLogMapper.selectList(

@@ -2,6 +2,7 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.dto.SysUserSaveRequest;
 import com.payflow.admin.dto.SysUserVO;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +43,7 @@ public class SysUserController {
     }
 
     @Operation(summary = "新增系统用户")
+    @RequirePermission("user:create")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping
     public Map<String, Object> create(@RequestBody SysUserSaveRequest request) {
@@ -50,6 +52,7 @@ public class SysUserController {
     }
 
     @Operation(summary = "更新系统用户")
+    @RequirePermission("user:edit")
     @PutMapping("/{id}")
     public Map<String, Object> update(@PathVariable Long id, @RequestBody SysUserSaveRequest request) {
         sysUserService.updateUser(id, request);
@@ -57,6 +60,7 @@ public class SysUserController {
     }
 
     @Operation(summary = "重置用户密码")
+    @RequirePermission("user:reset_password")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PutMapping("/{id}/reset-password")
     public Map<String, Object> resetPassword(@PathVariable Long id,
@@ -70,6 +74,7 @@ public class SysUserController {
     }
 
     @Operation(summary = "禁用用户")
+    @RequirePermission("user:edit")
     @PutMapping("/{id}/disable")
     public Map<String, Object> disable(@PathVariable Long id) {
         sysUserService.disable(id);

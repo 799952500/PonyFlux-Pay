@@ -16,6 +16,7 @@ import com.payflow.admin.service.AdminUserPreferenceService;
 import com.payflow.admin.service.AuditLogService;
 import com.payflow.admin.service.CaptchaService;
 import com.payflow.admin.service.LoginProtectionService;
+import com.payflow.admin.service.PermissionQueryService;
 import com.payflow.admin.service.SysMenuService;
 import com.payflow.admin.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +27,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     private final AuditLogService auditLogService;
     private final AdminMerchantScopeService adminMerchantScopeService;
     private final AdminUserPreferenceService adminUserPreferenceService;
+    private final PermissionQueryService permissionQueryService;
 
     @Override
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) {
@@ -138,6 +142,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
                 .authorizedMerchantIds(merchantScope.getAuthorizedMerchantIds())
                 .expireTime(expireTime)
                 .menus(menus)
+                .permissions(new ArrayList<>(permissionQueryService.getPermCodesByUsername(user.getUsername())))
                 .uiPreferences(adminUserPreferenceService.fromUser(user))
                 .build();
     }

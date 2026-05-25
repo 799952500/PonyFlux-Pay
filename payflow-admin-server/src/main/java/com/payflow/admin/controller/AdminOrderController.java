@@ -3,9 +3,14 @@ package com.payflow.admin.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.entity.cashier.Order;
 import com.payflow.admin.entity.cashier.Payment;
+import com.payflow.admin.kit.AdminApiResponseKit;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.dto.AdminOrderRefundRequest;
+import com.payflow.admin.service.AdminOrderOpsService;
 import com.payflow.admin.service.OrderService;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.PaymentService;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +40,7 @@ public class AdminOrderController {
 
     private final OrderService orderService;
     private final PaymentService paymentService;
+    private final AdminOrderOpsService adminOrderOpsService;
 
     /**
      * 分页查询订单列表
@@ -68,6 +74,7 @@ public class AdminOrderController {
      * 导出订单 CSV（UTF-8 BOM，最多 5000 行）
      */
     @Operation(summary = "导出订单CSV")
+    @RequirePermission("order:export")
     @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
     public ResponseEntity<String> exportOrders(
             HttpServletRequest request,
@@ -185,9 +192,54 @@ public class AdminOrderController {
     }
 
     /**
+     * 发起退款申请（仅创建待审批记录，须在退款管理审批通过后才会调渠道）
+     */
+    @Operation(summary = "发起退款申请")
+    @RequirePermission("refund:create")
+    @PostMapping("/{orderId}/refund-requests")
+    public ResponseEntity<Map<String, Object>> createRefundRequest(
+            HttpServletRequest request,
+            @PathVariable String orderId,
+            @Valid @RequestBody AdminOrderRefundRequest body) {
+        try {
+            List<String> scope = AdminRequestContext.merchantScope(request);
+            Map<String, Object> data = adminOrderOpsService.createRefundRequest(orderId, body, scope);
+            return ResponseEntity.ok(AdminApiResponseKit.success(data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(AdminApiResponseKit.error(404, e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(AdminApiResponseKit.error(500, e.getMessage()));
+        }
+    }
+
+    /**
+     * 向支付机构查单；sync=true 时尝试将渠道成功结果同步到本地
+     */
+    @Operation(summary = "查询支付机构订单状态")
+    @RequirePermission("order:payment:query")
+    @PostMapping("/{orderId}/payments/{paymentId}/query-channel")
+    public ResponseEntity<Map<String, Object>> queryPaymentChannel(
+            HttpServletRequest request,
+            @PathVariable String orderId,
+            @PathVariable String paymentId,
+            @RequestParam(defaultValue = "false") boolean sync) {
+        try {
+            List<String> scope = AdminRequestContext.merchantScope(request);
+            Map<String, Object> data = adminOrderOpsService.queryPaymentChannel(
+                    orderId, paymentId, sync, scope);
+            return ResponseEntity.ok(AdminApiResponseKit.success(data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(AdminApiResponseKit.error(404, e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.ok(AdminApiResponseKit.error(500, e.getMessage()));
+        }
+    }
+
+    /**
      * 关闭订单
      */
     @Operation(summary = "关闭订单")
+    @RequirePermission("order:close")
     @PostMapping("/{orderId}/close")
     public ResponseEntity<Map<String, Object>> closeOrder(HttpServletRequest request,
                                                            @PathVariable String orderId) {

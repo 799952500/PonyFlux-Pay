@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  * 商户进件申请（KYB）。
  */
 @Data
-@TableName("merchant_application")
+@TableName("admin_merchant_application")
 public class MerchantApplicationEntity {
 
     @TableId(type = IdType.AUTO)

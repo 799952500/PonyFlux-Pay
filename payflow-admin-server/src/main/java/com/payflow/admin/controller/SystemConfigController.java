@@ -2,6 +2,7 @@ package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.SystemConfig;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.security.RequireRole;
 import com.payflow.admin.service.SystemConfigService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -86,6 +87,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "新增系统配置")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody SystemConfig config) {
@@ -101,6 +103,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "更新系统配置")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id,
@@ -117,6 +120,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "删除系统配置")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id) {
@@ -131,6 +135,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "刷新指定key缓存")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/{key}")
     public ResponseEntity<Map<String, Object>> refreshByKey(@PathVariable String key) {
@@ -145,6 +150,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "刷新指定分类缓存")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/category/{category}")
     public ResponseEntity<Map<String, Object>> refreshByCategory(@PathVariable String category) {
@@ -158,6 +164,7 @@ public class SystemConfigController {
      * @return 操作结果
      */
     @Operation(summary = "全量刷新配置缓存")
+    @RequirePermission("system_config:write")
     @RequireRole(RequireRole.SUPER_ADMIN)
     @PostMapping("/cache/refresh/all")
     public ResponseEntity<Map<String, Object>> refreshAll() {

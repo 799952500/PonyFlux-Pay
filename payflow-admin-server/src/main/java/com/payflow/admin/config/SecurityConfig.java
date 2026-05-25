@@ -3,6 +3,7 @@ package com.payflow.admin.config;
 import com.payflow.admin.interceptor.AdminAuditInterceptor;
 import com.payflow.admin.interceptor.InternalApiTokenInterceptor;
 import com.payflow.admin.interceptor.JwtInterceptor;
+import com.payflow.admin.interceptor.PermissionInterceptor;
 import com.payflow.admin.interceptor.RoleBasedInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class SecurityConfig implements WebMvcConfigurer {
 
     private final JwtInterceptor jwtInterceptor;
     private final RoleBasedInterceptor roleBasedInterceptor;
+    private final PermissionInterceptor permissionInterceptor;
     private final AdminAuditInterceptor adminAuditInterceptor;
     private final InternalApiTokenInterceptor internalApiTokenInterceptor;
 
@@ -38,7 +40,7 @@ public class SecurityConfig implements WebMvcConfigurer {
      * CORS 允许的来源白名单，从配置文件读取。
      * 生产环境必须显式列出域名，禁止使用通配符 "*"。
      */
-    @Value("${payflow.cors.allowed-origins:http://localhost:3001}")
+    @Value("#{'${payflow.cors.allowed-origins:http://localhost:3001,http://127.0.0.1:3001}'.split(',')}")
     private List<String> allowedOrigins;
 
     @Override
@@ -55,6 +57,15 @@ public class SecurityConfig implements WebMvcConfigurer {
                         "/api/v1/admin/meta/**"
                 );
         registry.addInterceptor(roleBasedInterceptor)
+                .addPathPatterns("/api/v1/admin/**", "/api/v1/merchants/**")
+                .excludePathPatterns(
+                        "/api/v1/admin/auth/login",
+                        "/api/v1/admin/auth/captcha",
+                        "/api/v1/admin/auth/captcha-required",
+                        "/api/v1/admin/auth/logout",
+                        "/api/v1/admin/meta/**"
+                );
+        registry.addInterceptor(permissionInterceptor)
                 .addPathPatterns("/api/v1/admin/**", "/api/v1/merchants/**")
                 .excludePathPatterns(
                         "/api/v1/admin/auth/login",
