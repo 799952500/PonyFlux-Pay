@@ -25,6 +25,7 @@ export const PLATFORM_ONLY_ROUTE_PREFIXES = [
   '/admin/channel-routing',
   '/admin/insights',
   '/admin/search',
+  '/admin/reconcile/sla-rules',
 ] as const
 
 export function isPlatformOnlyRoute(path: string): boolean {

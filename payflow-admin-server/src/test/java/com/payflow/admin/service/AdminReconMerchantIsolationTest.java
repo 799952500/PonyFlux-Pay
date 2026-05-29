@@ -4,7 +4,9 @@ import com.payflow.admin.dto.recon.ReconSummaryResponse;
 import com.payflow.admin.entity.recon.ReconTaskEntity;
 import com.payflow.admin.mapper.cashier.ReconCashierPaymentRow;
 import com.payflow.admin.mapper.cashier.ReconCashierReportMapper;
+import com.payflow.admin.mapper.recon.ReconDiffAssignmentEntityMapper;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
+import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,12 @@ class AdminReconMerchantIsolationTest {
 
     @Mock
     private ReconCashierReportMapper reconCashierReportMapper;
+
+    @Mock
+    private ReconDiffAssignmentEntityMapper reconDiffAssignmentEntityMapper;
+
+    @Mock
+    private ReconHandlerAuditEntityMapper reconHandlerAuditEntityMapper;
 
     @Test
     @DisplayName("对账订单结果传入授权外商户时返回空页且不查询交易数据")
@@ -101,7 +109,12 @@ class AdminReconMerchantIsolationTest {
     }
 
     private AdminReconQueryService service() {
-        return new AdminReconQueryService(reconTaskEntityMapper, reconDiffEntityMapper, reconCashierReportMapper);
+        return new AdminReconQueryService(
+                reconTaskEntityMapper,
+                reconDiffEntityMapper,
+                reconDiffAssignmentEntityMapper,
+                reconHandlerAuditEntityMapper,
+                reconCashierReportMapper);
     }
 
     private static ReconTaskEntity task(String taskId) {

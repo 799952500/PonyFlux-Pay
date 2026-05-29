@@ -1,14 +1,14 @@
 ﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" label="商户">
           <el-select v-model="queryForm.merchantId" placeholder="全部商户" clearable style="width: 200px" @change="handleSearch">
             <el-option v-if="!merchantFilterLocked" label="全部商户" value="" />
             <el-option v-for="m in merchantList" :key="m.merchantId" :label="m.merchantName" :value="m.merchantId" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -24,12 +24,12 @@
       <el-table table-layout="auto" v-loading="loading" :data="routeList" stripe size="small" class="data-table">
         <el-table-column label="路由ID" prop="routeId" min-width="100">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums font-medium text-[#047857]">{{ row.routeId }}</span>
+            <span class="cell-mono pf-link">{{ row.routeId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户ID" prop="merchantId" min-width="140">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums text-[#64748B]">{{ row.merchantId }}</span>
+            <span class="cell-mono">{{ row.merchantId }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户名称" min-width="160">
@@ -51,7 +51,7 @@
         </el-table-column>
         <el-table-column label="账户编号" prop="accountNo" min-width="140">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums text-[#64748B]">{{ row.accountNo ?? '—' }}</span>
+            <span class="cell-mono">{{ row.accountNo ?? '—' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="优先级" prop="priority" width="80" align="center">

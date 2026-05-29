@@ -188,4 +188,26 @@ public interface OrderMapper extends BaseMapper<Order> {
             + "WHERE order_id LIKE CONCAT('%', #{q}, '%') OR merchant_order_no LIKE CONCAT('%', #{q}, '%') "
             + "ORDER BY created_at DESC LIMIT #{limit}")
     List<Map<String, Object>> quickSearch(@Param("q") String q, @Param("limit") int limit);
+
+    /**
+     * 支付漏斗聚合：按时间范围 + 动态条件统计各状态订单数
+     */
+    @Select("<script>"
+            + "SELECT status, COUNT(*) AS cnt FROM cashier_orders"
+            + " WHERE created_at BETWEEN #{start} AND #{end}"
+            + "<if test='merchantId != null'> AND merchant_id = #{merchantId}</if>"
+            + "<if test='channel != null'> AND channel = #{channel}</if>"
+            + "<if test='merchantScopeIds != null and merchantScopeIds.size() > 0'>"
+            + " AND merchant_id IN"
+            + " <foreach item='mid' collection='merchantScopeIds' open='(' separator=',' close=')'>"
+            + "#{mid}"
+            + "</foreach>"
+            + "</if>"
+            + " GROUP BY status"
+            + "</script>")
+    List<Map<String, Object>> funnelAggregate(@Param("start") LocalDateTime start,
+                                              @Param("end") LocalDateTime end,
+                                              @Param("merchantId") String merchantId,
+                                              @Param("channel") String channel,
+                                              @Param("merchantScopeIds") List<String> merchantScopeIds);
 }

@@ -25,12 +25,15 @@ class AdminExportMerchantIsolationTest {
     private DashboardAggregationService dashboardAggregationService;
 
     @Mock
+    private NotificationService notificationService;
+
+    @Mock
     private HttpServletRequest request;
 
     @Test
     @DisplayName("商户管理员导出授权外商户报表时不创建导出任务")
     void exportReportRejectsMerchantOutsideScope() {
-        AdminExportController controller = new AdminExportController(dashboardAggregationService);
+        AdminExportController controller = new AdminExportController(dashboardAggregationService, notificationService);
         when(request.getAttribute("role")).thenReturn("ADMIN");
         when(request.getAttribute("dataMerchantIds")).thenReturn("M100001");
 
@@ -45,7 +48,7 @@ class AdminExportMerchantIsolationTest {
     @Test
     @DisplayName("单商户管理员未指定商户时自动限定到授权商户")
     void exportReportUsesSingleAuthorizedMerchantWhenAllRequested() {
-        AdminExportController controller = new AdminExportController(dashboardAggregationService);
+        AdminExportController controller = new AdminExportController(dashboardAggregationService, notificationService);
         when(request.getAttribute("role")).thenReturn("ADMIN");
         when(request.getAttribute("dataMerchantIds")).thenReturn("M100001");
         when(dashboardAggregationService.queryMetrics(
@@ -65,7 +68,7 @@ class AdminExportMerchantIsolationTest {
     @Test
     @DisplayName("系统管理员保留全局导出能力")
     void exportReportKeepsAllScopeForSystemAdmin() {
-        AdminExportController controller = new AdminExportController(dashboardAggregationService);
+        AdminExportController controller = new AdminExportController(dashboardAggregationService, notificationService);
         when(request.getAttribute("role")).thenReturn("SUPER_ADMIN");
         when(dashboardAggregationService.queryMetrics(
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), eq("day"), eq("ALL")))

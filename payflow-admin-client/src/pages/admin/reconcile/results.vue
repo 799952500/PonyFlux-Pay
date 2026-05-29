@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="账单日" required>
           <el-date-picker
             v-model="queryForm.billDate"
@@ -42,7 +42,7 @@
         <el-form-item label="视图">
           <el-checkbox v-model="queryForm.onlyAbnormal">仅异常（差异表）</el-checkbox>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -55,7 +55,15 @@
     <div class="content-card">
       <TableToolbar title="对账结果" :total="total" />
 
-      <el-table table-layout="auto" v-loading="loading" :data="list" stripe size="small" class="data-table">
+      <el-table
+        table-layout="auto"
+        v-loading="loading"
+        :data="list"
+        stripe
+        size="small"
+        class="data-table"
+        @row-click="(row: ReconOrderResultItem) => row.orderId && goOrder(row.orderId)"
+      >
         <el-table-column label="对账状态" prop="reconStatus" width="110" align="center">
           <template #default="{ row }">
             <el-tag size="small" :type="tagTypeOf(RECON_STATUS_TAG, row.reconStatus, 'warning')">
@@ -63,33 +71,60 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="订单号" prop="orderId" min-width="140" show-overflow-tooltip>
+        <el-table-column label="订单号" prop="orderId" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span
               v-if="row.orderId"
               :data-flip="`order-${row.orderId}`"
-              class="text-xs tabular-nums text-[#047857] cursor-pointer"
-              @click="goOrder(row.orderId)"
-            >{{ row.orderId }}</span>
-            <span v-else>—</span>
+              class="cell-mono pf-link cursor-pointer"
+              @click.stop="goOrder(row.orderId)"
+            >#{{ row.orderId }}</span>
+            <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="商户号" prop="merchantId" width="120" show-overflow-tooltip />
-        <el-table-column label="支付账号" prop="accountCode" width="120" show-overflow-tooltip />
-        <el-table-column label="支付号" prop="paymentId" width="140" show-overflow-tooltip />
+        <el-table-column label="商户号" prop="merchantId" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.merchantId || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付账号" prop="accountCode" width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.accountCode || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付号" prop="paymentId" width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.paymentId || '—' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="渠道" prop="payChannel" width="100">
-          <template #default="{ row }">{{ channelLabel(row.payChannel) }}</template>
+          <template #default="{ row }">
+            <el-tag v-if="row.payChannel" size="small" :type="channelTagType(row.payChannel)">
+              {{ channelLabel(row.payChannel) }}
+            </el-tag>
+            <span v-else class="cell-empty">—</span>
+          </template>
         </el-table-column>
-        <el-table-column label="渠道流水号" prop="channelTransactionId" min-width="140" show-overflow-tooltip />
-        <el-table-column label="本地金额" width="100" align="right">
-          <template #default="{ row }">{{ formatMoneyFen(row.localAmountFen) }}</template>
+        <el-table-column label="渠道流水号" prop="channelTransactionId" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.channelTransactionId || '—' }}</span>
+          </template>
         </el-table-column>
-        <el-table-column label="账单金额" width="100" align="right">
-          <template #default="{ row }">{{ formatMoneyFen(row.channelAmountFen) }}</template>
+        <el-table-column label="本地金额" width="110" align="right" class-name="col-amount">
+          <template #default="{ row }">
+            <span class="cell-amount">¥{{ formatMoneyFen(row.localAmountFen) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="账单金额" width="110" align="right" class-name="col-amount">
+          <template #default="{ row }">
+            <span class="cell-amount">¥{{ formatMoneyFen(row.channelAmountFen) }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="差异类型" prop="diffType" width="130">
           <template #default="{ row }">
-            <span v-if="row.diffType">{{ labelOf(RECON_DIFF_LABEL, row.diffType) }}</span>
+            <el-tag v-if="row.diffType" size="small" type="warning" effect="plain">
+              {{ labelOf(RECON_DIFF_LABEL, row.diffType) }}
+            </el-tag>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
@@ -143,6 +178,7 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   formatMoneyFen,
   channelLabel,
+  channelTagType,
   labelOf,
   tagTypeOf,
   RECON_STATUS_LABEL,

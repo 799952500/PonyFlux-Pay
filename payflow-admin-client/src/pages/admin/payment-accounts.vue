@@ -10,7 +10,7 @@
       description="当前仅展示与您授权商户关联的支付账号，由服务端按路由绑定关系自动过滤。"
     />
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="所属渠道">
           <el-select v-model="queryForm.channelId" placeholder="全部渠道" clearable style="width: 180px">
             <el-option v-for="ch in channelList" :key="ch.id" :label="ch.channelName" :value="ch.id" />
@@ -19,7 +19,7 @@
         <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" placeholder="账号编码 / 账号名称" clearable style="width: 200px" @keyup.enter="handleSearch" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -33,19 +33,26 @@
         </template>
       </TableToolbar>
 
-      <el-table table-layout="auto" v-loading="loading" :data="accountList" stripe size="small" class="data-table">
+      <el-table
+        table-layout="auto"
+        v-loading="loading"
+        :data="accountList"
+        stripe
+        size="small"
+        class="data-table"
+        @row-click="openEdit"
+      >
         <el-table-column label="账号编码" prop="accountCode" min-width="140">
           <template #default="{ row }">
-            <span class="text-xs font-mono font-medium text-primary">{{ row.accountCode }}</span>
+            <span class="cell-mono pf-link cursor-pointer">{{ row.accountCode }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="账号名称" prop="accountName" min-width="160">
-          <template #default="{ row }">
-            <span class="font-medium">{{ row.accountName }}</span>
-          </template>
-        </el-table-column>
+        <el-table-column label="账号名称" prop="accountName" min-width="160" show-overflow-tooltip />
         <el-table-column label="所属渠道" prop="channelName" min-width="120">
-          <template #default="{ row }">{{ row.channelName ?? '—' }}</template>
+          <template #default="{ row }">
+            <el-tag v-if="row.channelName" size="small" effect="plain">{{ row.channelName }}</el-tag>
+            <span v-else class="cell-empty">—</span>
+          </template>
         </el-table-column>
         <el-table-column label="启用状态" width="100" align="center">
           <template #default="{ row }">
@@ -60,13 +67,13 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="140" class-name="col-actions" fixed="right">
+        <el-table-column label="操作" min-width="120" class-name="col-actions" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
+            <el-button link type="danger" size="small" @click.stop="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="账单日" required>
           <el-date-picker
             v-model="queryForm.billDate"
@@ -21,8 +21,9 @@
         <el-form-item label="支付账号">
           <el-input v-model="queryForm.accountCode" placeholder="账户编码，可选" clearable style="width: 160px" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="load">查询</el-button>
+          <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -60,26 +61,44 @@
       />
 
       <el-table table-layout="auto" :data="summary?.byAccount ?? []" stripe size="small" class="data-table">
-        <el-table-column prop="accountCode" label="支付账号" min-width="140" show-overflow-tooltip />
-        <el-table-column prop="channel" label="对账渠道" width="100">
-          <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
-        </el-table-column>
-        <el-table-column label="本地笔数" prop="localSuccessCount" width="100" align="right" />
-        <el-table-column label="本地金额(元)" width="120" align="right">
-          <template #default="{ row }">{{ formatMoneyFen(row.localSuccessAmountFen) }}</template>
-        </el-table-column>
-        <el-table-column label="账单笔数" prop="channelBillCount" width="100" align="right" />
-        <el-table-column label="账单金额(元)" width="120" align="right">
-          <template #default="{ row }">{{ formatMoneyFen(row.channelBillAmountFen) }}</template>
-        </el-table-column>
-        <el-table-column label="差额(元)" width="120" align="right">
+        <el-table-column prop="accountCode" label="支付账号" min-width="140" show-overflow-tooltip>
           <template #default="{ row }">
-            <span :class="deltaClass(row.amountDeltaFen)">{{ formatMoneyFen(row.amountDeltaFen) }}</span>
+            <span class="cell-mono">{{ row.accountCode || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="120" class-name="col-actions" fixed="right">
+        <el-table-column prop="channel" label="对账渠道" width="100">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="openDetailForAccount(row)">差额明细</el-button>
+            <el-tag size="small" :type="channelTagType(row.channel)">{{ channelLabel(row.channel) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="本地笔数" prop="localSuccessCount" width="100" align="right">
+          <template #default="{ row }">
+            <span class="tabular-nums">{{ row.localSuccessCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="本地金额" width="120" align="right" class-name="col-amount">
+          <template #default="{ row }">
+            <span class="cell-amount">¥{{ formatMoneyFen(row.localSuccessAmountFen) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="账单笔数" prop="channelBillCount" width="100" align="right">
+          <template #default="{ row }">
+            <span class="tabular-nums">{{ row.channelBillCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="账单金额" width="120" align="right" class-name="col-amount">
+          <template #default="{ row }">
+            <span class="cell-amount">¥{{ formatMoneyFen(row.channelBillAmountFen) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="差额" width="120" align="right" class-name="col-amount">
+          <template #default="{ row }">
+            <span class="cell-amount" :class="deltaClass(row.amountDeltaFen)">¥{{ formatMoneyFen(row.amountDeltaFen) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="100" class-name="col-actions" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="openDetailForAccount(row)">差额明细</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -108,34 +127,56 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="localOrderId" label="订单号" min-width="120" show-overflow-tooltip />
-          <el-table-column prop="merchantId" label="商户" width="100" show-overflow-tooltip />
-          <el-table-column prop="channelTradeNo" label="渠道单号" min-width="120" show-overflow-tooltip />
-          <el-table-column label="金额(元)" width="120" align="right">
+          <el-table-column prop="localOrderId" label="订单号" min-width="140" show-overflow-tooltip>
             <template #default="{ row }">
-              <span class="tabular-nums">{{ formatMoneyFen(row.channelAmount) }} / {{ formatMoneyFen(row.localAmount) }}</span>
+              <span v-if="row.localOrderId" class="cell-mono pf-link cursor-pointer" @click="goOrder(row.localOrderId)">
+                #{{ row.localOrderId }}
+              </span>
+              <span v-else class="cell-empty">—</span>
             </template>
           </el-table-column>
-          <el-table-column prop="accountCode" label="支付账号" width="120" show-overflow-tooltip />
-          <el-table-column prop="handleStatus" label="处理" width="90">
-            <template #default="{ row }">{{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}</template>
-          </el-table-column>
-          <el-table-column label="账单日" prop="billDate" width="120">
+          <el-table-column prop="merchantId" label="商户" width="100" show-overflow-tooltip>
             <template #default="{ row }">
-              <span class="text-xs text-slate-600 tabular-nums">{{ formatDate(row.billDate) }}</span>
+              <span class="cell-mono">{{ row.merchantId || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="channelTradeNo" label="渠道单号" min-width="130" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="cell-mono">{{ row.channelTradeNo || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="渠道/本地金额" min-width="150" align="right" class-name="col-amount">
+            <template #default="{ row }">
+              <span class="cell-amount text-xs">
+                ¥{{ formatMoneyFen(row.channelAmount) }} / ¥{{ formatMoneyFen(row.localAmount) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="accountCode" label="支付账号" width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="cell-mono">{{ row.accountCode || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="handleStatus" label="处理" width="90">
+            <template #default="{ row }">
+              <el-tag size="small" effect="plain">{{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="账单日" prop="billDate" width="120" class-name="col-datetime">
+            <template #default="{ row }">
+              <span class="cell-datetime">{{ formatDate(row.billDate) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="操作" min-width="80" class-name="col-actions" fixed="right">
             <template #default="{ row }">
               <el-button
                 v-if="row.localOrderId"
-                :data-flip="`order-${row.localOrderId}`"
                 link
                 type="primary"
                 size="small"
                 @click="goOrder(row.localOrderId)"
               >
-                订单
+                详情
               </el-button>
             </template>
           </el-table-column>
@@ -164,6 +205,7 @@ import {
   formatDate,
   formatMoneyFen,
   channelLabel,
+  channelTagType,
   labelOf,
   RECON_DIFF_LABEL,
   RECON_HANDLE_LABEL,
@@ -206,9 +248,16 @@ const detailQuery = reactive({
 })
 
 function deltaClass(fen?: number | null) {
-  if (fen == null) return 'text-slate-800'
-  if (fen === 0) return 'text-emerald-700'
-  return 'text-rose-600'
+  if (fen == null) return ''
+  if (fen === 0) return ''
+  return 'cell-amount--danger'
+}
+
+function handleReset() {
+  queryForm.billDate = yesterday()
+  queryForm.channel = ''
+  queryForm.accountCode = ''
+  load()
 }
 
 async function load() {

@@ -61,6 +61,12 @@
 | 订单导出 CSV | GET | `/admin/orders/export` | [`AdminOrderController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminOrderController.java) |
 | 全局搜索 | GET | `/admin/search` | [`AdminSearchController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSearchController.java) |
 | 通知摘要 | GET | `/admin/notifications/summary` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 通知列表 | GET | `/admin/notifications` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 通知未读数 | GET | `/admin/notifications/unread-count` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 通知标记已读 | POST | `/admin/notifications/{id}/read` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 通知全部已读 | POST | `/admin/notifications/read-all` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 通知批量已读 | POST | `/admin/notifications/read-batch` | [`AdminNotificationController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminNotificationController.java) |
+| 支付漏斗 | GET | `/admin/insights/funnel` | [`AdminInsightsController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminInsightsController.java) |
 | 审计日志 | GET | `/admin/audit-logs` | [`AdminAuditLogController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminAuditLogController.java) |
 | 安全审计（越权拒绝） | GET | `/admin/security/audit` | [`AdminSecurityAuditController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AdminSecurityAuditController.java)（`RISK` / `SUPER_ADMIN`） |
 | 验证码 | GET | `/admin/auth/captcha` | [`AuthController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/AuthController.java) |
@@ -332,6 +338,37 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-req
 | 仪表盘/费率/流失预警 | `/admin/dashboard/**`、`/admin/fee-rates/**`、`/admin/churn-alerts` | 统计和列表限定授权商户 | 可跨商户或按商户查看 |
 | 导出/批量/异步 | `/admin/export/**` 及批量操作 | 授权外资源不处理、不导出 | 按平台权限治理 |
 | 审计 | `/admin/security/audit`、`/admin/audit-logs` | 仅自身授权范围相关摘要 | 可定位商户归属、资源类别和拒绝原因 |
+
+### 对账差异工单（工作流升级）契约补充
+
+| 前端方法 | HTTP | 路径 | 后端 Controller | 权限/范围 |
+|----------|------|------|-----------------|-----------|
+| `getReconWorkItems` | GET | `/admin/reconcile/diffs/work-items` | `AdminReconController` | 仅授权商户范围内工单可见；支持 onlyMine/onlyUnassigned 过滤 |
+| `getReconWorkItemDetail` | GET | `/admin/reconcile/diffs/{diffId}` | `AdminReconController` | 仅授权商户范围内可见，返回 diff+assignment+audits |
+| `claimReconWorkItem` | POST | `/admin/reconcile/diffs/{diffId}/claim` | `AdminReconController` | `recon:diff:assign` |
+| `assignReconWorkItem` | POST | `/admin/reconcile/diffs/{diffId}/assign` | `AdminReconController` | `recon:diff:assign` |
+| `startReconWorkItem` | POST | `/admin/reconcile/diffs/{diffId}/start` | `AdminReconController` | `recon:diff:handle` |
+| `completeReconWorkItem` | POST | `/admin/reconcile/diffs/{diffId}/complete` | `AdminReconController` | `recon:diff:handle` |
+| `commentReconWorkItem` | POST | `/admin/reconcile/diffs/{diffId}/comment` | `AdminReconController` | `recon:diff:handle` |
+
+### 对账 SLA 规则契约补充
+
+| 前端方法 | HTTP | 路径 | 后端 Controller | 权限/范围 |
+|----------|------|------|-----------------|-----------|
+| `getReconSlaRules` | GET | `/admin/reconcile/sla-rules` | `AdminReconController` | `recon:manage` |
+| `saveReconSlaRule` | PUT | `/admin/reconcile/sla-rules/{diffType}` | `AdminReconController` | `recon:manage` |
+
+### 对账归因看板 / 长尾 / 报告订阅
+
+| 前端方法 | HTTP | 路径 | 后端 Controller | 权限/范围 |
+|----------|------|------|-----------------|-----------|
+| `getReconAggregationDashboard` | GET | `/admin/reconcile/aggregation/dashboard` | `AdminReconController` | merchantScope |
+| `getReconLongTailSummary` | GET | `/admin/reconcile/long-tail/summary` | `AdminReconController` | merchantScope |
+| `batchReconAcceptLoss` | POST | `/admin/reconcile/long-tail/accept-loss` | `AdminReconController` | `recon:manage` |
+| `getReconSubscriptions` | GET | `/admin/reconcile/subscriptions` | `AdminReconController` | `recon:report:subscribe` |
+| `createReconSubscription` | POST | `/admin/reconcile/subscriptions` | `AdminReconController` | `recon:report:subscribe` |
+| `deleteReconSubscription` | DELETE | `/admin/reconcile/subscriptions/{id}` | `AdminReconController` | `recon:report:subscribe` |
+| `getReconReportDetail` | GET | `/admin/reconcile/reports/{snapshotId}` | `AdminReconController` | `recon:report:subscribe` |
 
 ### 全局配置白名单
 

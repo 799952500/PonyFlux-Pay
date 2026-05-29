@@ -38,7 +38,7 @@
       >
         <el-table-column prop="applicationNo" label="申请单号" min-width="160">
           <template #default="{ row }">
-            <span class="cell-mono font-medium">{{ row.applicationNo }}</span>
+            <span class="cell-mono pf-link">{{ row.applicationNo }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="merchantName" label="商户名称" min-width="140">
@@ -65,7 +65,7 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="172" class-name="col-datetime">
           <template #default="{ row }">
-            <span class="text-xs tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right" class-name="col-actions">

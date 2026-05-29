@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="filters" size="default">
+      <el-form :inline="true" :model="filters" size="default" class="filter-bar__form">
         <el-form-item label="预警状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 140px" @change="loadAlerts">
             <el-option label="待处理" value="pending" />
@@ -13,7 +13,7 @@
         <el-form-item label="商户ID">
           <el-input v-model="filters.merchantId" placeholder="商户ID" clearable style="width: 140px" @keyup.enter="loadAlerts" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="loadAlerts">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="loadAlerts">刷新</el-button>
         </el-form-item>
@@ -58,7 +58,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createTime) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createTime) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="180" class-name="col-actions" fixed="right">

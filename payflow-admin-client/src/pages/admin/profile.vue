@@ -22,6 +22,9 @@
         <el-tab-pane label="外观与显示" name="appearance">
           <AppearanceSettings />
         </el-tab-pane>
+        <el-tab-pane label="对账报告订阅" name="recon-reports">
+          <ReconReportSubscriptions />
+        </el-tab-pane>
       </el-tabs>
     </div>
   </div>
@@ -32,24 +35,34 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '@/stores/admin'
 import AppearanceSettings from '@/components/admin/AppearanceSettings.vue'
+import ReconReportSubscriptions from '@/components/admin/ReconReportSubscriptions.vue'
 
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
 const user = computed(() => adminStore.user)
 
-const activeTab = ref(route.query.tab === 'appearance' ? 'appearance' : 'account')
+const activeTab = ref(
+  route.query.tab === 'appearance'
+    ? 'appearance'
+    : route.query.tab === 'recon-reports'
+      ? 'recon-reports'
+      : 'account'
+)
 
 watch(
   () => route.query.tab,
   (tab) => {
     if (tab === 'appearance') activeTab.value = 'appearance'
+    else if (tab === 'recon-reports') activeTab.value = 'recon-reports'
     else if (tab === 'account') activeTab.value = 'account'
   },
 )
 
 watch(activeTab, (tab) => {
-  const q = tab === 'appearance' ? { tab: 'appearance' } : {}
+  const q: Record<string, string> = {}
+  if (tab === 'appearance') q.tab = 'appearance'
+  if (tab === 'recon-reports') q.tab = 'recon-reports'
   if (route.query.tab !== q.tab) {
     router.replace({ path: '/admin/profile', query: q })
   }

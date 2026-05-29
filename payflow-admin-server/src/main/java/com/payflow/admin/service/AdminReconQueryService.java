@@ -1,24 +1,35 @@
 package com.payflow.admin.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.dto.recon.ReconAbnormalPageRow;
 import com.payflow.admin.dto.recon.ReconAccountSummaryVO;
+import com.payflow.admin.dto.recon.ReconDiffWorkItemDTO;
 import com.payflow.admin.dto.recon.ReconOrderResultVO;
 import com.payflow.admin.dto.recon.ReconSummaryResponse;
+import com.payflow.admin.entity.recon.ReconDiffAssignmentEntity;
 import com.payflow.admin.entity.recon.ReconDiffEntity;
+import com.payflow.admin.entity.recon.ReconHandlerAuditEntity;
 import com.payflow.admin.entity.recon.ReconTaskEntity;
 import com.payflow.admin.kit.AdminReconChannelKit;
 import com.payflow.admin.mapper.cashier.OrderMerchantRow;
 import com.payflow.admin.mapper.cashier.ReconCashierPaymentRow;
 import com.payflow.admin.mapper.cashier.ReconCashierReportMapper;
 import com.payflow.admin.mapper.cashier.ReconLocalAccountAggRow;
+import com.payflow.admin.mapper.recon.ReconDiffAssignmentEntityMapper;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
+import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
+import com.payflow.common.exception.BizException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.payflow.admin.service.recon.ReconLongTailService;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +49,8 @@ public class AdminReconQueryService {
 
     private final ReconTaskEntityMapper reconTaskEntityMapper;
     private final ReconDiffEntityMapper reconDiffEntityMapper;
+    private final ReconDiffAssignmentEntityMapper reconDiffAssignmentEntityMapper;
+    private final ReconHandlerAuditEntityMapper reconHandlerAuditEntityMapper;
     private final ReconCashierReportMapper reconCashierReportMapper;
 
     /**
@@ -434,6 +447,122 @@ public class AdminReconQueryService {
         data.put("total", total);
         data.put("page", page);
         data.put("size", size);
+        return data;
+    }
+
+    public Map<String, Object> pageWorkItems(
+            LocalDate billDate,
+            String channel,
+            String diffType,
+            String workflowStatus,
+            String onlyMineAssignee,
+            boolean onlyUnassigned,
+            boolean onlyOverdue,
+            String ageBucket,
+            long page,
+            long size,
+            List<String> merchantScopeIds) {
+        long safeSize = Math.min(size, 500);
+        Page<ReconDiffAssignmentEntity> p = new Page<>(page, safeSize);
+
+        var qw = Wrappers.<ReconDiffAssignmentEntity>lambdaQuery();
+        if (merchantScopeIds != null) {
+            if (merchantScopeIds.isEmpty()) {
+                return pagePayload(List.of(), 0, page, safeSize);
+            }
+            qw.in(ReconDiffAssignmentEntity::getMerchantId, merchantScopeIds);
+        }
+        if (StringUtils.hasText(workflowStatus)) {
+            qw.eq(ReconDiffAssignmentEntity::getWorkflowStatus, workflowStatus.trim().toUpperCase());
+        }
+        if (StringUtils.hasText(onlyMineAssignee)) {
+            qw.eq(ReconDiffAssignmentEntity::getAssigneeId, onlyMineAssignee);
+        }
+        if (onlyUnassigned) {
+            qw.eq(ReconDiffAssignmentEntity::getWorkflowStatus, "UNASSIGNED");
+        }
+        qw.orderByDesc(ReconDiffAssignmentEntity::getUpdatedAt);
+        reconDiffAssignmentEntityMapper.selectPage(p, qw);
+
+        List<Long> diffIds = p.getRecords().stream().map(ReconDiffAssignmentEntity::getDiffId).toList();
+        Map<Long, ReconDiffEntity> diffById = diffIds.isEmpty()
+                ? Map.of()
+                : reconDiffEntityMapper.selectBatchIds(diffIds).stream()
+                .collect(Collectors.toMap(ReconDiffEntity::getId, d -> d, (a, b) -> a));
+
+        List<ReconDiffWorkItemDTO> list = new ArrayList<>();
+        for (ReconDiffAssignmentEntity a : p.getRecords()) {
+            ReconDiffEntity d = diffById.get(a.getDiffId());
+            if (d == null) {
+                continue;
+            }
+            if (billDate != null || StringUtils.hasText(channel)) {
+                ReconTaskEntity t = reconTaskEntityMapper.selectOne(
+                        Wrappers.<ReconTaskEntity>lambdaQuery().eq(ReconTaskEntity::getTaskId, d.getTaskId()));
+                if (t == null) {
+                    continue;
+                }
+                if (billDate != null && !billDate.equals(t.getBillDate())) {
+                    continue;
+                }
+                if (StringUtils.hasText(channel) && !channel.trim().equalsIgnoreCase(t.getChannel())) {
+                    continue;
+                }
+            }
+            if (StringUtils.hasText(diffType) && !diffType.trim().equalsIgnoreCase(d.getDiffType())) {
+                continue;
+            }
+            if (onlyOverdue && (a.getDueAt() == null || !a.getDueAt().isBefore(LocalDateTime.now()))) {
+                continue;
+            }
+            if (StringUtils.hasText(ageBucket)) {
+                int ageDays = (int) ChronoUnit.DAYS.between(a.getCreatedAt().toLocalDate(), LocalDate.now());
+                if (!ageBucket.trim().equalsIgnoreCase(ReconLongTailService.ageBucket(ageDays))) {
+                    continue;
+                }
+            }
+            ReconDiffWorkItemDTO dto = new ReconDiffWorkItemDTO();
+            dto.setDiffId(d.getId());
+            dto.setTaskId(d.getTaskId());
+            dto.setMerchantId(a.getMerchantId());
+            dto.setDiffType(d.getDiffType());
+            dto.setHandleStatus(d.getHandleStatus());
+            dto.setWorkflowStatus(a.getWorkflowStatus());
+            dto.setAssigneeId(a.getAssigneeId());
+            dto.setDueAt(a.getDueAt());
+            dto.setEscalatedAt(a.getEscalatedAt());
+            dto.setCreatedAt(d.getCreatedAt());
+            dto.setChannelAmount(d.getChannelAmount());
+            dto.setLocalAmount(d.getLocalAmount());
+            list.add(dto);
+        }
+        return pagePayload(list, p.getTotal(), page, safeSize);
+    }
+
+    public Map<String, Object> getWorkItemDetail(long diffId, List<String> merchantScopeIds) {
+        ReconDiffEntity diff = reconDiffEntityMapper.selectById(diffId);
+        if (diff == null) {
+            throw new BizException(7543, "差异记录不存在: " + diffId);
+        }
+        ReconDiffAssignmentEntity assignment = reconDiffAssignmentEntityMapper.selectOne(
+                Wrappers.<ReconDiffAssignmentEntity>lambdaQuery().eq(ReconDiffAssignmentEntity::getDiffId, diffId));
+        if (assignment == null) {
+            throw new BizException(7560, "工单不存在: " + diffId);
+        }
+        if (merchantScopeIds != null) {
+            if (merchantScopeIds.isEmpty() || !merchantScopeIds.contains(assignment.getMerchantId())) {
+                throw new BizException(7503, "授权商户范围不包含目标资源");
+            }
+        }
+        List<ReconHandlerAuditEntity> audits = reconHandlerAuditEntityMapper.selectList(
+                Wrappers.<ReconHandlerAuditEntity>lambdaQuery()
+                        .eq(ReconHandlerAuditEntity::getDiffId, diffId)
+                        .orderByAsc(ReconHandlerAuditEntity::getId));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("diff", diff);
+        data.put("assignment", assignment);
+        data.put("audits", audits);
         return data;
     }
 }

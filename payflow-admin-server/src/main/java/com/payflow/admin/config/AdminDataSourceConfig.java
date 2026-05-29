@@ -11,6 +11,7 @@ import com.payflow.admin.mapper.ChannelRouteMapper;
 import com.payflow.admin.mapper.ChurnAlertMapper;
 import com.payflow.admin.mapper.DashboardMetricsMapper;
 import com.payflow.admin.mapper.DataIsolationCheckMapper;
+import com.payflow.admin.mapper.NotificationMapper;
 import com.payflow.admin.mapper.FeeRateAuditLogMapper;
 import com.payflow.admin.mapper.FeeRateConfigMapper;
 import com.payflow.admin.mapper.MerchantFeeSnapshotMapper;
@@ -32,6 +33,11 @@ import com.payflow.admin.mapper.SysUserMapper;
 import com.payflow.admin.mapper.SysUserRoleMapper;
 import com.payflow.admin.mapper.SystemConfigMapper;
 import com.payflow.admin.mapper.recon.ReconDiffEntityMapper;
+import com.payflow.admin.mapper.recon.ReconDiffAssignmentEntityMapper;
+import com.payflow.admin.mapper.recon.ReconDiffSlaRuleEntityMapper;
+import com.payflow.admin.mapper.recon.ReconReportSubscriptionEntityMapper;
+import com.payflow.admin.mapper.recon.ReconReportSnapshotEntityMapper;
+import com.payflow.admin.mapper.recon.ReconAggregationSnapshotEntityMapper;
 import com.payflow.admin.mapper.recon.ReconHandlerAuditEntityMapper;
 import com.payflow.admin.mapper.recon.ReconMerchantTaskEntityMapper;
 import com.payflow.admin.mapper.recon.ReconTaskEntityMapper;
@@ -131,6 +137,15 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<DataIsolationCheckMapper> dataIsolationCheckMapper(
             @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<DataIsolationCheckMapper> factory = new MapperFactoryBean<>(DataIsolationCheckMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<NotificationMapper> notificationMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<NotificationMapper> factory = new MapperFactoryBean<>(NotificationMapper.class);
         factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }
@@ -314,6 +329,51 @@ public class AdminDataSourceConfig {
     public MapperFactoryBean<ReconHandlerAuditEntityMapper> reconHandlerAuditEntityMapper(
             @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
         MapperFactoryBean<ReconHandlerAuditEntityMapper> factory = new MapperFactoryBean<>(ReconHandlerAuditEntityMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconDiffAssignmentEntityMapper> reconDiffAssignmentEntityMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ReconDiffAssignmentEntityMapper> factory = new MapperFactoryBean<>(ReconDiffAssignmentEntityMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconDiffSlaRuleEntityMapper> reconDiffSlaRuleEntityMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ReconDiffSlaRuleEntityMapper> factory = new MapperFactoryBean<>(ReconDiffSlaRuleEntityMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconReportSubscriptionEntityMapper> reconReportSubscriptionEntityMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ReconReportSubscriptionEntityMapper> factory = new MapperFactoryBean<>(ReconReportSubscriptionEntityMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconReportSnapshotEntityMapper> reconReportSnapshotEntityMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ReconReportSnapshotEntityMapper> factory = new MapperFactoryBean<>(ReconReportSnapshotEntityMapper.class);
+        factory.setSqlSessionTemplate(sqlSessionTemplate);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public MapperFactoryBean<ReconAggregationSnapshotEntityMapper> reconAggregationSnapshotEntityMapper(
+            @Qualifier("adminSqlSessionTemplate") SqlSessionTemplate sqlSessionTemplate) {
+        MapperFactoryBean<ReconAggregationSnapshotEntityMapper> factory = new MapperFactoryBean<>(ReconAggregationSnapshotEntityMapper.class);
         factory.setSqlSessionTemplate(sqlSessionTemplate);
         return factory;
     }

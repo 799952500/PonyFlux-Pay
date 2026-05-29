@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 onMounted(() => {
-  router.replace('/admin/reconcile/tasks')
+  router.replace('/admin/reconcile/work-items')
 })
 </script>
 

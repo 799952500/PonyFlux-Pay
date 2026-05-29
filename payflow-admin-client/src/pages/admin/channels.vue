@@ -2,7 +2,7 @@
   <div class="page-channel-shell">
     <!-- 顶部筛选工具栏 -->
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" placeholder="渠道编码 / 名称" clearable style="width: 180px" @keyup.enter="handleSearch" />
         </el-form-item>
@@ -13,7 +13,7 @@
             <el-option label="禁用" :value="false" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>

@@ -1,7 +1,9 @@
 package com.payflow.admin.controller;
 
+import com.payflow.admin.enums.NotificationTypeEnum;
 import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.service.DashboardAggregationService;
+import com.payflow.admin.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AdminExportController {
 
     private final DashboardAggregationService dashboardAggregationService;
+    private final NotificationService notificationService;
 
     /** 导出任务状态缓存（生产环境应落库） */
     private final ConcurrentHashMap<String, Map<String, Object>> exportTasks = new ConcurrentHashMap<>();
@@ -63,6 +67,10 @@ public class AdminExportController {
         task.put("status", "processing");
         task.put("merchantId", effectiveMerchantId);
         task.put("createdAt", java.time.LocalDateTime.now().toString());
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId != null) {
+            task.put("userId", userId);
+        }
         exportTasks.put(taskId, task);
 
         // 异步生成
@@ -113,7 +121,6 @@ public class AdminExportController {
     @SuppressWarnings("unused")
     public void asyncGenerateReport(String taskId, String dateFrom, String dateTo, String merchantId) {
         try {
-            // 模拟数据导出逻辑（生产环境应使用 Apache POI 生成 Excel）
             LocalDateTime start = LocalDateTime.parse(dateFrom + "T00:00:00");
             LocalDateTime end = LocalDateTime.parse(dateTo + "T23:59:59");
             Map<String, Object> metrics = dashboardAggregationService.queryMetrics(start, end, "day", effectiveChannelCode(merchantId));
@@ -126,6 +133,7 @@ public class AdminExportController {
                 task.put("totalCount", metrics.get("totalCount"));
                 task.put("downloadUrl", "/api/v1/admin/export/download/" + taskId);
                 task.put("completedAt", java.time.LocalDateTime.now().toString());
+                sendExportNotification(taskId, task, true, null);
             }
         } catch (Exception e) {
             log.error("导出任务失败: taskId={}", taskId, e);
@@ -133,8 +141,38 @@ public class AdminExportController {
             if (task != null) {
                 task.put("status", "failed");
                 task.put("error", e.getMessage());
+                sendExportNotification(taskId, task, false, e.getMessage());
             }
         }
+    }
+
+    private void sendExportNotification(String taskId, Map<String, Object> task,
+                                        boolean success, String errorMsg) {
+        try {
+            Long userId = task.get("userId") instanceof Long uid ? uid : null;
+            List<Long> recipientUserIds = userId != null
+                    ? Collections.singletonList(userId) : Collections.emptyList();
+            if (success) {
+                notificationService.send(
+                        NotificationTypeEnum.EXPORT_COMPLETED, taskId,
+                        "导出任务完成",
+                        "交易报表导出已完成（" + dateRange(task) + "），点击下载",
+                        "/admin/export", null, recipientUserIds);
+            } else {
+                notificationService.send(
+                        NotificationTypeEnum.EXPORT_FAILED, taskId,
+                        "导出任务失败",
+                        "交易报表导出失败: " + (errorMsg != null ? errorMsg : "未知错误"),
+                        "/admin/export", null, recipientUserIds);
+            }
+        } catch (Exception e) {
+            log.error("发送导出通知失败: taskId={}", taskId, e);
+        }
+    }
+
+    private static String dateRange(Map<String, Object> task) {
+        Object created = task.get("createdAt");
+        return created != null ? created.toString().substring(0, 10) : "";
     }
 
     private static String resolveMerchantId(String merchantId, List<String> merchantScopeIds) {

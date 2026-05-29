@@ -10,7 +10,7 @@
       <el-table table-layout="auto" v-loading="loading" :data="userList" stripe size="small" class="data-table">
         <el-table-column label="用户名" prop="username" min-width="140">
           <template #default="{ row }">
-            <span class="cell-mono font-medium text-[#047857]">{{ row.username }}</span>
+            <span class="cell-mono pf-link">{{ row.username }}</span>
           </template>
         </el-table-column>
         <el-table-column label="昵称" prop="nickname" min-width="120">
@@ -36,7 +36,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="280" class-name="col-actions" fixed="right">

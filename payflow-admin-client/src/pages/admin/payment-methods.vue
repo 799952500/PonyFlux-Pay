@@ -18,7 +18,7 @@
           <el-radio-button value="UNION">银联</el-radio-button>
         </el-radio-group>
       </div>
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="所属渠道">
           <el-select v-model="queryForm.channel" placeholder="全部渠道" clearable style="width: 150px">
             <el-option label="全部" value="" />
@@ -37,7 +37,7 @@
             <el-option label="停用" value="DISABLED" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -45,22 +45,24 @@
     </div>
 
     <div class="content-card">
-      <div class="table-toolbar">
-        <div>
-          <div class="table-toolbar__title">支付方式列表</div>
-          <span v-if="activeChannelIdFromQuery != null" class="table-toolbar__hint">
+      <TableToolbar title="支付方式列表" :total="total">
+        <template #hint>
+          <span v-if="activeChannelIdFromQuery != null">
             已按渠道筛选（渠道 ID：{{ activeChannelIdFromQuery }}）
             <el-button type="primary" link class="!p-0 !h-auto align-baseline ml-1" @click="clearChannelQuery">清除筛选</el-button>
           </span>
-          <span v-else class="table-toolbar__hint">共 {{ total }} 条记录</span>
-        </div>
-        <el-button v-permission="'payment_method:create'" type="primary" class="btn-primary" icon="Plus" @click="openAdd">新建支付方式</el-button>
-      </div>
+        </template>
+        <template #actions>
+          <el-button v-permission="'payment_method:create'" type="primary" class="btn-primary" icon="Plus" @click="openAdd">
+            新建支付方式
+          </el-button>
+        </template>
+      </TableToolbar>
 
       <el-table table-layout="auto" v-loading="loading" :data="tableData" stripe size="small" class="data-table">
         <el-table-column label="支付方式编号" prop="methodCode" min-width="148">
           <template #default="{ row }">
-            <span class="cell-mono text-[#047857] font-medium cursor-pointer hover:underline" @click="openDetail(row)">{{ row.methodCode }}</span>
+            <span class="cell-mono pf-link cursor-pointer" @click.stop="openDetail(row)">{{ row.methodCode }}</span>
           </template>
         </el-table-column>
         <el-table-column label="支付方式名称" prop="methodName" min-width="160">
@@ -88,7 +90,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column v-if="canManagePaymentMethods" label="操作" width="140" fixed="right" align="center">
@@ -196,6 +198,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { getPaymentMethods, deletePaymentMethod, createPaymentMethod, updatePaymentMethod, getChannels, getPaymentMethodById } from '@/api/admin'

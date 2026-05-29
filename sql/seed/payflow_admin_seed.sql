@@ -143,6 +143,31 @@ INSERT INTO recon_diff (
 ('RECON-20260517-001', 'CHANNEL_ONLY', 'ALI_ONLY_999', NULL, 100, NULL, 'SUCCESS', NULL, 'PENDING', 'AUTO_QUERY', NOW()),
 ('RECON-20260516-001', 'LOCAL_ONLY', NULL, 'ORD-20260516-0007', NULL, 6600, NULL, 'PAYING', 'PENDING', 'REVIEW', NOW());
 
+-- 对账差异 SLA 默认规则（用于演示）
+INSERT INTO recon_diff_sla_rule (diff_type, enabled, sla_hours, due_soon_ratio, escalate_to_role, updated_by, updated_at)
+VALUES
+('AMOUNT_MISMATCH', 1, 24, 0.2000, 'recon:manage', 'seed', NOW()),
+('STATUS_MISMATCH', 1, 12, 0.2000, 'recon:manage', 'seed', NOW()),
+('CHANNEL_ONLY', 1, 8, 0.2000, 'recon:manage', 'seed', NOW()),
+('LOCAL_ONLY', 1, 8, 0.2000, 'recon:manage', 'seed', NOW())
+ON DUPLICATE KEY UPDATE
+  enabled = VALUES(enabled),
+  sla_hours = VALUES(sla_hours),
+  due_soon_ratio = VALUES(due_soon_ratio),
+  escalate_to_role = VALUES(escalate_to_role),
+  updated_by = VALUES(updated_by),
+  updated_at = VALUES(updated_at);
+
+-- 对账报告订阅示例（用于演示）
+INSERT INTO recon_report_subscription (subscriber_id, report_type, scope, enabled, created_at, updated_at)
+VALUES
+('admin', 'DAILY', 'ALL_AUTHORIZED', 1, NOW(), NOW()),
+('admin', 'WEEKLY', 'ALL_AUTHORIZED', 1, NOW(), NOW())
+ON DUPLICATE KEY UPDATE
+  scope = VALUES(scope),
+  enabled = VALUES(enabled),
+  updated_at = VALUES(updated_at);
+
 INSERT INTO admin_dashboard_metrics (
   metric_time, granularity, channel_code, total_amount, total_count, active_merchants, fee_income, refund_amount, refund_count
 ) VALUES
@@ -232,9 +257,13 @@ INSERT INTO admin_sys_menus (
 (13, 10, 'merchant_notifies', '回调记录', 'MENU', '/admin/merchant-notifies', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
 -- 3 对账管理
 (60, NULL, 'grp_reconcile', '对账管理', 'MENU', NULL, NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
-(61, 60, 'reconcile_tasks', '对账任务', 'MENU', '/admin/reconcile/tasks', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
-(62, 60, 'reconcile_results', '对账结果', 'MENU', '/admin/reconcile/results', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
-(63, 60, 'reconcile_summary', '对账汇总', 'MENU', '/admin/reconcile/summary', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
+(310, 60, 'reconcile_work_items', '差异工单', 'MENU', '/admin/reconcile/work-items', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
+(61, 60, 'reconcile_tasks', '对账任务', 'MENU', '/admin/reconcile/tasks', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
+(62, 60, 'reconcile_results', '对账结果', 'MENU', '/admin/reconcile/results', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
+(311, 60, 'reconcile_insights_dashboard', '差异归因看板', 'MENU', '/admin/reconcile/insights-dashboard', NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
+(312, 60, 'reconcile_sla_rules', 'SLA 规则', 'MENU', '/admin/reconcile/sla-rules', NULL, 5, 1, 'ACTIVE', 'recon:manage', NULL, NOW(), NOW()),
+(313, 60, 'reconcile_long_tail', '长尾差异', 'MENU', '/admin/reconcile/long-tail', NULL, 6, 1, 'ACTIVE', NOW(), NOW()),
+(63, 60, 'reconcile_summary', '对账汇总', 'MENU', '/admin/reconcile/summary', NULL, 7, 1, 'ACTIVE', NOW(), NOW()),
 -- 4 渠道与账户
 (20, NULL, 'grp_channel_account', '渠道与账户', 'MENU', NULL, NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
 (21, 20, 'channels', '渠道管理', 'MENU', '/admin/channels', NULL, 1, 1, 'ACTIVE', NOW(), NOW()),
@@ -288,6 +317,13 @@ INSERT INTO admin_sys_menus (id, parent_id, menu_code, menu_name, menu_type, pat
 (225, 32, 'btn_risk_rule_write', '风控规则维护', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'risk:rule:write', 'POST:/api/v1/admin/risk/rules', NOW(), NOW()),
 (231, 61, 'btn_recon_manual_run', '手动对账', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'recon:manual_run', 'POST:/api/v1/admin/reconcile/tasks/manual-run', NOW(), NOW()),
 (232, 62, 'btn_recon_diff_handle', '差异处理', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'recon:diff:handle', 'POST:/api/v1/admin/reconcile/diffs/*/handle', NOW(), NOW()),
+(301, 62, 'btn_recon_work_item_assign', '工单指派/改派', 'BUTTON', NULL, NULL, 2, 1, 'ACTIVE', 'recon:diff:assign', 'POST:/api/v1/admin/reconcile/diffs/*/assign', NOW(), NOW()),
+(302, 62, 'btn_recon_work_item_claim', '工单认领', 'BUTTON', NULL, NULL, 3, 1, 'ACTIVE', 'recon:diff:assign', 'POST:/api/v1/admin/reconcile/diffs/*/claim', NOW(), NOW()),
+(303, 62, 'btn_recon_work_item_start', '开始处理', 'BUTTON', NULL, NULL, 4, 1, 'ACTIVE', 'recon:diff:handle', 'POST:/api/v1/admin/reconcile/diffs/*/start', NOW(), NOW()),
+(304, 62, 'btn_recon_work_item_complete', '工单处置完成', 'BUTTON', NULL, NULL, 5, 1, 'ACTIVE', 'recon:diff:handle', 'POST:/api/v1/admin/reconcile/diffs/*/complete', NOW(), NOW()),
+(305, 62, 'btn_recon_work_item_comment', '工单留言', 'BUTTON', NULL, NULL, 6, 1, 'ACTIVE', 'recon:diff:handle', 'POST:/api/v1/admin/reconcile/diffs/*/comment', NOW(), NOW()),
+(306, 62, 'btn_recon_sla_rule_write', 'SLA 规则维护', 'BUTTON', NULL, NULL, 7, 1, 'ACTIVE', 'recon:manage', 'PUT:/api/v1/admin/reconcile/sla-rules/*', NOW(), NOW()),
+(307, 62, 'btn_recon_report_subscribe', '报告订阅', 'BUTTON', NULL, NULL, 8, 1, 'ACTIVE', 'recon:report:subscribe', 'POST:/api/v1/admin/reconcile/subscriptions', NOW(), NOW()),
 (233, 65, 'btn_fee_rate_write', '费率配置维护', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'fee_rate:write', 'POST:/api/v1/admin/fee-rate', NOW(), NOW()),
 (241, 41, 'btn_system_config_write', '系统配置维护', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'system_config:write', 'POST:/api/v1/admin/system-configs', NOW(), NOW()),
 (251, 51, 'btn_role_create', '新增角色', 'BUTTON', NULL, NULL, 1, 1, 'ACTIVE', 'role:create', 'POST:/api/v1/admin/roles', NOW(), NOW()),
@@ -304,7 +340,7 @@ INSERT INTO admin_sys_menus (id, parent_id, menu_code, menu_name, menu_type, pat
 
 INSERT INTO admin_sys_role_menus (role_id, menu_id, created_at) SELECT 1, id, NOW() FROM admin_sys_menus;
 INSERT INTO admin_sys_role_menus (role_id, menu_id, created_at) SELECT 2, id, NOW() FROM admin_sys_menus WHERE id NOT IN (51, 52, 53, 54, 64);
-INSERT INTO admin_sys_role_menus (role_id, menu_id, created_at) SELECT 3, id, NOW() FROM admin_sys_menus WHERE id IN (1, 2, 3, 4, 101, 104, 10, 11, 12, 13, 60, 61, 62, 63);
+INSERT INTO admin_sys_role_menus (role_id, menu_id, created_at) SELECT 3, id, NOW() FROM admin_sys_menus WHERE id IN (1, 2, 3, 4, 101, 104, 10, 11, 12, 13, 60, 61, 62, 63, 310, 311, 313, 232, 301, 302, 303, 304, 305, 307);
 INSERT INTO admin_sys_role_menus (role_id, menu_id, created_at) SELECT 4, id, NOW() FROM admin_sys_menus WHERE id IN (1, 2, 10, 11, 30, 31, 32, 64, 68, 103, 67, 65, 66);
 
 INSERT INTO admin_sys_users (id, username, password, nickname, phone, email, status, created_at, updated_at) VALUES
@@ -323,6 +359,31 @@ ALTER TABLE admin_merchant_payment_routes AUTO_INCREMENT = 100;
 ALTER TABLE admin_channel_routes AUTO_INCREMENT = 100;
 ALTER TABLE admin_risk_rules AUTO_INCREMENT = 100;
 ALTER TABLE admin_system_configs AUTO_INCREMENT = 100;
+-- 站内通知 demo 数据
+INSERT INTO admin_notifications (recipient_user_id, merchant_id, biz_type, biz_key, title, summary, link, read_status, created_at) VALUES
+(1, 'M100001', 'REFUND_APPROVAL', 'REF-20260524-001', '退款 REF-20260524-001 等待审批', '商户 M100001 发起退款 ¥158.00，请尽快处理', '/admin/refunds?status=REFUNDING', 0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+(1, 'M100001', 'REFUND_APPROVAL', 'REF-20260524-002', '退款 REF-20260524-002 等待审批', '商户 M100001 发起退款 ¥320.50', '/admin/refunds?status=REFUNDING', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+(2, 'M100001', 'REFUND_APPROVAL', 'REF-20260524-001', '退款 REF-20260524-001 等待审批', '商户 M100001 发起退款 ¥158.00，请尽快处理', '/admin/refunds?status=REFUNDING', 0, DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+(1, 'M100001', 'CHURN_OVERDUE', 'CHURN-1001', '流失预警超时：M100001 超48小时未跟进', '商户 M100001 的流失预警已超过 48 小时未处理', '/admin/churn-alerts?status=pending', 0, DATE_SUB(NOW(), INTERVAL 50 HOUR)),
+(2, 'M100001', 'CHURN_OVERDUE', 'CHURN-1001', '流失预警超时：M100001 超48小时未跟进', '商户 M100001 的流失预警已超过 48 小时未处理', '/admin/churn-alerts?status=pending', 1, DATE_SUB(NOW(), INTERVAL 50 HOUR)),
+(1, NULL, 'EXPORT_COMPLETED', 'EXPORT-20260525-001', '导出任务完成', '交易报表导出已完成，点击下载', '/admin/export/download/EXPORT-20260525-001', 0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1, NULL, 'EXPORT_FAILED', 'EXPORT-20260525-002', '导出任务失败', '商户 M100002 的对账报表导出失败：数据量超限', '/admin/export', 1, DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(1, 'M100001', 'RECON_DIFF', 'RECON-TASK-20260524', '对账发现 5 笔差异', '对账任务 RECON-TASK-20260524 完成，发现 5 笔差异需处理', '/admin/reconcile/tasks/RECON-TASK-20260524/diffs', 0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(2, 'M100001', 'RECON_DIFF', 'RECON-TASK-20260524', '对账发现 5 笔差异', '对账任务 RECON-TASK-20260524 完成，发现 5 笔差异需处理', '/admin/reconcile/tasks/RECON-TASK-20260524/diffs', 0, DATE_SUB(NOW(), INTERVAL 1 DAY)),
+(1, 'M100002', 'WEBHOOK_FAILURE', 'WEBHOOK-M100002-EP1', '商户 M100002 回调连续失败', 'webhook 端点连续失败 5 次，请检查商户配置', '/admin/merchant-notifies?merchantId=M100002', 0, DATE_SUB(NOW(), INTERVAL 6 HOUR)),
+(1, 'M100001', 'REFUND_APPROVAL', 'REF-20260523-003', '退款 REF-20260523-003 等待审批', '商户 M100001 发起退款 ¥88.00', '/admin/refunds?status=REFUNDING', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(1, NULL, 'EXPORT_COMPLETED', 'EXPORT-20260523-003', '导出任务完成', '月度汇总报表导出完成', '/admin/export/download/EXPORT-20260523-003', 1, DATE_SUB(NOW(), INTERVAL 3 DAY)),
+(2, 'M100002', 'WEBHOOK_FAILURE', 'WEBHOOK-M100002-EP1', '商户 M100002 回调连续失败', 'webhook 端点连续失败 5 次', '/admin/merchant-notifies?merchantId=M100002', 0, DATE_SUB(NOW(), INTERVAL 6 HOUR)),
+(1, 'M100001', 'CHURN_OVERDUE', 'CHURN-1002', '流失预警超时：M100001 连续下降', '商户交易量连续 5 天下降，预警已超时', '/admin/churn-alerts?status=pending', 0, DATE_SUB(NOW(), INTERVAL 72 HOUR)),
+(2, 'M100001', 'REFUND_APPROVAL', 'REF-20260524-002', '退款 REF-20260524-002 等待审批', '商户 M100001 发起退款 ¥320.50', '/admin/refunds?status=REFUNDING', 0, DATE_SUB(NOW(), INTERVAL 3 HOUR)),
+(1, 'M100002', 'RECON_DIFF', 'RECON-TASK-20260523', '对账发现 3 笔差异', '对账任务完成，发现 3 笔差异', '/admin/reconcile/tasks/RECON-TASK-20260523/diffs', 1, DATE_SUB(NOW(), INTERVAL 4 DAY)),
+(1, NULL, 'EXPORT_COMPLETED', 'EXPORT-20260522-001', '导出任务完成', '渠道分析报表已就绪', '/admin/export/download/EXPORT-20260522-001', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(2, NULL, 'EXPORT_COMPLETED', 'EXPORT-20260522-001', '导出任务完成', '渠道分析报表已就绪', '/admin/export/download/EXPORT-20260522-001', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(1, 'M100001', 'REFUND_APPROVAL', 'REF-20260522-004', '退款 REF-20260522-004 等待审批', '商户 M100001 发起退款 ¥42.00', '/admin/refunds?status=REFUNDING', 1, DATE_SUB(NOW(), INTERVAL 5 DAY)),
+(1, 'M100002', 'WEBHOOK_FAILURE', 'WEBHOOK-M100002-EP2', '商户 M100002 第二端点回调失败', '备用 webhook 端点也连续失败', '/admin/merchant-notifies?merchantId=M100002', 0, DATE_SUB(NOW(), INTERVAL 12 HOUR));
+
+ALTER TABLE admin_notifications AUTO_INCREMENT = 100;
+
 ALTER TABLE admin_users AUTO_INCREMENT = 100;
 ALTER TABLE admin_sys_roles AUTO_INCREMENT = 100;
 ALTER TABLE admin_sys_menus AUTO_INCREMENT = 300;

@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="商户号">
           <el-input v-model="queryForm.merchantId" placeholder="merchantId" clearable style="width: 140px" />
         </el-form-item>
@@ -33,7 +33,7 @@
             style="width: 240px"
           />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -46,7 +46,7 @@
       <el-table table-layout="auto" v-loading="loading" :data="list" stripe size="small" class="data-table">
         <el-table-column label="时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户" prop="merchantId" width="120">

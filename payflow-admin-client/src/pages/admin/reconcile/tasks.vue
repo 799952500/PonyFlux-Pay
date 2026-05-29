@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="账单日">
           <el-date-picker
             v-model="queryForm.billDate"
@@ -30,10 +30,10 @@
             <el-option label="初始" value="INIT" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
-          <el-button type="success" class="btn-primary" @click="openManual">手动对账</el-button>
+          <el-button class="btn-outline" @click="openManual">手动对账</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -41,15 +41,33 @@
     <div class="content-card">
       <TableToolbar title="对账任务" :total="total" />
 
-      <el-table table-layout="auto" v-loading="loading" :data="taskList" stripe size="small" class="data-table">
-        <el-table-column label="任务号" prop="taskId" min-width="200" show-overflow-tooltip />
-        <el-table-column label="渠道" prop="channel" width="90">
-          <template #default="{ row }">{{ channelLabel(row.channel) }}</template>
-        </el-table-column>
-        <el-table-column label="账户" prop="accountCode" width="140" show-overflow-tooltip />
-        <el-table-column label="账单日" prop="billDate" width="120">
+      <el-table
+        table-layout="auto"
+        v-loading="loading"
+        :data="taskList"
+        stripe
+        size="small"
+        class="data-table"
+        @row-click="openDrawer"
+      >
+        <el-table-column label="任务号" prop="taskId" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDate(row.billDate) }}</span>
+            <span class="cell-mono pf-link cursor-pointer">{{ row.taskId }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="渠道" prop="channel" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="channelTagType(row.channel)">{{ channelLabel(row.channel) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="账户" prop="accountCode" width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="cell-mono">{{ row.accountCode || '—' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="账单日" prop="billDate" width="120" class-name="col-datetime">
+          <template #default="{ row }">
+            <span class="cell-datetime">{{ formatDate(row.billDate) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" prop="status" width="110" align="center">
@@ -59,20 +77,24 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="差异数" prop="diffCount" width="80" align="right" />
-        <el-table-column label="触发" prop="triggeredBy" width="100" />
-        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
+        <el-table-column label="差异数" prop="diffCount" width="88" align="right">
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="tabular-nums" :class="row.diffCount > 0 ? 'text-amber-600 font-medium' : ''">{{ row.diffCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="220" class-name="col-actions" fixed="right">
+        <el-table-column label="触发" prop="triggeredBy" width="100" show-overflow-tooltip />
+        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openDrawer(row)">详情</el-button>
-            <el-button link type="primary" size="small" :disabled="!row.fileObjectKey" @click="downloadFile(row.taskId)">
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="200" class-name="col-actions" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" size="small" @click.stop="openDrawer(row)">详情</el-button>
+            <el-button link type="primary" size="small" :disabled="!row.fileObjectKey" @click.stop="downloadFile(row.taskId)">
               下载
             </el-button>
-            <el-button link type="warning" size="small" @click="rerun(row)">重跑</el-button>
+            <el-button link type="warning" size="small" @click.stop="rerun(row)">重跑</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -136,7 +158,7 @@
               </el-select>
               <el-button size="small" type="primary" @click="loadDiffs">筛选</el-button>
             </div>
-            <TableToolbar :total="diffTotal" />
+            <TableToolbar title="差异明细" :total="diffTotal" />
             <el-table table-layout="auto" v-loading="diffLoading" :data="diffList" stripe size="small" max-height="420" class="data-table">
               <el-table-column prop="diffType" label="类型" width="130">
                 <template #default="{ row }">
@@ -145,21 +167,32 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="channelTradeNo" label="渠道单号" min-width="120" show-overflow-tooltip />
-              <el-table-column prop="localOrderId" label="本地订单" width="120" show-overflow-tooltip />
-              <el-table-column label="金额(分)" width="160">
+              <el-table-column prop="channelTradeNo" label="渠道单号" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">
-                  <span class="tabular-nums">{{ row.channelAmount ?? '-' }} / {{ row.localAmount ?? '-' }}</span>
+                  <span class="cell-mono">{{ row.channelTradeNo || '—' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="localOrderId" label="本地订单" min-width="140" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <span v-if="row.localOrderId" class="cell-mono pf-link">{{ row.localOrderId }}</span>
+                  <span v-else class="cell-empty">—</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="渠道/本地金额" min-width="160" align="right" class-name="col-amount">
+                <template #default="{ row }">
+                  <span class="cell-amount text-xs">
+                    ¥{{ formatMoneyFen(row.channelAmount) }} / ¥{{ formatMoneyFen(row.localAmount) }}
+                  </span>
                 </template>
               </el-table-column>
               <el-table-column prop="handleStatus" label="处理" width="100">
                 <template #default="{ row }">
-                  {{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}
+                  <el-tag size="small" effect="plain">{{ labelOf(RECON_HANDLE_LABEL, row.handleStatus) }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column label="处理时间" prop="handledAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
                 <template #default="{ row }">
-                  <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.handledAt) }}</span>
+                  <span class="cell-datetime">{{ formatDateTime(row.handledAt) }}</span>
                 </template>
               </el-table-column>
               <el-table-column label="操作" min-width="160" class-name="col-actions" fixed="right">
@@ -242,7 +275,9 @@ import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {
   formatDate,
   formatDateTime,
+  formatMoneyFen,
   channelLabel,
+  channelTagType,
   labelOf,
   tagTypeOf,
   RECON_STATUS_LABEL,

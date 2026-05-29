@@ -6,14 +6,17 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.payflow.admin.entity.cashier.MerchantNotify;
 import com.payflow.admin.entity.cashier.MerchantNotifyAttempt;
 import com.payflow.admin.entity.cashier.Order;
+import com.payflow.admin.enums.NotificationTypeEnum;
 import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.kit.MerchantNotifyMaskKit;
 import com.payflow.admin.mapper.cashier.MerchantNotifyAttemptMapper;
 import com.payflow.admin.mapper.cashier.MerchantNotifyMapper;
 import com.payflow.admin.service.MerchantNotifyQueryService;
+import com.payflow.admin.service.NotificationService;
 import com.payflow.admin.service.OrderService;
 import com.payflow.common.exception.BizException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -23,13 +26,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryService {
 
+    private static final int WEBHOOK_FAIL_THRESHOLD = 5;
+
     private final MerchantNotifyMapper merchantNotifyMapper;
     private final MerchantNotifyAttemptMapper merchantNotifyAttemptMapper;
     private final OrderService orderService;
+    private final NotificationService notificationService;
 
     @Override
     public IPage<Map<String, Object>> page(int pageNum, int pageSize,
@@ -52,6 +59,10 @@ public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryServic
         Page<MerchantNotify> page = new Page<>(pageNum, size);
         wrapper.orderByDesc(MerchantNotify::getLastAttemptAt).orderByDesc(MerchantNotify::getUpdatedAt);
         IPage<MerchantNotify> raw = merchantNotifyMapper.selectPage(page, wrapper);
+        // 对连续失败达到阈值的记录触发站内通知（幂等）
+        for (MerchantNotify notify : raw.getRecords()) {
+            notifyWebhookFailureIfNeeded(notify);
+        }
         return raw.convert(this::toListItem);
     }
 
@@ -207,5 +218,31 @@ public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryServic
         row.put("truncated", Boolean.TRUE.equals(attempt.getTruncated()));
         row.put("createdAt", attempt.getCreatedAt());
         return row;
+    }
+
+    /**
+     * 连续失败次数达到阈值时发送站内通知（幂等）。
+     */
+    private void notifyWebhookFailureIfNeeded(MerchantNotify notify) {
+        if (notify.getAttemptCount() == null || notify.getAttemptCount() < WEBHOOK_FAIL_THRESHOLD) {
+            return;
+        }
+        if (!"FAILED".equals(notify.getSummaryStatus())) {
+            return;
+        }
+        try {
+            String bizKey = "WEBHOOK-" + notify.getNotifyId();
+            String title = "商户回调连续失败";
+            String summary = "商户 " + notify.getMerchantId() + " 的回调通知（订单 "
+                    + notify.getOrderId() + "）已连续失败 " + notify.getAttemptCount() + " 次";
+            String link = "/admin/merchant-notifies?merchantId=" + notify.getMerchantId();
+            notificationService.sendToRole(
+                    NotificationTypeEnum.WEBHOOK_FAILURE,
+                    bizKey, title, summary, link,
+                    notify.getMerchantId(),
+                    "merchant:manage");
+        } catch (Exception e) {
+            log.error("发送 Webhook 失败通知异常: notifyId={}", notify.getNotifyId(), e);
+        }
     }
 }

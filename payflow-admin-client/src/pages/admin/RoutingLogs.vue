@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="filters" size="default">
+      <el-form :inline="true" :model="filters" size="default" class="filter-bar__form">
         <el-form-item label="交易流水号">
           <el-input v-model="filters.tradeNo" placeholder="输入交易号" clearable style="width: 180px" @keyup.enter="handleSearch" />
         </el-form-item>
@@ -26,7 +26,7 @@
             style="width: 360px"
           />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" :loading="exporting" @click="handleExport">导出 Excel</el-button>
         </el-form-item>
@@ -34,12 +34,7 @@
     </div>
 
     <div class="content-card">
-      <div class="table-toolbar">
-        <div>
-          <div class="table-toolbar__title">决策记录</div>
-          <div class="table-toolbar__hint">共 {{ pagination.total }} 条路由决策</div>
-        </div>
-      </div>
+      <TableToolbar title="决策记录" :total="pagination.total" hint="路由决策审计" />
 
       <el-table
         table-layout="auto"
@@ -52,7 +47,7 @@
       >
         <el-table-column label="交易流水号" prop="tradeNo" min-width="168">
           <template #default="{ row }">
-            <span class="cell-mono text-[#047857] font-medium">{{ row.tradeNo }}</span>
+            <span class="cell-mono pf-link cursor-pointer">{{ row.tradeNo }}</span>
           </template>
         </el-table-column>
         <el-table-column label="商户ID" prop="merchantId" width="96" align="center">
@@ -104,7 +99,7 @@
         </el-table-column>
         <el-table-column label="决策时间" prop="createTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createTime) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createTime) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="72" class-name="col-actions" fixed="right">
@@ -154,6 +149,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getRoutingLogs, exportRoutingLogs } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import {

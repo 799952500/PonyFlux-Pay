@@ -585,6 +585,21 @@ export interface ReconDiffItem {
   handledAt?: string
 }
 
+export interface ReconDiffWorkItem {
+  diffId: number
+  taskId: string
+  merchantId: string
+  diffType: string
+  handleStatus: string
+  workflowStatus: string
+  assigneeId?: string
+  dueAt?: string
+  escalatedAt?: string
+  createdAt?: string
+  channelAmount?: number
+  localAmount?: number
+}
+
 export const getReconTasks = (params: {
   page?: number
   size?: number
@@ -628,6 +643,110 @@ export const triggerReconManual = (body: {
 
 export const handleReconDiff = (id: number, body: { action: string; remark?: string }) =>
   request.post(`/admin/reconcile/diffs/${id}/handle`, body)
+
+export const getReconWorkItems = (params: {
+  billDate?: string
+  channel?: string
+  diffType?: string
+  workflowStatus?: string
+  onlyMine?: boolean
+  onlyUnassigned?: boolean
+  onlyOverdue?: boolean
+  ageBucket?: string
+  page?: number
+  size?: number
+}): Promise<{ list: ReconDiffWorkItem[]; total: number; page: number; size: number }> =>
+  request.get('/admin/reconcile/diffs/work-items', { params }).then((data: any) => ({
+    list: data?.list ?? [],
+    total: Number(data?.total ?? 0),
+    page: Number(data?.page ?? params.page ?? 1),
+    size: Number(data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
+  }))
+
+export const getReconWorkItemDetail = (diffId: number): Promise<any> =>
+  request.get(`/admin/reconcile/diffs/${diffId}`)
+
+export const claimReconWorkItem = (diffId: number) =>
+  request.post(`/admin/reconcile/diffs/${diffId}/claim`)
+
+export const assignReconWorkItem = (diffId: number, body: { assigneeId: string; remark?: string }) =>
+  request.post(`/admin/reconcile/diffs/${diffId}/assign`, body)
+
+export const startReconWorkItem = (diffId: number, body?: { remark?: string }) =>
+  request.post(`/admin/reconcile/diffs/${diffId}/start`, body ?? {})
+
+export const completeReconWorkItem = (diffId: number, body: { action: string; remark: string }) =>
+  request.post(`/admin/reconcile/diffs/${diffId}/complete`, body)
+
+export const commentReconWorkItem = (diffId: number, body: { content: string }) =>
+  request.post(`/admin/reconcile/diffs/${diffId}/comment`, body)
+
+export interface ReconSlaRule {
+  id?: number
+  diffType: string
+  enabled: boolean
+  slaHours: number
+  dueSoonRatio: number
+  escalateToRole: string
+  updatedBy?: string
+  updatedAt?: string
+}
+
+export const getReconSlaRules = (): Promise<ReconSlaRule[]> =>
+  request.get('/admin/reconcile/sla-rules').then((d: any) => d ?? [])
+
+export const saveReconSlaRule = (diffType: string, body: Partial<ReconSlaRule>) =>
+  request.put(`/admin/reconcile/sla-rules/${encodeURIComponent(diffType)}`, body)
+
+export interface ReconAggregationDashboard {
+  matrix: Array<{ channel: string; diffType: string; diffCount: number; diffAmount: number }>
+  trend: Array<{ period: string; diffCount: number; diffAmount: number }>
+  topMerchants: Array<{ key: string; diffCount: number; diffAmount: number }>
+  topAccounts: Array<{ key: string; diffCount: number; diffAmount: number }>
+  slaStats: { avgHandleMinutes?: number; slaMetRate?: number; longTailRate?: number; sample: number }
+}
+
+export const getReconAggregationDashboard = (params: {
+  dateFrom: string
+  dateTo: string
+  channel?: string
+  diffType?: string
+}): Promise<ReconAggregationDashboard> => request.get('/admin/reconcile/aggregation/dashboard', { params })
+
+export interface ReconLongTailSummary {
+  buckets: Array<{ ageBucket: string; diffCount: number; diffAmount: number }>
+  maxAgeDays: number
+}
+
+export const getReconLongTailSummary = (asOf?: string): Promise<ReconLongTailSummary> =>
+  request.get('/admin/reconcile/long-tail/summary', { params: asOf ? { asOf } : {} })
+
+export const batchReconAcceptLoss = (body: { diffIds: number[]; remark: string }) =>
+  request.post('/admin/reconcile/long-tail/accept-loss', body)
+
+export interface ReconReportSubscription {
+  id?: number
+  subscriberId: string
+  reportType: string
+  scope: string
+  enabled: boolean
+  lastSentAt?: string
+}
+
+export const getReconSubscriptions = (): Promise<ReconReportSubscription[]> =>
+  request.get('/admin/reconcile/subscriptions').then((d: any) => d ?? [])
+
+export const createReconSubscription = (body: {
+  reportType: string
+  scope: string
+  enabled?: boolean
+}) => request.post('/admin/reconcile/subscriptions', body)
+
+export const deleteReconSubscription = (id: number) =>
+  request.delete(`/admin/reconcile/subscriptions/${id}`)
+
+export const getReconReportDetail = (snapshotId: string): Promise<any> =>
+  request.get(`/admin/reconcile/reports/${encodeURIComponent(snapshotId)}`)
 
 export interface ReconOrderResultItem {
   orderId?: string
@@ -719,8 +838,13 @@ export const getReconAnomalies = (params: {
 // -------------------------------------------------------------------
 // 运营洞察 / 进件 / 路由健康
 // -------------------------------------------------------------------
-export const getInsightsFunnel = (): Promise<Record<string, unknown>> =>
-  request.get('/admin/insights/funnel')
+export const getInsightsFunnel = (params?: {
+  dateFrom?: string
+  dateTo?: string
+  merchantId?: string
+  channel?: string
+}): Promise<Record<string, unknown>> =>
+  request.get('/admin/insights/funnel', { params }).then((d: any) => d?.data ?? d ?? {})
 
 /** @deprecated 请使用 @/api/onboarding */
 export const listOnboardingApplications = (): Promise<unknown[]> =>
@@ -858,3 +982,41 @@ export const updateDataIsolationRemediation = (
   body: { remediationStatus: string; note?: string }
 ): Promise<void> =>
   request.put(`/admin/data-isolation/checks/${encodeURIComponent(checkId)}/remediation`, body).then(() => undefined)
+
+// -------------------------------------------------------------------
+// 通知中心
+// -------------------------------------------------------------------
+export interface NotificationItem {
+  id: string
+  bizType: string
+  title: string
+  summary: string
+  link: string
+  readStatus: number
+  createdAt: string
+}
+
+export const getNotifications = (params: {
+  read?: string
+  type?: string
+  page?: number
+  size?: number
+}): Promise<PageResult<NotificationItem>> =>
+  request.get('/admin/notifications', { params }).then((data: any) => ({
+    list: data?.data?.list ?? data?.list ?? [],
+    total: Number(data?.data?.total ?? data?.total ?? 0),
+    page: Number(data?.data?.page ?? params.page ?? 1),
+    pageSize: Number(data?.data?.size ?? params.size ?? DEFAULT_PAGE_SIZE),
+  }))
+
+export const getUnreadCount = (): Promise<number> =>
+  request.get('/admin/notifications/unread-count').then((d: any) => Number(d?.data?.count ?? d?.count ?? 0))
+
+export const markNotificationRead = (id: string | number): Promise<void> =>
+  request.post(`/admin/notifications/${id}/read`).then(() => undefined)
+
+export const markAllNotificationsRead = (): Promise<{ affected: number }> =>
+  request.post('/admin/notifications/read-all').then((d: any) => d?.data ?? d ?? { affected: 0 })
+
+export const markBatchNotificationsRead = (ids: (string | number)[]): Promise<{ affected: number }> =>
+  request.post('/admin/notifications/read-batch', { ids }).then((d: any) => d?.data ?? d ?? { affected: 0 })

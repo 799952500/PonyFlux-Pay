@@ -75,6 +75,10 @@
                 <el-icon class="menu-icon"><Memo /></el-icon>
                 <span class="menu-text">{{ t('menu.groupReconcile') }}</span>
               </template>
+              <el-menu-item index="/admin/reconcile/work-items">
+                <el-icon class="menu-icon"><Tickets /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileWorkItems') }}</span>
+              </el-menu-item>
               <el-menu-item index="/admin/reconcile/tasks">
                 <el-icon class="menu-icon"><Calendar /></el-icon>
                 <span class="menu-text">{{ t('menu.reconcileTasks') }}</span>
@@ -82,6 +86,18 @@
               <el-menu-item index="/admin/reconcile/results">
                 <el-icon class="menu-icon"><Finished /></el-icon>
                 <span class="menu-text">{{ t('menu.reconcileResults') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reconcile/insights-dashboard">
+                <el-icon class="menu-icon"><TrendCharts /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileInsightsDashboard') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="platformAdmin" index="/admin/reconcile/sla-rules">
+                <el-icon class="menu-icon"><Timer /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileSlaRules') }}</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reconcile/long-tail">
+                <el-icon class="menu-icon"><Clock /></el-icon>
+                <span class="menu-text">{{ t('menu.reconcileLongTail') }}</span>
               </el-menu-item>
               <el-menu-item index="/admin/reconcile/summary">
                 <el-icon class="menu-icon"><DataAnalysis /></el-icon>
@@ -232,11 +248,7 @@
           />
 
           <div class="ml-auto flex items-center gap-2 topbar-actions">
-            <el-badge :value="0" class="cursor-pointer" :hidden="true">
-              <el-button circle class="topbar-notify-btn">
-                <el-icon><Bell /></el-icon>
-              </el-button>
-            </el-badge>
+            <NotificationPopover />
 
             <el-dropdown trigger="click" placement="bottom-end" @command="onUserMenuCommand">
               <button type="button" class="topbar-avatar-btn" title="个人中心">
@@ -317,11 +329,15 @@ import {
   Collection,
   DocumentCopy,
   Lock,
+  Timer,
+  Clock,
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '@/stores/admin'
 import { useThemeStore } from '@/stores/theme'
 import { getAdminProfile } from '@/api/auth'
 import AdminSidebarMenu from '@/components/AdminSidebarMenu.vue'
+import NotificationPopover from '@/components/NotificationPopover.vue'
+import { useNotificationPolling } from '@/composables/useNotification'
 import OrderDetailDrawer from '@/components/orders/OrderDetailDrawer.vue'
 import MerchantInsightDrawer from '@/components/merchants/MerchantInsightDrawer.vue'
 import { isPlatformAdmin, isPlatformOnlyRoute } from '@/utils/adminAccess'
@@ -461,6 +477,8 @@ const adminName = computed(() => {
   }
   return '管理员'
 })
+
+useNotificationPolling()
 
 onMounted(async () => {
   if (!adminStore.isLoggedIn()) return

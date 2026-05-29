@@ -223,6 +223,53 @@ export const RECON_DIFF_LABEL: Record<string, string> = {
   STATUS_MISMATCH: '状态不符',
 }
 
+/** 对账差异工单状态 */
+export const RECON_WORKFLOW_STATUS_LABEL: Record<string, string> = {
+  UNASSIGNED: '未指派',
+  ASSIGNED: '已指派',
+  IN_PROGRESS: '处理中',
+  ESCALATED: '已升级',
+  PROCESSED: '已处理',
+  IGNORED: '已忽略',
+  ACCEPTED_LOSS: '已挂账',
+}
+
+export const RECON_WORKFLOW_STATUS_TAG: Record<string, string> = {
+  UNASSIGNED: 'info',
+  ASSIGNED: 'warning',
+  IN_PROGRESS: 'primary',
+  ESCALATED: 'danger',
+  PROCESSED: 'success',
+  IGNORED: 'info',
+  ACCEPTED_LOSS: 'danger',
+}
+
+/** 长尾账龄分桶（与 ReconLongTailService.ageBucket 一致） */
+export const RECON_AGE_BUCKET_LABEL: Record<string, string> = {
+  LT_1D: '1 天以内',
+  D1_3: '1–3 天',
+  D3_7: '3–7 天',
+  D7_30: '7–30 天',
+  GT_30: '30 天以上',
+}
+
+export const RECON_AGE_BUCKET_TAG: Record<string, string> = {
+  LT_1D: 'success',
+  D1_3: 'info',
+  D3_7: 'warning',
+  D7_30: 'warning',
+  GT_30: 'danger',
+}
+
+export const RECON_AGE_BUCKET_ORDER = ['LT_1D', 'D1_3', 'D3_7', 'D7_30', 'GT_30'] as const
+
+export function sortReconAgeBuckets<T extends { ageBucket: string }>(buckets: T[]): T[] {
+  const order = new Map<string, number>(RECON_AGE_BUCKET_ORDER.map((k, i) => [k, i]))
+  return [...buckets].sort(
+    (a, b) => (order.get(a.ageBucket) ?? 99) - (order.get(b.ageBucket) ?? 99),
+  )
+}
+
 export const RECON_HANDLE_LABEL: Record<string, string> = {
   PENDING: '待处理',
   PROCESSED: '已处理',

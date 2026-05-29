@@ -10,7 +10,7 @@
       <el-table table-layout="auto" v-loading="loading" :data="roleList" stripe size="small" class="data-table">
         <el-table-column label="角色编码" prop="roleCode" min-width="140">
           <template #default="{ row }">
-            <span class="cell-mono font-medium text-[#047857]">{{ row.roleCode }}</span>
+            <span class="cell-mono pf-link">{{ row.roleCode }}</span>
           </template>
         </el-table-column>
         <el-table-column label="角色名称" prop="roleName" min-width="160">
@@ -30,7 +30,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="220" class-name="col-actions" fixed="right">

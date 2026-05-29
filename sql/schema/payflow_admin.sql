@@ -13,6 +13,8 @@ DROP VIEW IF EXISTS `payment_methods`;
 DROP VIEW IF EXISTS `merchants`;
 DROP VIEW IF EXISTS `channels`;
 
+DROP TABLE IF EXISTS `admin_notifications`;
+DROP TABLE IF EXISTS `admin_data_isolation_checks`;
 DROP TABLE IF EXISTS `admin_merchant_webhook_endpoint`;
 DROP TABLE IF EXISTS `admin_merchant_open_app`;
 DROP TABLE IF EXISTS `admin_merchant_contract`;
@@ -374,6 +376,7 @@ CREATE TABLE `recon_task` (
   `task_id` VARCHAR(64) NOT NULL,
   `channel` VARCHAR(32) NOT NULL,
   `account_code` VARCHAR(64) NOT NULL,
+  `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '对账任务涉及商户号',
   `bill_date` DATE NOT NULL,
   `bill_type` VARCHAR(32) NOT NULL DEFAULT 'trade',
   `status` VARCHAR(32) NOT NULL,
@@ -417,6 +420,7 @@ CREATE TABLE `recon_bill_record` (
 CREATE TABLE `recon_diff` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `task_id` VARCHAR(64) NOT NULL,
+  `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '差异归属商户号',
   `diff_type` VARCHAR(32) NOT NULL,
   `channel_trade_no` VARCHAR(128) DEFAULT NULL,
   `local_order_id` VARCHAR(64) DEFAULT NULL,
@@ -446,6 +450,89 @@ CREATE TABLE `recon_handler_audit` (
   PRIMARY KEY (`id`),
   KEY `idx_recon_audit_diff` (`diff_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='差异处理审计';
+
+CREATE TABLE `recon_diff_assignment` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `diff_id` BIGINT NOT NULL,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `assignee_id` VARCHAR(64) DEFAULT NULL,
+  `workflow_status` VARCHAR(32) NOT NULL,
+  `assigned_at` DATETIME DEFAULT NULL,
+  `due_at` DATETIME DEFAULT NULL,
+  `escalated_at` DATETIME DEFAULT NULL,
+  `escalated_to_role` VARCHAR(64) DEFAULT NULL,
+  `last_reminded_at` DATETIME DEFAULT NULL,
+  `processed_at` DATETIME DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recon_diff_assignment_diff` (`diff_id`),
+  KEY `idx_recon_diff_assignment_assignee` (`assignee_id`),
+  KEY `idx_recon_diff_assignment_status` (`workflow_status`),
+  KEY `idx_recon_diff_assignment_due` (`due_at`),
+  KEY `idx_recon_diff_assignment_merchant` (`merchant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账差异工单扩展';
+
+CREATE TABLE `recon_diff_sla_rule` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `diff_type` VARCHAR(32) NOT NULL,
+  `enabled` TINYINT NOT NULL DEFAULT 1,
+  `sla_hours` INT NOT NULL,
+  `due_soon_ratio` DECIMAL(6,4) NOT NULL DEFAULT 0.2000,
+  `escalate_to_role` VARCHAR(64) NOT NULL DEFAULT 'recon:manage',
+  `updated_by` VARCHAR(64) DEFAULT NULL,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recon_diff_sla_rule_type` (`diff_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账差异 SLA 规则';
+
+CREATE TABLE `recon_report_subscription` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `subscriber_id` VARCHAR(64) NOT NULL,
+  `report_type` VARCHAR(16) NOT NULL,
+  `scope` VARCHAR(32) NOT NULL,
+  `enabled` TINYINT NOT NULL DEFAULT 1,
+  `last_sent_at` DATETIME DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recon_report_subscription` (`subscriber_id`, `report_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账报告订阅';
+
+CREATE TABLE `recon_report_snapshot` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `snapshot_id` VARCHAR(64) NOT NULL,
+  `subscriber_id` VARCHAR(64) NOT NULL,
+  `report_type` VARCHAR(16) NOT NULL,
+  `period_start` DATETIME NOT NULL,
+  `period_end` DATETIME NOT NULL,
+  `payload_json` TEXT NOT NULL,
+  `generated_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recon_report_snapshot_snapshot` (`snapshot_id`),
+  KEY `idx_recon_report_snapshot_subscriber` (`subscriber_id`, `report_type`, `generated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账报告快照';
+
+CREATE TABLE `recon_aggregation_snapshot` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `stat_date` DATE NOT NULL,
+  `merchant_id` VARCHAR(64) NOT NULL,
+  `channel` VARCHAR(32) NOT NULL,
+  `diff_type` VARCHAR(32) NOT NULL,
+  `diff_count` BIGINT NOT NULL,
+  `diff_amount` BIGINT NOT NULL,
+  `processed_count` BIGINT NOT NULL DEFAULT 0,
+  `ignored_count` BIGINT NOT NULL DEFAULT 0,
+  `accepted_loss_count` BIGINT NOT NULL DEFAULT 0,
+  `sla_met_count` BIGINT NOT NULL DEFAULT 0,
+  `sla_total_count` BIGINT NOT NULL DEFAULT 0,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recon_aggregation_snapshot` (`stat_date`, `merchant_id`, `channel`, `diff_type`),
+  KEY `idx_recon_aggregation_snapshot_date` (`stat_date`),
+  KEY `idx_recon_aggregation_snapshot_merchant` (`merchant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='对账差异预聚合快照';
 
 CREATE TABLE `recon_merchant_task` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -653,6 +740,48 @@ CREATE TABLE `admin_payment_link` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_link` (`link_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收款链接';
+
+CREATE TABLE IF NOT EXISTS `admin_data_isolation_checks` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `check_id` VARCHAR(64) NOT NULL COMMENT '检查项标识',
+  `target_type` VARCHAR(32) NOT NULL COMMENT 'DATA_TABLE/PAGE/API/ASYNC_TASK/EXPORT_TASK',
+  `target_name` VARCHAR(256) NOT NULL COMMENT '检查目标名称',
+  `classification` VARCHAR(32) NOT NULL COMMENT 'MERCHANT/GLOBAL/SYSTEM_AUDIT/MANUAL_REVIEW',
+  `merchant_field_status` VARCHAR(32) NOT NULL COMMENT 'PRESENT/MISSING/NOT_APPLICABLE/PENDING_CONFIRM',
+  `risk_level` VARCHAR(16) NOT NULL COMMENT 'HIGH/MEDIUM/LOW',
+  `affected_entries` VARCHAR(1024) DEFAULT NULL COMMENT '影响入口摘要',
+  `remediation_status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/IN_PROGRESS/DONE/EXEMPTED/NEEDS_MANUAL_REVIEW',
+  `decision_reason` VARCHAR(1024) DEFAULT NULL COMMENT '分类或豁免理由',
+  `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '检查项关联商户',
+  `last_scanned_at` DATETIME DEFAULT NULL COMMENT '最近扫描时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_check_id` (`check_id`),
+  KEY `idx_isolation_classification` (`classification`, `remediation_status`),
+  KEY `idx_isolation_risk` (`risk_level`, `remediation_status`),
+  KEY `idx_isolation_target` (`target_type`, `target_name`),
+  KEY `idx_isolation_merchant` (`merchant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商户数据隔离检查项';
+
+CREATE TABLE IF NOT EXISTS `admin_notifications` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `recipient_user_id` BIGINT NOT NULL COMMENT '接收人（admin_sys_users.id）',
+  `merchant_id` VARCHAR(64) DEFAULT NULL COMMENT '商户隔离字段',
+  `biz_type` VARCHAR(32) NOT NULL COMMENT '通知业务类型',
+  `biz_key` VARCHAR(128) NOT NULL COMMENT '业务唯一键（幂等去重）',
+  `title` VARCHAR(256) NOT NULL COMMENT '通知标题',
+  `summary` VARCHAR(512) DEFAULT NULL COMMENT '正文摘要',
+  `link` VARCHAR(512) DEFAULT NULL COMMENT '跳转URL（相对路径）',
+  `read_status` TINYINT NOT NULL DEFAULT 0 COMMENT '0=未读 1=已读',
+  `read_at` DATETIME DEFAULT NULL COMMENT '标记已读时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_notification_biz` (`biz_type`, `biz_key`, `recipient_user_id`),
+  KEY `idx_notification_recipient` (`recipient_user_id`, `read_status`, `created_at` DESC),
+  KEY `idx_notification_merchant` (`merchant_id`),
+  KEY `idx_notification_cleanup` (`read_status`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站内通知';
 
 CREATE OR REPLACE VIEW `channels` AS SELECT * FROM `admin_channels`;
 CREATE OR REPLACE VIEW `merchants` AS SELECT * FROM `admin_merchants`;

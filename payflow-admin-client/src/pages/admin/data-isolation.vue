@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="query" size="default">
+      <el-form :inline="true" :model="query" size="default" class="filter-bar__form">
         <el-form-item label="分类">
           <el-select v-model="query.classification" placeholder="全部" clearable style="width: 150px">
             <el-option label="商户级" value="MERCHANT" />
@@ -29,7 +29,7 @@
         <el-form-item v-if="isPlatformAdmin" label="商户号">
           <el-input v-model="query.merchantId" placeholder="可选" clearable style="width: 140px" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" @click="handleReset">重置</el-button>
           <el-button v-if="isPlatformAdmin" type="warning" :loading="scanning" @click="handleScan">执行扫描</el-button>
@@ -49,7 +49,7 @@
         <el-table-column label="商户" prop="merchantId" width="110" />
         <el-table-column label="最近扫描" prop="lastScannedAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs tabular-nums">{{ formatDateTime(row.lastScannedAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.lastScannedAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column v-if="isPlatformAdmin" label="操作" width="160" fixed="right">

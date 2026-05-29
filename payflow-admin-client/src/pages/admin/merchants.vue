@@ -1,14 +1,14 @@
 ﻿<template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="queryForm" size="default">
+      <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
         <el-form-item label="关键词"><el-input v-model="queryForm.keyword" placeholder="商户号 / 商户名称" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryForm.status" placeholder="全部" clearable style="width: 140px">
             <el-option label="全部" value="" /><el-option label="正常" value="ACTIVE" /><el-option label="停用" value="SUSPENDED" /><el-option label="关闭" value="CLOSED" />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -23,7 +23,7 @@
           <template #default="{ row }">
             <span
               :data-flip="`merchant-${row.merchantId}`"
-              class="text-xs tabular-nums font-medium text-primary cursor-pointer"
+              class="cell-mono pf-link cursor-pointer"
               @click.stop="goMerchantInsight(row)"
             >{{ row.merchantId }}</span>
           </template>
@@ -54,7 +54,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" min-width="280" class-name="col-actions" fixed="right">

@@ -126,6 +126,42 @@ const router = createRouter({
           meta: { title: '对账汇总', requiresAuth: true },
         },
         {
+          path: 'reconcile/work-items',
+          name: 'ReconcileWorkItems',
+          component: () => import('@/pages/admin/reconcile/work-items.vue'),
+          meta: { title: '差异工单', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/work-items/:diffId',
+          name: 'ReconcileWorkItemDetail',
+          component: () => import('@/pages/admin/reconcile/work-item-detail.vue'),
+          meta: { title: '工单详情', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/sla-rules',
+          name: 'ReconcileSlaRules',
+          component: () => import('@/pages/admin/reconcile/sla-rules.vue'),
+          meta: { title: 'SLA 规则', requiresAuth: true, platformOnly: true },
+        },
+        {
+          path: 'reconcile/insights-dashboard',
+          name: 'ReconcileInsightsDashboard',
+          component: () => import('@/pages/admin/reconcile/insights-dashboard.vue'),
+          meta: { title: '差异归因看板', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/long-tail',
+          name: 'ReconcileLongTail',
+          component: () => import('@/pages/admin/reconcile/long-tail.vue'),
+          meta: { title: '长尾差异', requiresAuth: true },
+        },
+        {
+          path: 'reconcile/reports/:snapshotId',
+          name: 'ReconcileReportDetail',
+          component: () => import('@/pages/admin/reconcile/report-detail.vue'),
+          meta: { title: '对账报告', requiresAuth: true },
+        },
+        {
           path: 'channels',
           name: 'Channels',
           component: () => import('@/pages/admin/channels.vue'),

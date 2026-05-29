@@ -8,7 +8,7 @@
     <!-- 规则列表 -->
     <template v-if="activeTab === 'rules'">
       <div class="filter-bar">
-        <el-form :inline="true" :model="queryForm" size="default">
+        <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
           <el-form-item label="关键词">
             <el-input
               v-model="queryForm.keyword"
@@ -58,7 +58,7 @@
               <el-option label="停用" :value="false" />
             </el-select>
           </el-form-item>
-          <el-form-item>
+          <el-form-item class="filter-bar__actions">
             <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
             <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
           </el-form-item>
@@ -160,7 +160,7 @@
           </el-table-column>
           <el-table-column label="更新时间" min-width="156" show-overflow-tooltip>
             <template #default="{ row }">
-              <span class="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatDateTime(row.updatedAt) }}</span>
+              <span class="cell-datetime">{{ formatDateTime(row.updatedAt) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="操作" min-width="120" class-name="col-actions" fixed="right">
@@ -191,7 +191,7 @@
     <!-- 命中记录 -->
     <template v-else>
       <div class="filter-bar">
-        <el-form :inline="true" :model="hitQuery" size="default">
+        <el-form :inline="true" :model="hitQuery" size="default" class="filter-bar__form">
           <el-form-item label="商户">
             <el-select v-model="hitQuery.merchantId" placeholder="全部" clearable filterable style="width: 180px">
               <el-option
@@ -209,7 +209,7 @@
               <el-option label="告警" value="WARN_ONLY" />
             </el-select>
           </el-form-item>
-          <el-form-item>
+          <el-form-item class="filter-bar__actions">
             <el-button type="primary" class="btn-primary" icon="Search" @click="loadHits">查询</el-button>
           </el-form-item>
         </el-form>
@@ -219,7 +219,7 @@
         <el-table table-layout="auto" v-loading="hitLoading" :data="hitList" stripe size="small" class="data-table">
           <el-table-column label="时间" prop="createdAt" width="168">
             <template #default="{ row }">
-              <span class="text-xs tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+              <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="商户" min-width="140" show-overflow-tooltip>

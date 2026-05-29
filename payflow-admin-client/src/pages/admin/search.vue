@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" @submit.prevent="runSearch">
+      <el-form :inline="true" size="default" class="filter-bar__form" @submit.prevent="runSearch">
         <el-form-item label="关键词">
           <el-input
             v-model="keyword"
@@ -14,7 +14,7 @@
         <el-form-item label="条数">
           <el-input-number v-model="limit" :min="1" :max="50" />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="runSearch">搜索</el-button>
         </el-form-item>
       </el-form>
@@ -48,7 +48,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.createdAt) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
       </el-table>

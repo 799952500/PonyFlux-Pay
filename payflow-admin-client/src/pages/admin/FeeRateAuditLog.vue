@@ -1,7 +1,7 @@
 <template>
   <div class="page-table-shell">
     <div class="filter-bar">
-      <el-form :inline="true" :model="filters" size="default">
+      <el-form :inline="true" :model="filters" size="default" class="filter-bar__form">
         <el-form-item label="商户ID">
           <el-input
             v-model="filters.merchantId"
@@ -11,7 +11,7 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="filter-bar__actions">
           <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
           <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
         </el-form-item>
@@ -19,12 +19,7 @@
     </div>
 
     <div class="content-card">
-      <div class="table-toolbar">
-        <div>
-          <div class="table-toolbar__title">变更记录</div>
-          <div class="table-toolbar__hint">共 {{ pagination.total }} 条费率变更审计</div>
-        </div>
-      </div>
+      <TableToolbar title="变更记录" :total="pagination.total" hint="费率变更审计" />
 
       <el-table table-layout="auto" :data="logs" v-loading="loading" stripe size="small" class="data-table">
         <el-table-column label="商户ID" prop="merchantId" width="96" align="center">
@@ -34,7 +29,7 @@
         </el-table-column>
         <el-table-column label="变更时间" prop="changeTime" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="text-xs text-slate-600 tabular-nums">{{ formatDateTime(row.changeTime) }}</span>
+            <span class="cell-datetime">{{ formatDateTime(row.changeTime) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="费率变更" min-width="180">
@@ -76,6 +71,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getFeeRateAuditLog } from '@/api/admin'
+import TableToolbar from '@/components/admin/TableToolbar.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import { DEFAULT_PAGE_SIZE } from '@/constants/pagination'
 import { FEE_TRIGGER_LABEL, formatDateTime, formatRatePercent, labelOf } from '@/utils/format'
