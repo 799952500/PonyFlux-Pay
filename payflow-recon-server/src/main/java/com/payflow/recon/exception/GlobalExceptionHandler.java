@@ -1,6 +1,7 @@
 package com.payflow.recon.exception;
 
 import com.payflow.common.exception.BizException;
+import com.payflow.common.web.R;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,6 @@ import java.util.Map;
 
 /**
  * 全局异常处理。
- *
- * @author PayFlow Team
  */
 @Slf4j
 @RestControllerAdvice
@@ -59,7 +58,7 @@ public class GlobalExceptionHandler {
         log.error("SQL 语法/表结构异常: {}", e.getMessage(), e);
         return R.<Void>builder()
                 .code(7598)
-                .message("对账表未初始化或结构不匹配，请执行 admin-schema.sql / admin-alter-202605-recon.sql 或 sql/full-reseed-payflow-demo.sql")
+                .message("对账表未初始化或结构不匹配，请执行 python scripts/install_demo_db.py 或 sql/schema/payflow_admin.sql")
                 .build();
     }
 

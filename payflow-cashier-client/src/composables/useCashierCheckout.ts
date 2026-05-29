@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useCashierStore } from '@/stores/cashier'
 import { getCashierInfo, createPayment, pollPaymentStatus } from '@/api/cashier'
@@ -14,46 +15,49 @@ function resolvePayChannel(methodCode: string): PayChannel {
 }
 
 /** Demo 固定展示 8 种支付方式，便于验证长列表滚动与紧凑样式 */
-const DEMO_PC_PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    methodCode: 'ALIPAY_NATIVE',
-    methodName: '支付宝（扫码）',
-    channel: 'ALIPAY',
-    icon: '',
-    discount: { name: '首单立减', amount: 100 },
-  },
-  { methodCode: 'WECHAT_NATIVE', methodName: '微信支付（扫码）', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'UNION_QR', methodName: '云闪付（扫码）', channel: 'UNION_PAY', icon: '' },
-  { methodCode: 'ALIPAY_WAP', methodName: '支付宝 H5', channel: 'ALIPAY', icon: '' },
-  { methodCode: 'WECHAT_H5', methodName: '微信 H5', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'ALIPAY_APP', methodName: '支付宝 App', channel: 'ALIPAY', icon: '' },
-  { methodCode: 'WECHAT_APP', methodName: '微信 App', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'WECHAT_JSAPI', methodName: '微信 JSAPI', channel: 'WECHAT_PAY', icon: '' },
+const DEMO_PC_METHOD_CODES: Array<{ code: string; channel: PayChannel; discount?: boolean }> = [
+  { code: 'ALIPAY_NATIVE', channel: 'ALIPAY', discount: true },
+  { code: 'WECHAT_NATIVE', channel: 'WECHAT_PAY' },
+  { code: 'UNION_QR', channel: 'UNION_PAY' },
+  { code: 'ALIPAY_WAP', channel: 'ALIPAY' },
+  { code: 'WECHAT_H5', channel: 'WECHAT_PAY' },
+  { code: 'ALIPAY_APP', channel: 'ALIPAY' },
+  { code: 'WECHAT_APP', channel: 'WECHAT_PAY' },
+  { code: 'WECHAT_JSAPI', channel: 'WECHAT_PAY' },
 ]
 
-const DEMO_H5_PAYMENT_METHODS: PaymentMethod[] = [
-  {
-    methodCode: 'ALIPAY_WAP',
-    methodName: '支付宝',
-    channel: 'ALIPAY',
-    icon: '',
-    discount: { name: '首单立减', amount: 100 },
-  },
-  { methodCode: 'WECHAT_H5', methodName: '微信支付', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'UNION_H5', methodName: '云闪付', channel: 'UNION_PAY', icon: '' },
-  { methodCode: 'ALIPAY_NATIVE', methodName: '支付宝（扫码）', channel: 'ALIPAY', icon: '' },
-  { methodCode: 'WECHAT_NATIVE', methodName: '微信（扫码）', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'ALIPAY_APP', methodName: '支付宝 App', channel: 'ALIPAY', icon: '' },
-  { methodCode: 'WECHAT_APP', methodName: '微信 App', channel: 'WECHAT_PAY', icon: '' },
-  { methodCode: 'WECHAT_JSAPI', methodName: '微信 JSAPI', channel: 'WECHAT_PAY', icon: '' },
+const DEMO_H5_METHOD_CODES: Array<{ code: string; channel: PayChannel; discount?: boolean }> = [
+  { code: 'ALIPAY_WAP', channel: 'ALIPAY', discount: true },
+  { code: 'WECHAT_H5', channel: 'WECHAT_PAY' },
+  { code: 'UNION_H5', channel: 'UNION_PAY' },
+  { code: 'ALIPAY_NATIVE', channel: 'ALIPAY' },
+  { code: 'WECHAT_NATIVE', channel: 'WECHAT_PAY' },
+  { code: 'ALIPAY_APP', channel: 'ALIPAY' },
+  { code: 'WECHAT_APP', channel: 'WECHAT_PAY' },
+  { code: 'WECHAT_JSAPI', channel: 'WECHAT_PAY' },
 ]
 
-function buildDemoOrder(terminal: CashierTerminal): CashierInfo {
+function buildDemoMethods(
+  codes: Array<{ code: string; channel: PayChannel; discount?: boolean }>,
+  t: (key: string) => string
+): PaymentMethod[] {
+  return codes.map(({ code, channel, discount }) => ({
+    methodCode: code,
+    methodName: t(`paymentMethods.${code}`),
+    channel,
+    icon: '',
+    ...(discount
+      ? { discount: { name: t('paymentMethods.firstOrderDiscount'), amount: 100 } }
+      : {}),
+  }))
+}
+
+function buildDemoOrder(terminal: CashierTerminal, t: (key: string) => string): CashierInfo {
   const base = {
     orderId: 'DEMO001',
-    merchantName: '演示商户',
-    subject: '测试商品',
-    body: '这是一笔测试订单，用于演示收银台功能',
+    merchantName: t('demo.merchantName'),
+    subject: t('demo.subject'),
+    body: t('demo.body'),
     amount: 10000,
     currency: 'CNY',
     createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
@@ -64,17 +68,22 @@ function buildDemoOrder(terminal: CashierTerminal): CashierInfo {
   return {
     ...base,
     paymentMethods:
-      terminal === 'H5' ? DEMO_H5_PAYMENT_METHODS : DEMO_PC_PAYMENT_METHODS,
+      terminal === 'H5'
+        ? buildDemoMethods(DEMO_H5_METHOD_CODES, t)
+        : buildDemoMethods(DEMO_PC_METHOD_CODES, t),
   }
 }
 
 export function useCashierCheckout(terminal: CashierTerminal) {
   const route = useRoute()
+  const { t } = useI18n()
   const cashierStore = useCashierStore()
 
   const selectedMethod = ref('')
   const payResult = ref<'success' | 'failed' | null>(null)
   const confirming = ref(false)
+
+  const loadError = ref<string | null>(null)
 
   const deviceType: DeviceType = terminal === 'H5' ? 'H5' : 'WEB'
 
@@ -106,7 +115,7 @@ export function useCashierCheckout(terminal: CashierTerminal) {
   )
 
   function handleOrderExpired() {
-    ElMessage.warning('支付超时，请返回商户重新下单')
+    ElMessage.warning(t('messages.paymentExpired'))
   }
 
   let expiredNotified = false
@@ -120,21 +129,31 @@ export function useCashierCheckout(terminal: CashierTerminal) {
   async function startPaymentPoll(paymentId: string | undefined) {
     if (!paymentId) return
     const MAX_POLL = 60
+    const MAX_POLL_FAIL = 3
     let count = 0
+    let failCount = 0
     const poll = async (): Promise<void> => {
       if (count >= MAX_POLL) {
         payResult.value = 'failed'
+        confirming.value = false
         return
       }
       try {
         const statusResp = (await pollPaymentStatus(paymentId)) as unknown as { status: string }
+        failCount = 0
         const st = statusResp.status
         if (st === 'PAID' || st === 'SUCCESS') {
           payResult.value = 'success'
+          confirming.value = false
           return
         }
       } catch {
-        /* 继续轮询 */
+        failCount++
+        if (failCount >= MAX_POLL_FAIL) {
+          ElMessage.warning(t('messages.pollFailed'))
+          confirming.value = false
+          return
+        }
       }
       count++
       setTimeout(poll, 3000)
@@ -147,12 +166,14 @@ export function useCashierCheckout(terminal: CashierTerminal) {
     const sig = route.query.sig as string | undefined
 
     if (!orderId || orderId === 'demo') {
-      cashierStore.setOrderInfo(buildDemoOrder(terminal))
+      loadError.value = null
+      cashierStore.setOrderInfo(buildDemoOrder(terminal, t))
       cashierStore.setLoading(false)
       return
     }
 
     cashierStore.setLoading(true)
+    loadError.value = null
     try {
       const info = await getCashierInfo(orderId, sig ?? '', terminal)
       cashierStore.setOrderInfo(info)
@@ -162,7 +183,8 @@ export function useCashierCheckout(terminal: CashierTerminal) {
         payResult.value = 'failed'
       }
     } catch {
-      ElMessage.error('加载收银台信息失败')
+      loadError.value = t('messages.loadCashierFailed')
+      cashierStore.setOrderInfo(null)
     } finally {
       cashierStore.setLoading(false)
     }
@@ -255,7 +277,10 @@ export function useCashierCheckout(terminal: CashierTerminal) {
   async function handleConfirmPay() {
     confirming.value = true
     const result = cashierStore.paymentResult
-    if (!result) return
+    if (!result) {
+      confirming.value = false
+      return
+    }
 
     const MAX_POLL = 60
     let count = 0
@@ -301,12 +326,14 @@ export function useCashierCheckout(terminal: CashierTerminal) {
     payResult,
     confirming,
     showQR,
+    loadError,
     merchantInitial,
     checkoutDeadlinePassed,
     handleOrderExpired,
     handlePay,
     handleConfirmPay,
     handleRetry,
+    retryLoad: loadOrder,
     formatAmount,
   }
 }

@@ -1,6 +1,8 @@
 package com.payflow.recon.service;
 
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.payflow.recon.config.ReconProperties;
 import com.payflow.recon.entity.ReconDiff;
 import com.payflow.recon.mapper.ReconDiffMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.List;
 public class ReconDiffHealService {
 
     private final ReconDiffMapper reconDiffMapper;
+    private final ReconProperties reconProperties;
 
     /**
      * 为本任务全部差异写入建议动作。
@@ -36,7 +39,9 @@ public class ReconDiffHealService {
                 default -> "REVIEW";
             };
             d.setSuggestedAction(suggestion);
-            reconDiffMapper.updateById(d);
+        }
+        if (!list.isEmpty()) {
+            Db.updateBatchById(list, reconProperties.getBatchSize());
         }
         log.info("对账差异建议已标注: taskId={}, count={}", taskId, list.size());
     }

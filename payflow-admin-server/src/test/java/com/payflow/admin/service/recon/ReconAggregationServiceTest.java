@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReconAggregationService 集成测试")
-class ReconAggregationServiceIT {
+class ReconAggregationServiceTest {
 
     @Mock
     private ReconTaskEntityMapper taskMapper;

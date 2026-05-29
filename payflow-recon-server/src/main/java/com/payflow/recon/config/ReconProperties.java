@@ -23,6 +23,9 @@ public class ReconProperties {
 
     private Storage storage = new Storage();
 
+    /** 批量写入条数（账单/差异） */
+    private int batchSize = 500;
+
     @Data
     public static class Poller {
         private boolean enabled = true;

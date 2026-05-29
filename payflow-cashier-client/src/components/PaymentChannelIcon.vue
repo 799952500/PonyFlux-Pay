@@ -35,10 +35,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   channel: string
 }>()
+
+const { t } = useI18n()
 
 const variant = computed(() => {
   const c = props.channel.toUpperCase()
@@ -49,13 +52,13 @@ const variant = computed(() => {
 })
 
 const label = computed(() => {
-  const map: Record<string, string> = {
-    alipay: '支付宝',
-    wechat: '微信支付',
-    union: '云闪付',
-    default: '支付方式',
+  const keyMap: Record<string, string> = {
+    alipay: 'paymentMethods.ALIPAY',
+    wechat: 'paymentMethods.WECHAT_PAY',
+    union: 'paymentMethods.UNION_PAY',
+    default: 'cashier.paymentMethods',
   }
-  return map[variant.value]
+  return t(keyMap[variant.value] ?? keyMap.default)
 })
 </script>
 

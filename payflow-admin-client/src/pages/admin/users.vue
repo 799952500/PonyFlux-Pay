@@ -8,6 +8,9 @@
       </TableToolbar>
 
       <el-table table-layout="auto" v-loading="loading" :data="userList" stripe size="small" class="data-table">
+        <template #empty>
+          <el-empty description="暂无用户" />
+        </template>
         <el-table-column label="用户名" prop="username" min-width="140">
           <template #default="{ row }">
             <span class="cell-mono pf-link">{{ row.username }}</span>

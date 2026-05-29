@@ -1,6 +1,7 @@
 package com.payflow.cashier.openservice.payment.impl;
 
 import com.payflow.cashier.entity.PayChannelAccount;
+import com.payflow.cashier.openservice.payment.ChannelOrderQueryResult;
 import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenService;
 import com.payflow.cashier.sdk.PayStrategyLocator;
 import com.payflow.common.exception.BizException;
@@ -8,6 +9,7 @@ import com.payflow.payment.core.PayMethod;
 import com.payflow.payment.core.PayResult;
 import com.payflow.payment.core.PayStrategy;
 import com.payflow.payment.core.RefundResult;
+import com.payflow.payment.wechat.WxPayNativeHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class WxPayPaymentOpenService implements PayChannelPaymentOpenService {
 
     /** 支付策略定位器：按 payMethod 定位具体策略（WECHAT_NATIVE/WECHAT_H5/WECHAT_APP） */
     private final PayStrategyLocator payStrategyLocator;
+    private final WxPayNativeHandler wxPayNativeHandler;
 
     /**
      * 微信渠道编码（小写）。
@@ -69,6 +72,13 @@ public class WxPayPaymentOpenService implements PayChannelPaymentOpenService {
         PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, channelExtras);
         log.info("微信下单完成: orderId={}, payMethod={}, action={}", orderId, payMethod, result.getAction());
         return result;
+    }
+
+    @Override
+    public ChannelOrderQueryResult queryOrder(String orderId, PayChannelAccount account) {
+        boolean paid = wxPayNativeHandler.queryOutTradeNoSuccess(orderId, account);
+        return ChannelOrderQueryResult.of(paid, null,
+                paid ? "微信侧订单已支付" : "微信侧订单未支付或查单失败");
     }
 
     /**

@@ -5,12 +5,12 @@
         <img src="/ponyflux-logo.svg" width="32" height="32" alt="" class="pc-header__logo" />
         <div class="pc-header__titles">
           <span class="pc-header__name">PonyFlux Pay</span>
-          <span class="pc-header__sub">企业收银台</span>
+          <span class="pc-header__sub">{{ t('nav.enterpriseCashier') }}</span>
         </div>
       </div>
 
       <div class="pc-header__center">
-        <span class="pc-header__page-title">订单支付</span>
+        <span class="pc-header__page-title">{{ t('nav.orderPayment') }}</span>
       </div>
 
       <div class="pc-header__actions">
@@ -19,9 +19,9 @@
           class="pc-header__timer"
           :class="{ 'pc-header__timer--warn': isExpiringSoon }"
         >
-          支付剩余 {{ expireCountdown }}
+          {{ t('nav.timeRemaining', { time: expireCountdown }) }}
         </span>
-        <a href="tel:4008888888" class="pc-header__link">联系客服</a>
+        <a href="tel:4008888888" class="pc-header__link">{{ t('nav.contactSupport') }}</a>
       </div>
     </div>
     <div class="pc-header__stamp-edge" aria-hidden="true" />
@@ -30,8 +30,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCashierStore } from '@/stores/cashier'
 
+const { t } = useI18n()
 const cashierStore = useCashierStore()
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | null = null
@@ -40,10 +42,10 @@ const expireCountdown = computed(() => {
   const info = cashierStore.orderInfo
   if (!info?.expireTime) return ''
   const diff = new Date(info.expireTime).getTime() - now.value
-  if (diff <= 0) return '已过期'
+  if (diff <= 0) return t('order.expired')
   const min = Math.floor(diff / 60000)
   const sec = Math.floor((diff % 60000) / 1000)
-  return `${min} 分 ${sec.toString().padStart(2, '0')} 秒`
+  return t('nav.minutesSeconds', { min, sec: sec.toString().padStart(2, '0') })
 })
 
 const isExpiringSoon = computed(() => {

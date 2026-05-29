@@ -60,9 +60,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, markRaw } from 'vue'
+import { ref, markRaw, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import { Bell, Warning, Clock, Download, CloseBold, DataAnalysis, Connection, Notification, Loading } from '@element-plus/icons-vue'
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/api/admin'
 import type { NotificationItem } from '@/api/admin'
@@ -70,11 +71,11 @@ import { useNotificationStore } from '@/composables/useNotification'
 import dayjs from 'dayjs'
 import relativeTimePlugin from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/en'
 
 dayjs.extend(relativeTimePlugin)
-dayjs.locale('zh-cn')
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const store = useNotificationStore()
 
@@ -93,8 +94,13 @@ const iconMap: Record<string, any> = {
 }
 
 function relativeTime(dateStr: string) {
-  return dayjs(dateStr).fromNow()
+  const loc = locale.value === 'en-US' ? 'en' : 'zh-cn'
+  return dayjs(dateStr).locale(loc).fromNow()
 }
+
+watch(locale, (loc) => {
+  dayjs.locale(loc === 'en-US' ? 'en' : 'zh-cn')
+})
 
 async function fetchItems() {
   loading.value = true
@@ -103,6 +109,7 @@ async function fetchItems() {
     items.value = result.list
   } catch {
     items.value = []
+    ElMessage.warning(t('notifications.loadFailed'))
   } finally {
     loading.value = false
   }

@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReconLongTailService 集成测试")
-class ReconLongTailServiceIT {
+class ReconLongTailServiceTest {
 
     @Mock
     private ReconDiffAssignmentEntityMapper assignmentMapper;

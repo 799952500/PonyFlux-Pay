@@ -7,7 +7,7 @@
       'checkout-pay-methods--dense': (layout === 'desktop' || layout === 'h5') && methods.length > 5,
     }"
   >
-    <h3 v-if="layout === 'pc'" class="checkout-section-title">选择支付方式</h3>
+    <h3 v-if="layout === 'pc'" class="checkout-section-title">{{ t('cashier.selectPayment') }}</h3>
 
     <div
       class="pay-options-scroller"
@@ -19,7 +19,7 @@
       <div
         class="pay-options"
         role="listbox"
-        :aria-label="layout === 'desktop' ? '支付方式列表' : undefined"
+        :aria-label="layout === 'desktop' ? t('paymentMethods.listAria') : undefined"
       >
       <button
         v-for="method in methods"
@@ -38,7 +38,7 @@
           <span v-if="method.discount" class="pay-option__hint pay-option__hint--promo">
             {{ method.discount.name }}
           </span>
-          <span v-else class="pay-option__hint">安全快捷</span>
+          <span v-else class="pay-option__hint">{{ t('paymentMethods.safeQuick') }}</span>
         </div>
 
         <div class="pay-option__tail">
@@ -56,8 +56,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import PaymentChannelIcon from '@/components/PaymentChannelIcon.vue'
 import type { PaymentMethod } from '@/types'
+
+const { t } = useI18n()
 
 withDefaults(
   defineProps<{

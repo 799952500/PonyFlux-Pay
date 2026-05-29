@@ -73,6 +73,23 @@ public class OrderService {
     }
 
     /**
+     * 批量按订单号查询（回调列表等场景避免 N+1）。
+     */
+    public Map<String, Order> mapByOrderIds(List<String> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Map.of();
+        }
+        List<String> distinct = orderIds.stream().filter(id -> id != null && !id.isBlank()).distinct().toList();
+        if (distinct.isEmpty()) {
+            return Map.of();
+        }
+        LambdaQueryWrapper<Order> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Order::getOrderId, distinct);
+        return orderMapper.selectList(wrapper).stream()
+                .collect(java.util.stream.Collectors.toMap(Order::getOrderId, o -> o, (a, b) -> a));
+    }
+
+    /**
      * 按商户查询订单
      */
     public List<Order> findByMerchantId(String merchantId) {

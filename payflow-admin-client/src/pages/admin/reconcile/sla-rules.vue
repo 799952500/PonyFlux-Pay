@@ -75,7 +75,7 @@
       </el-form>
       <template #footer>
         <el-button class="btn-outline" @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" class="btn-primary" @click="save">保存</el-button>
+        <el-button type="primary" class="btn-primary" :loading="submitting" @click="save">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -90,6 +90,7 @@ import { getReconSlaRules, saveReconSlaRule } from '@/api/admin'
 import { RECON_DIFF_LABEL, formatDateTime, labelOf } from '@/utils/format'
 
 const loading = ref(false)
+const submitting = ref(false)
 const rules = ref<ReconSlaRule[]>([])
 const dialogVisible = ref(false)
 const form = reactive<ReconSlaRule>({
@@ -111,6 +112,8 @@ const load = async () => {
   loading.value = true
   try {
     rules.value = await getReconSlaRules()
+  } catch {
+    ElMessage.warning('加载 SLA 规则失败')
   } finally {
     loading.value = false
   }
@@ -122,15 +125,22 @@ const openEdit = (row: ReconSlaRule) => {
 }
 
 const save = async () => {
-  await saveReconSlaRule(form.diffType, {
-    enabled: form.enabled,
-    slaHours: form.slaHours,
-    dueSoonRatio: form.dueSoonRatio,
-    escalateToRole: form.escalateToRole,
-  })
-  dialogVisible.value = false
-  ElMessage.success('保存成功')
-  await load()
+  submitting.value = true
+  try {
+    await saveReconSlaRule(form.diffType, {
+      enabled: form.enabled,
+      slaHours: form.slaHours,
+      dueSoonRatio: form.dueSoonRatio,
+      escalateToRole: form.escalateToRole,
+    })
+    dialogVisible.value = false
+    ElMessage.success('保存成功')
+    await load()
+  } catch {
+    ElMessage.warning('保存 SLA 规则失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 load()

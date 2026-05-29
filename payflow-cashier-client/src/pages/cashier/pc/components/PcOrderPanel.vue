@@ -2,17 +2,17 @@
   <section class="pc-order-panel pc-order-panel--ticket">
     <div class="pc-order-panel__banner">
       <div class="pc-order-panel__banner-text">
-        <span class="pc-order-panel__banner-title">电子订单</span>
-        <span class="pc-order-panel__banner-sub">Electronic Order</span>
+        <span class="pc-order-panel__banner-title">{{ t('orderPanel.electronicOrder') }}</span>
+        <span class="pc-order-panel__banner-sub">{{ t('orderPanel.electronicOrderEn') }}</span>
       </div>
       <img src="/ponyflux-logo.svg" alt="" class="pc-order-panel__banner-logo" width="28" height="28" />
     </div>
 
     <div class="pc-order-panel__body">
       <div class="pc-order-panel__meta">
-        <h2 class="pc-order-panel__title">订单信息</h2>
+        <h2 class="pc-order-panel__title">{{ t('orderPanel.orderInfo') }}</h2>
         <span class="pc-order-panel__status" :class="isExpired ? 'is-danger' : 'is-pending'">
-          {{ isExpired ? '已过期' : '待支付' }}
+          {{ isExpired ? t('order.expired') : t('order.pending') }}
         </span>
       </div>
 
@@ -20,33 +20,33 @@
         <div class="pc-order-panel__avatar">{{ merchantInitial }}</div>
         <div>
           <p class="pc-order-panel__merchant-name">{{ info.merchantName }}</p>
-          <p class="pc-order-panel__merchant-label">收款商户</p>
+          <p class="pc-order-panel__merchant-label">{{ t('orderPanel.merchantLabel') }}</p>
         </div>
       </div>
 
       <dl class="pc-order-dl">
         <div class="pc-order-dl__row">
-          <dt>商品名称</dt>
+          <dt>{{ t('orderPanel.productName') }}</dt>
           <dd>{{ info.subject }}</dd>
         </div>
         <div v-if="info.body" class="pc-order-dl__row">
-          <dt>商品说明</dt>
+          <dt>{{ t('orderPanel.productDesc') }}</dt>
           <dd>{{ info.body }}</dd>
         </div>
         <div class="pc-order-dl__row">
-          <dt>订单编号</dt>
+          <dt>{{ t('orderPanel.orderNo') }}</dt>
           <dd class="pc-order-dl__mono">{{ info.orderId }}</dd>
         </div>
         <div class="pc-order-dl__row">
-          <dt>创建时间</dt>
+          <dt>{{ t('orderPanel.createdAt') }}</dt>
           <dd>{{ formatTime(info.createdAt) }}</dd>
         </div>
         <div class="pc-order-dl__row">
-          <dt>过期时间</dt>
+          <dt>{{ t('orderPanel.expireAt') }}</dt>
           <dd>{{ formatTime(info.expireTime) }}</dd>
         </div>
         <div class="pc-order-dl__row pc-order-dl__row--amount">
-          <dt>应付金额</dt>
+          <dt>{{ t('orderPanel.amountDue') }}</dt>
           <dd>
             <span class="pc-order-amount">
               <span class="pc-order-amount__currency">¥</span>
@@ -59,7 +59,7 @@
 
       <div v-if="!isExpired && remainingMs > 0" class="pc-order-timer">
         <div class="pc-order-timer__label">
-          <span>支付时限</span>
+          <span>{{ t('orderPanel.paymentDeadline') }}</span>
           <span class="pc-order-timer__text">{{ countdownText }}</span>
         </div>
         <div class="pc-order-timer__track">
@@ -75,7 +75,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CashierInfo } from '@/types'
+
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   info: CashierInfo
@@ -105,7 +108,7 @@ const remainingMs = computed(() => Math.max(0, expireTs.value - now.value))
 const isExpired = computed(() => remainingMs.value <= 0)
 
 const countdownText = computed(() => {
-  if (isExpired.value) return '已超时'
+  if (isExpired.value) return t('order.timedOut')
   const min = Math.floor(remainingMs.value / 60000)
   const sec = Math.floor((remainingMs.value % 60000) / 1000)
   return `${min}:${sec.toString().padStart(2, '0')}`
@@ -132,7 +135,7 @@ const progressColor = computed(() => {
 function formatTime(iso?: string): string {
   if (!iso) return '—'
   try {
-    return new Date(iso).toLocaleString('zh-CN', {
+    return new Date(iso).toLocaleString(locale.value, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

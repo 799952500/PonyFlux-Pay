@@ -78,5 +78,12 @@ public interface PayChannelPaymentOpenService {
     RefundResult refund(String orderId, String refundId,
                         Long refundAmount, Long totalAmount,
                         String reason, PayChannelAccount account);
+
+    /**
+     * 向渠道查询订单支付状态（超时关单、MQ 兜底共用）。
+     */
+    default ChannelOrderQueryResult queryOrder(String orderId, PayChannelAccount account) {
+        return ChannelOrderQueryResult.unsupported("当前渠道未实现主动查单");
+    }
 }
 

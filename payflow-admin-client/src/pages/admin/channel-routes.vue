@@ -250,7 +250,10 @@ async function loadMerchants() {
   try {
     merchantList.value = filterMerchantOptions(await getMerchantsSimple())
     applyDefaultMerchantFilter(queryForm)
-  } catch { /* ignore */ }
+  } catch {
+    merchantList.value = []
+    ElMessage.warning('加载商户列表失败')
+  }
 }
 
 async function loadAccounts() {
@@ -267,7 +270,8 @@ async function loadAccounts() {
       })
     )
   } catch {
-    /* ignore */
+    allAccounts.value = []
+    ElMessage.warning('加载支付账号失败')
   }
 }
 
@@ -277,6 +281,7 @@ async function loadChannelOptions() {
     channelSelectList.value = Array.isArray(data) ? data : []
   } catch {
     channelSelectList.value = []
+    ElMessage.warning('加载渠道列表失败')
   }
 }
 

@@ -2,7 +2,7 @@ package com.payflow.cashier.controller;
 
 import com.payflow.cashier.dto.CreatePaymentRequest;
 import com.payflow.cashier.dto.CreatePaymentResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import com.payflow.cashier.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;

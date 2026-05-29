@@ -8,7 +8,7 @@ import com.payflow.cashier.entity.Merchant;
 import com.payflow.common.exception.BizException;
 import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.service.AuthService;
-import com.payflow.cashier.util.JwtUtils;
+import com.payflow.cashier.security.CashierJwtService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,13 +31,16 @@ public class AuthServiceImpl implements AuthService {
     private final MerchantMapper merchantMapper;
     private final PayflowProperties properties;
     private final StringRedisTemplate stringRedisTemplate;
+    private final CashierJwtService cashierJwtService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthServiceImpl(MerchantMapper merchantMapper, PayflowProperties properties,
-                           StringRedisTemplate stringRedisTemplate) {
+                           StringRedisTemplate stringRedisTemplate,
+                           CashierJwtService cashierJwtService) {
         this.merchantMapper = merchantMapper;
         this.properties = properties;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.cashierJwtService = cashierJwtService;
     }
 
     @Override
@@ -120,11 +123,9 @@ public class AuthServiceImpl implements AuthService {
 
         // 5. 生成 JWT Token
         long expireSeconds = properties.getJwt().getExpireSeconds();
-        String token = JwtUtils.generateToken(
-                properties.getJwt().getSecret(),
+        String token = cashierJwtService.generateToken(
                 merchant.getMerchantId(),
-                merchant.getMerchantName(),
-                expireSeconds
+                merchant.getMerchantName()
         );
 
         // 6. 构建响应
@@ -132,7 +133,7 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .merchantId(merchant.getMerchantId())
                 .merchantName(merchant.getMerchantName())
-                .expireTime(JwtUtils.calcExpireTimeStr(expireSeconds))
+                .expireTime(CashierJwtService.calcExpireTimeStr(expireSeconds))
                 .merchantStatus(merchant.getStatus())
                 .build();
 

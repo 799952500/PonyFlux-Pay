@@ -9,6 +9,7 @@ import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.mapper.ChurnAlertMapper;
 import com.payflow.admin.mapper.MerchantMapper;
 import com.payflow.admin.mapper.cashier.OrderMapper;
+import com.payflow.common.web.PageRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -115,9 +116,10 @@ public class ChurnAlertService {
 
     public IPage<ChurnAlert> getAlerts(int pageNum, int pageSize, String merchantId, String status,
                                        List<String> merchantScopeIds) {
+        int size = Math.min(Math.max(pageSize, 1), PageRequest.MAX_SIZE);
         String scopedMerchantId = AdminRequestContext.resolveMerchantFilter(merchantId, merchantScopeIds);
         if ("__NO_ACCESS__".equals(scopedMerchantId)) {
-            return new Page<>(pageNum, pageSize, 0);
+            return new Page<>(pageNum, size, 0);
         }
         LambdaQueryWrapper<ChurnAlert> wrapper = new LambdaQueryWrapper<>();
         if (scopedMerchantId != null && !scopedMerchantId.isEmpty()) {
@@ -125,12 +127,12 @@ public class ChurnAlertService {
             if (dbId != null) {
                 wrapper.eq(ChurnAlert::getMerchantId, dbId);
             } else {
-                return new Page<>(pageNum, pageSize, 0);
+                return new Page<>(pageNum, size, 0);
             }
         } else if (merchantScopeIds != null && !merchantScopeIds.isEmpty()) {
             List<Long> dbIds = resolveMerchantDbIds(merchantScopeIds);
             if (dbIds.isEmpty()) {
-                return new Page<>(pageNum, pageSize, 0);
+                return new Page<>(pageNum, size, 0);
             }
             wrapper.in(ChurnAlert::getMerchantId, dbIds);
         }
@@ -138,7 +140,7 @@ public class ChurnAlertService {
             wrapper.eq(ChurnAlert::getStatus, status);
         }
         wrapper.orderByDesc(ChurnAlert::getDeclinePct);
-        return churnAlertMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        return churnAlertMapper.selectPage(new Page<>(pageNum, size), wrapper);
     }
 
     /**

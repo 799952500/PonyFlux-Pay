@@ -64,7 +64,7 @@ public class WxPayV3HttpClient {
             int statusCode = response.statusCode();
             String body = response.body();
             if (statusCode != 200 && statusCode != 201) {
-                log.error("微信API请求失败: label={}, path={}, status={}, body={}", apiLabel, path, statusCode, body);
+                log.error("微信API请求失败: label={}, path={}, status={}, body={}", apiLabel, path, statusCode, safeLogBody(body));
                 JSONObject errResp = JSONUtil.parseObj(body);
                 String errMsg = errResp.getStr("message", "请求失败");
                 throw new BizException(6005, "微信支付API错误(" + apiLabel + "): " + errMsg);
@@ -103,7 +103,7 @@ public class WxPayV3HttpClient {
             int statusCode = response.statusCode();
             String body = response.body();
             if (statusCode != 200 && statusCode != 201) {
-                log.error("微信API GET失败: label={}, path={}, status={}, body={}", apiLabel, pathWithQuery, statusCode, body);
+                log.error("微信API GET失败: label={}, path={}, status={}, body={}", apiLabel, pathWithQuery, statusCode, safeLogBody(body));
                 throw new BizException(6005, "微信支付查单API错误: HTTP " + statusCode);
             }
             return body;
@@ -135,5 +135,15 @@ public class WxPayV3HttpClient {
                 + "nonceStr=\"" + nonce + "\", "
                 + "timestamp=\"" + timestamp + "\", "
                 + "signature=\"" + signature + "\"";
+    }
+
+    private static String safeLogBody(String body) {
+        if (body == null) {
+            return "";
+        }
+        if (body.length() <= 512) {
+            return body;
+        }
+        return body.substring(0, 512) + "...(truncated)";
     }
 }

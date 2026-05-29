@@ -1,13 +1,12 @@
 package com.payflow.cashier.controller;
 
-import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.dto.LoginRequest;
 import com.payflow.cashier.dto.LoginResponse;
 import com.payflow.cashier.dto.MerchantLoginApiVO;
 import com.payflow.cashier.entity.Merchant;
-import com.payflow.cashier.exception.R;
+import com.payflow.cashier.security.CashierJwtService;
 import com.payflow.cashier.service.AuthService;
-import com.payflow.cashier.util.JwtUtils;
+import com.payflow.common.web.R;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,6 @@ import java.time.Duration;
 
 /**
  * 商户认证接口（收银台前端登录）。
- *
- * @author Lucas
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,15 +27,9 @@ import java.time.Duration;
 public class MerchantAuthController {
 
     private final AuthService authService;
-    private final PayflowProperties properties;
+    private final CashierJwtService cashierJwtService;
     private final StringRedisTemplate stringRedisTemplate;
 
-    /**
-     * 商户登录，返回前端约定的 token + merchantInfo 结构。
-     *
-     * @param request 登录请求
-     * @return 统一包装成功响应
-     */
     @PostMapping("/login")
     public R<MerchantLoginApiVO> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse inner = authService.login(request);
@@ -54,15 +45,12 @@ public class MerchantAuthController {
         return R.ok(vo);
     }
 
-    /**
-     * 商户登出，将当前 JWT 加入黑名单。
-     */
     @PostMapping("/logout")
     public R<Void> logout(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            JwtUtils.TokenClaims claims = JwtUtils.parseClaims(properties.getJwt().getSecret(), token);
+            CashierJwtService.TokenClaims claims = cashierJwtService.parseClaims(token);
             if (claims != null && claims.jti() != null && claims.expiration() != null) {
                 long ttlSeconds = Math.max(1, (claims.expiration().getTime() - System.currentTimeMillis()) / 1000);
                 stringRedisTemplate.opsForValue()
@@ -72,12 +60,6 @@ public class MerchantAuthController {
         return R.ok();
     }
 
-    /**
-     * 将数据库商户状态映射为前端枚举（ACTIVE/SUSPENDED/CLOSED）。
-     *
-     * @param dbStatus 数据库状态
-     * @return 前端状态
-     */
     private String toFrontendMerchantStatus(String dbStatus) {
         if (dbStatus == null || dbStatus.isBlank()) {
             return "CLOSED";
@@ -91,3 +73,4 @@ public class MerchantAuthController {
         return "CLOSED";
     }
 }
+

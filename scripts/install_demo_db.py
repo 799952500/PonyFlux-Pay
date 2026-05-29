@@ -60,6 +60,9 @@ FLYWAY_ADMIN_MIGRATIONS = [
     ("6", "dashboard and routing", "SQL", "V6__dashboard_and_routing.sql"),
     ("7", "merchant data isolation governance", "SQL", "V7__merchant_data_isolation_governance.sql"),
     ("8", "button permissions", "SQL", "V8__button_permissions.sql"),
+    ("9", "notification center", "SQL", "V9__notification_center.sql"),
+    ("10", "recon diff workflow", "SQL", "V10__recon_diff_workflow.sql"),
+    ("11", "recon workflow menus", "SQL", "V11__recon_workflow_menus.sql"),
 ]
 
 FLYWAY_CASHIER_MIGRATIONS = [

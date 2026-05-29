@@ -1,7 +1,7 @@
 package com.payflow.cashier.controller;
 
 import com.payflow.cashier.dto.ReceiptResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.service.ReceiptService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

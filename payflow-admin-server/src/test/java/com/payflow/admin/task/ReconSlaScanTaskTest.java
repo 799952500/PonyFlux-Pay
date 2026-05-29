@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReconSlaService 扫描集成测试")
-class ReconSlaScanTaskIT {
+class ReconSlaScanTaskTest {
 
     @Mock
     private ReconDiffSlaRuleEntityMapper slaRuleMapper;

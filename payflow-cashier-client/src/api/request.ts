@@ -6,6 +6,7 @@
  */
 import axios, { type AxiosInstance } from 'axios'
 import { ElMessage } from 'element-plus'
+import { i18n } from '@/i18n'
 
 const request: AxiosInstance = axios.create({
   baseURL: '/api/v1',
@@ -22,14 +23,14 @@ request.interceptors.response.use(
   (response) => {
     const res = response.data
     if (res.code !== undefined && res.code !== 0) {
-      ElMessage.error(res.message || '请求失败')
+      ElMessage.error(res.message || i18n.global.t('api.requestFailed'))
       return Promise.reject(res)
     }
     return res.data
   },
   (error) => {
     const message =
-      error.response?.data?.message ?? error.message ?? '网络错误'
+      error.response?.data?.message ?? error.message ?? i18n.global.t('api.networkError')
     ElMessage.error(message)
     return Promise.reject(error)
   }

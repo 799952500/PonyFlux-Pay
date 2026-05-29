@@ -21,7 +21,7 @@ export const useCashierStore = defineStore('cashier', () => {
   // -------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------
-  function setOrderInfo(info: CashierInfo) {
+  function setOrderInfo(info: CashierInfo | null) {
     orderInfo.value = info
   }
 

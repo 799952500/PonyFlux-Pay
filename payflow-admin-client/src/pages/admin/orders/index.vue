@@ -1,9 +1,9 @@
 ﻿<template>
   <div class="page-table-shell">
     <div v-if="orderStats" class="content-card stats-panel">
-      <div class="stats-panel__label">订单统计</div>
+      <div class="stats-panel__label">{{ t('orders.statsTitle') }}</div>
       <div class="stats-panel__tags">
-        <el-tag type="info" effect="plain" size="default">全部 {{ orderStats.total }}</el-tag>
+        <el-tag type="info" effect="plain" size="default">{{ t('orders.all') }} {{ orderStats.total }}</el-tag>
         <el-tag
           v-for="row in statsTags"
           :key="row.status"
@@ -18,7 +18,7 @@
     <!-- 筛选工具栏 -->
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
-        <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" label="商户号">
+        <el-form-item v-if="!merchantFilterLocked || authorizedMerchantIds.length > 1" :label="t('orders.merchantId')">
           <el-select
             v-if="merchantFilterLocked && authorizedMerchantIds.length > 1"
             v-model="queryForm.merchantId"
@@ -38,51 +38,54 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="关键词">
-          <el-input v-model="queryForm.keyword" placeholder="订单号 / 商户订单号" clearable style="width: 200px" @keyup.enter="handleSearch" />
+        <el-form-item :label="t('orders.keyword')">
+          <el-input v-model="queryForm.keyword" :placeholder="t('orders.keywordPlaceholder')" clearable style="width: 200px" @keyup.enter="handleSearch" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="全部" clearable style="width: 136px">
-            <el-option label="全部" value="" />
-            <el-option label="待支付" value="CREATED" />
-            <el-option label="支付中" value="PAYING" />
-            <el-option label="已支付" value="PAID" />
-            <el-option label="已过期" value="EXPIRED" />
-            <el-option label="失败" value="FAILED" />
+        <el-form-item :label="t('orders.status')">
+          <el-select v-model="queryForm.status" :placeholder="t('orders.all')" clearable style="width: 136px">
+            <el-option :label="t('orders.all')" value="" />
+            <el-option :label="t('orders.pending')" value="CREATED" />
+            <el-option :label="t('orders.paying')" value="PAYING" />
+            <el-option :label="t('orders.paid')" value="PAID" />
+            <el-option :label="t('orders.expired')" value="EXPIRED" />
+            <el-option :label="t('orders.failed')" value="FAILED" />
           </el-select>
         </el-form-item>
-        <el-form-item label="渠道">
-          <el-select v-model="queryForm.channel" placeholder="全部" clearable style="width: 136px">
-            <el-option label="全部" value="" />
+        <el-form-item :label="t('orders.channel')">
+          <el-select v-model="queryForm.channel" :placeholder="t('orders.all')" clearable style="width: 136px">
+            <el-option :label="t('orders.all')" value="" />
             <el-option label="支付宝" value="ALIPAY" />
             <el-option label="微信支付" value="WECHAT_PAY" />
             <el-option label="银联" value="UNION_PAY" />
           </el-select>
         </el-form-item>
-        <el-form-item label="日期">
+        <el-form-item :label="t('orders.date')">
           <el-date-picker
             v-model="dateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            :range-separator="t('orders.dateRangeSep')"
+            :start-placeholder="t('orders.dateStart')"
+            :end-placeholder="t('orders.dateEnd')"
             value-format="YYYY-MM-DD"
             style="width: 260px"
           />
         </el-form-item>
         <el-form-item class="filter-bar__actions">
-          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
-          <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
-          <el-button class="btn-outline" :loading="exporting" @click="handleExportCsv">导出 CSV</el-button>
+          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">{{ t('orders.search') }}</el-button>
+          <el-button class="btn-outline" icon="Refresh" @click="handleReset">{{ t('orders.reset') }}</el-button>
+          <el-button class="btn-outline" :loading="exporting" @click="handleExportCsv">{{ t('orders.exportCsv') }}</el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <div class="content-card">
-      <TableToolbar title="订单列表" :total="total" />
+      <TableToolbar :title="t('orders.title')" :total="total" />
 
       <el-table table-layout="auto" v-loading="loading" :data="orderList" stripe size="small" @row-click="openDetail" class="data-table">
-        <el-table-column label="订单号" prop="orderId" min-width="160">
+        <template #empty>
+          <el-empty :description="t('orders.empty')" />
+        </template>
+        <el-table-column :label="t('orders.orderId')" prop="orderId" min-width="160">
           <template #default="{ row }">
             <span
               :data-flip="`order-${row.orderId}`"
@@ -90,35 +93,35 @@
             >#{{ row.orderId }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="商户订单号" prop="merchantOrderNo" min-width="150" />
-        <el-table-column label="商品" prop="subject" min-width="140">
+        <el-table-column :label="t('orders.merchantOrderNo')" prop="merchantOrderNo" min-width="150" />
+        <el-table-column :label="t('orders.subject')" prop="subject" min-width="140">
           <template #default="{ row }"><span class="truncate block max-w-[140px]">{{ row.subject }}</span></template>
         </el-table-column>
-        <el-table-column label="金额（元）" prop="amount" width="110" align="right" class-name="col-amount">
+        <el-table-column :label="t('orders.amountYuan')" prop="amount" width="110" align="right" class-name="col-amount">
           <template #default="{ row }">
             <span class="cell-amount">¥{{ formatMoneyFen(row.amount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="渠道" prop="channel" width="100">
+        <el-table-column :label="t('orders.channel')" prop="channel" width="100">
           <template #default="{ row }">
             <el-tag size="small" :type="channelTagType(row.channel)">{{ channelLabel(row.channel) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" prop="status" width="90">
+        <el-table-column :label="t('orders.status')" prop="status" width="90">
           <template #default="{ row }">
             <el-tag size="small" :type="tagTypeOf(ORDER_STATUS_TAG, row.status)">
               {{ labelOf(ORDER_STATUS_LABEL, row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
+        <el-table-column :label="t('orders.createdAt')" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="80" class-name="col-actions" fixed="right">
+        <el-table-column :label="t('common.actions')" min-width="80" class-name="col-actions" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
+            <el-button link type="primary" size="small" @click.stop="openDetail(row)">{{ t('orders.detail') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -135,6 +138,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useMerchantScope } from '@/composables/useMerchantScope'
 import { useOrderDetailOverlay } from '@/composables/useOrderDetailOverlay'
@@ -156,6 +160,7 @@ import {
   tagTypeOf,
 } from '@/utils/format'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { open: openOrderDetail } = useOrderDetailOverlay()
@@ -204,7 +209,7 @@ async function loadOrders() {
     const resp = await getOrders(params)
     orderList.value = resp.list
     total.value = resp.total
-  } catch { ElMessage.error('加载订单列表失败') }
+  } catch { ElMessage.error(t('orders.loadFailed')) }
   finally { loading.value = false }
 }
 
@@ -229,9 +234,9 @@ async function handleExportCsv() {
       f.endTime = `${dateRange.value[1]} 23:59:59`
     }
     await exportOrdersCsv(f)
-    ElMessage.success('已开始下载')
+    ElMessage.success(t('orders.exportStarted'))
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '导出失败'
+    const msg = e instanceof Error ? e.message : t('orders.exportFailed')
     ElMessage.error(msg)
   } finally {
     exporting.value = false
@@ -303,7 +308,7 @@ watch(
     }
     if (queryForm.merchantId && !isMerchantAllowed(queryForm.merchantId)) {
       queryForm.merchantId = defaultMerchantIdFromScope()
-      ElMessage.warning('无权查看该商户订单')
+      ElMessage.warning(t('orders.merchantForbidden'))
     }
     queryForm.page = 1
     loadOrders()

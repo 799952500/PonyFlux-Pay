@@ -1,10 +1,9 @@
 package com.payflow.cashier.middleware;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.context.AuthMode;
-import com.payflow.cashier.exception.R;
-import com.payflow.cashier.util.JwtUtils;
+import com.payflow.cashier.security.CashierJwtService;
+import com.payflow.common.web.R;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -17,29 +16,23 @@ import java.io.IOException;
 
 /**
  * JWT 认证拦截器
- * <p>
- * 拦截所有 /api/v1/orders/** 和 /api/v1/payments/** 请求，
- * 从请求头 Authorization: Bearer <token> 中提取并验证 JWT。
- * 验证通过后将 merchantId 注入到请求属性中。
- *
- * @author PayFlow Team
  */
 @Slf4j
 @Component
 public class JwtAuthInterceptor implements HandlerInterceptor {
 
-    /** 请求属性 Key：存放已验证的商户号 */
     public static final String ATTR_MERCHANT_ID = "merchantId";
 
-    private final PayflowProperties properties;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final CashierJwtService cashierJwtService;
 
-    public JwtAuthInterceptor(PayflowProperties properties, ObjectMapper objectMapper,
-                              StringRedisTemplate stringRedisTemplate) {
-        this.properties = properties;
+    public JwtAuthInterceptor(ObjectMapper objectMapper,
+                              StringRedisTemplate stringRedisTemplate,
+                              CashierJwtService cashierJwtService) {
         this.objectMapper = objectMapper;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.cashierJwtService = cashierJwtService;
     }
 
     @Override
@@ -59,17 +52,14 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        String merchantId = JwtUtils.verifyAndGetMerchantId(
-                properties.getJwt().getSecret(), token);
-
+        String merchantId = cashierJwtService.verifyAndGetMerchantId(token);
         if (merchantId == null) {
             log.warn("JWT认证失败: token无效或已过期, path={}", request.getRequestURI());
             sendUnauthorized(response, "token无效或已过期");
             return false;
         }
 
-        // 检查 JWT 黑名单
-        JwtUtils.TokenClaims parsedClaims = JwtUtils.parseClaims(properties.getJwt().getSecret(), token);
+        CashierJwtService.TokenClaims parsedClaims = cashierJwtService.parseClaims(token);
         if (parsedClaims != null && parsedClaims.jti() != null) {
             try {
                 Boolean blacklisted = stringRedisTemplate.hasKey("jwt:blacklist:" + parsedClaims.jti());
@@ -79,7 +69,6 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
                     return false;
                 }
             } catch (Exception e) {
-                // Redis 不可用 → fail-close，拒绝请求以保证安全
                 log.error("Redis黑名单检查失败（已拒绝）: {}", e.getMessage());
                 sendUnauthorized(response, "服务暂不可用，请稍后重试");
                 return false;
@@ -96,7 +85,7 @@ public class JwtAuthInterceptor implements HandlerInterceptor {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        R<?> r = R.unauthorized(message);
-        objectMapper.writeValue(response.getWriter(), r);
+        objectMapper.writeValue(response.getWriter(), R.unauthorized(message));
     }
 }
+

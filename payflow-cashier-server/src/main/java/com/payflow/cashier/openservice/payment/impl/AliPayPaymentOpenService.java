@@ -1,9 +1,11 @@
 package com.payflow.cashier.openservice.payment.impl;
 
 import com.payflow.cashier.entity.PayChannelAccount;
+import com.payflow.cashier.openservice.payment.ChannelOrderQueryResult;
 import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenService;
 import com.payflow.cashier.sdk.PayStrategyLocator;
 import com.payflow.common.exception.BizException;
+import com.payflow.payment.alipay.AliPayQrHandler;
 import com.payflow.payment.core.PayMethod;
 import com.payflow.payment.core.PayResult;
 import com.payflow.payment.core.PayStrategy;
@@ -25,6 +27,7 @@ public class AliPayPaymentOpenService implements PayChannelPaymentOpenService {
 
     /** 支付策略定位器：按 payMethod 定位具体策略（ALIPAY_QR/ALIPAY_WAP/ALIPAY_APP） */
     private final PayStrategyLocator payStrategyLocator;
+    private final AliPayQrHandler aliPayQrHandler;
 
     /**
      * 支付宝渠道编码（小写）。
@@ -69,6 +72,13 @@ public class AliPayPaymentOpenService implements PayChannelPaymentOpenService {
         PayResult result = strategy.pay(orderId, amount, subject, returnUrl, notifyUrl, account, channelExtras);
         log.info("支付宝下单完成: orderId={}, payMethod={}, action={}", orderId, payMethod, result.getAction());
         return result;
+    }
+
+    @Override
+    public ChannelOrderQueryResult queryOrder(String orderId, PayChannelAccount account) {
+        boolean paid = aliPayQrHandler.queryOutTradeNoSuccess(orderId, account);
+        return ChannelOrderQueryResult.of(paid, null,
+                paid ? "支付宝侧订单已支付" : "支付宝侧订单未支付或查单失败");
     }
 
     /**

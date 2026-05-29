@@ -4,15 +4,15 @@
       <div class="checkout-merchant__avatar">{{ merchantInitial }}</div>
       <div class="checkout-merchant__meta">
         <span class="checkout-merchant__name">{{ info.merchantName }}</span>
-        <span class="checkout-merchant__label">收款方</span>
+        <span class="checkout-merchant__label">{{ t('orderCard.payeeLabel') }}</span>
       </div>
       <span class="checkout-status" :class="isExpired ? 'checkout-status--danger' : 'checkout-status--pending'">
-        {{ isExpired ? '已过期' : '待支付' }}
+        {{ isExpired ? t('order.expired') : t('order.pending') }}
       </span>
     </div>
 
     <div class="checkout-amount-block">
-      <p class="checkout-amount-label">支付金额</p>
+      <p class="checkout-amount-label">{{ t('orderCard.amountLabel') }}</p>
       <div class="checkout-amount">
         <span class="checkout-amount__currency">¥</span>
         <span class="checkout-amount__int">{{ integerPart }}</span>
@@ -24,7 +24,7 @@
 
     <div class="checkout-meta">
       <span class="checkout-meta__item">
-        <span class="checkout-meta__label">订单号</span>
+        <span class="checkout-meta__label">{{ t('orderCard.orderNoLabel') }}</span>
         <span class="checkout-meta__value">{{ info.orderId }}</span>
       </span>
     </div>
@@ -42,7 +42,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { CashierInfo } from '@/types'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   info: CashierInfo

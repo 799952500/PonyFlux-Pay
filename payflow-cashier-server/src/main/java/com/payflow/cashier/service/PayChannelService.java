@@ -5,7 +5,7 @@ import com.payflow.cashier.dto.ChannelRouteDTO;
 import com.payflow.cashier.entity.PayChannel;
 import com.payflow.cashier.entity.PayChannelAccount;
 import com.payflow.cashier.entity.PayChannelMerchantRoute;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 
 import java.util.List;
 

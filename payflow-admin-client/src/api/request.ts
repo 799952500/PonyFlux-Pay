@@ -63,7 +63,12 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminUser')
+      ElMessage.warning('登录已过期，请重新登录')
       router.push('/login')
+      return Promise.reject(error)
+    }
+    if (error.response?.status === 403) {
+      ElMessage.warning('无权限执行此操作')
       return Promise.reject(error)
     }
     const body = error.response?.data

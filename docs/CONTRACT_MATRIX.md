@@ -2,7 +2,7 @@
 
 约定：`payflow-admin-client` / `payflow-cashier-client` 的 `axios` **baseURL** 均为 `/api/v1`，下列路径为 **相对 baseURL** 的路径；完整 URL 形如 `http://host:port/api/v1` + 路径。
 
-成功响应：后端多为 `{ code: 0, message: "success", data: ... }`，前端拦截器解包后调用方拿到 **data**。
+成功响应：三后端（admin / cashier / recon）统一为 `com.payflow.common.web.R<T>` 结构 `{ code, message, data }`；部分历史 Controller 仍返回等价 `Map` 或内部 `ApiResponse`（字段一致）。前端 Axios 拦截器解包后调用方拿到 **data**。`code !== 0` 时 message 为可读错误信息。
 
 ---
 

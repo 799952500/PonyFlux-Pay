@@ -3,7 +3,7 @@ package com.payflow.cashier.controller;
 import com.payflow.cashier.dto.CreateOrderRequest;
 import com.payflow.cashier.dto.CreateOrderResponse;
 import com.payflow.cashier.dto.OrderDetailResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.context.MerchantContext;
 import com.payflow.cashier.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;

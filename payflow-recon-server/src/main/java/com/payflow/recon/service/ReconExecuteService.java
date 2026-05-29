@@ -1,6 +1,8 @@
 package com.payflow.recon.service;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.toolkit.Db;
+import com.payflow.recon.config.ReconProperties;
 import com.payflow.common.exception.BizException;
 import com.payflow.recon.entity.ReconBillRecord;
 import com.payflow.recon.entity.ReconTask;
@@ -48,6 +50,7 @@ public class ReconExecuteService {
     private final ReconFileStorage reconFileStorage;
     private final ReconTaskMapper reconTaskMapper;
     private final ReconBillRecordMapper reconBillRecordMapper;
+    private final ReconProperties reconProperties;
     private final ReconDiffMapper reconDiffMapper;
     private final ReconCompareService reconCompareService;
     private final ReconDiffHealService reconDiffHealService;
@@ -113,7 +116,7 @@ public class ReconExecuteService {
             updateTaskStatus(taskId, STATUS_PARSING, null);
 
             List<ReconBillRecord> records = open.parseBill(downloaded, taskId);
-            persistBillRecords(records);
+            persistBillRecords(taskId, records);
 
             long billTotalAmount = records.stream()
                     .filter(r -> Boolean.FALSE.equals(r.getParseError()))
@@ -126,7 +129,8 @@ public class ReconExecuteService {
             reconDiffHealService.annotateSuggestions(taskId);
 
             String payChannel = ReconChannelKit.reconToPayChannel(reconChannel);
-            List<CashierReconPaymentRow> localRows = cashierReconPaymentMapper.listSuccessByBillDate(payChannel, billDate);
+            List<CashierReconPaymentRow> localRows = cashierReconPaymentMapper.listSuccessByBillDate(
+                    payChannel, billDate.atStartOfDay(), billDate.plusDays(1).atStartOfDay());
             int localCount = localRows.size();
             long localAmount = localRows.stream()
                     .mapToLong(p -> p.getAmount() != null ? p.getAmount() : 0L)
@@ -211,15 +215,26 @@ public class ReconExecuteService {
         }
     }
 
-    @Transactional(transactionManager = "adminTransactionManager")
-    public void persistBillRecords(List<ReconBillRecord> records) {
+    @Transactional(transactionManager = "adminTransactionManager", rollbackFor = Exception.class)
+    public void persistBillRecords(String taskId, List<ReconBillRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
         LocalDateTime now = LocalDateTime.now();
         for (ReconBillRecord r : records) {
             r.setCreatedAt(now);
             if (r.getParseError() == null) {
                 r.setParseError(false);
             }
-            reconBillRecordMapper.insert(r);
+        }
+        int batchSize = reconProperties.getBatchSize();
+        try {
+            Db.saveBatch(records, batchSize);
+        } catch (RuntimeException e) {
+            int batchIndex = records.size() / batchSize;
+            log.error("账单批量入库失败: taskId={}, recordCount={}, batchSize={}, lastBatchIndex={}",
+                    taskId, records.size(), batchSize, batchIndex, e);
+            throw e;
         }
     }
 

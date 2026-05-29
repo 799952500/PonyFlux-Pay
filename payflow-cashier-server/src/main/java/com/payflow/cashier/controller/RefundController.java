@@ -2,7 +2,7 @@ package com.payflow.cashier.controller;
 
 import com.payflow.cashier.dto.RefundRequest;
 import com.payflow.cashier.dto.RefundResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import com.payflow.cashier.service.RefundService;
 import com.payflow.cashier.service.ResourceOwnershipService;

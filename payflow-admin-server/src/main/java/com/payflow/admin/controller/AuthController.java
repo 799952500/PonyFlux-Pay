@@ -12,6 +12,7 @@ import com.payflow.admin.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -28,6 +29,7 @@ import java.util.Map;
  * 管理员身份认证 Controller
   * @author Lucas
  */
+@Slf4j
 @Tag(name = "认证管理")
 @RestController
 @RequestMapping("/api/v1/admin/auth")
@@ -136,7 +138,12 @@ public class AuthController {
                 long ttlSeconds = Math.max(1, (expiration.getTime() - System.currentTimeMillis()) / 1000);
                 stringRedisTemplate.opsForValue()
                         .set("jwt:blacklist:" + jti, "logout", Duration.ofSeconds(ttlSeconds));
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                log.warn("登出写入 JWT 黑名单失败: {}", ex.getMessage());
+                return ResponseEntity.status(503).body(Map.of(
+                        "code", 503,
+                        "message", "登出失败，请稍后重试",
+                        "data", null));
             }
         }
         return ResponseEntity.ok(Map.of("code", 0, "message", "success", "data", null));

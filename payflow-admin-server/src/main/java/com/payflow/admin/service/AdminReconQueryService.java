@@ -121,10 +121,12 @@ public class AdminReconQueryService {
         }
 
         long offset = (page - 1) * size;
+        var dayStart = billDate.atStartOfDay();
+        var dayEnd = billDate.plusDays(1).atStartOfDay();
         long total = reconCashierReportMapper.countSuccessPaymentsOnBillDate(
-                billDate, payChannel, emptyToNull(merchantId), emptyToNull(orderKeyword));
+                dayStart, dayEnd, payChannel, emptyToNull(merchantId), emptyToNull(orderKeyword));
         List<ReconCashierPaymentRow> rows = reconCashierReportMapper.listSuccessPaymentsOnBillDate(
-                billDate, payChannel, emptyToNull(merchantId), emptyToNull(orderKeyword), offset, size);
+                dayStart, dayEnd, payChannel, emptyToNull(merchantId), emptyToNull(orderKeyword), offset, size);
 
         List<ReconOrderResultVO> list = new ArrayList<>();
         for (ReconCashierPaymentRow p : rows) {
@@ -200,7 +202,7 @@ public class AdminReconQueryService {
         String acctFilter = StringUtils.hasText(accountCode) ? accountCode.trim() : null;
 
         List<ReconLocalAccountAggRow> localRows = reconCashierReportMapper.aggregateLocalSuccessByAccount(
-                billDate, acctFilter);
+                billDate.atStartOfDay(), billDate.plusDays(1).atStartOfDay(), acctFilter);
         if (merchantScopeIds != null && merchantScopeIds.isEmpty()) {
             localRows = List.of();
         }

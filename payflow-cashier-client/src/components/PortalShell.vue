@@ -2,7 +2,7 @@
   <div class="portal-page">
     <header class="portal-header">
       <div class="portal-header__brand">
-        <img src="/ponyflux-logo.svg" width="32" height="32" alt="小马支付" class="portal-header__logo" />
+        <img src="/ponyflux-logo.svg" width="32" height="32" :alt="t('app.brand')" class="portal-header__logo" />
         <span class="portal-header__name">PonyFlux Pay</span>
       </div>
       <slot name="header-extra" />
@@ -41,6 +41,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   title?: string
   subtitle?: string

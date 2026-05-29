@@ -80,26 +80,34 @@ Admin-server uses **two datasources** manually configured (no `@MapperScan` on t
 - **Cashier-server**: Three layers — (1) `MerchantSignatureInterceptor` (HMAC-SHA256 + timestamp + nonce) on merchant endpoints, (2) `PaymentIdempotencyInterceptor` on POST payments, (3) `JwtAuthInterceptor` on order endpoints.
 - **Internal service communication**: `X-Payflow-Internal-Token` header shared between admin-server and recon-server.
 
-### Reconciliation Flow (recon-server)
+### Reconciliation Flow
 
-Status machine: `INIT` → `DOWNLOADING` → `PARSING` → `COMPARING` → `SUCCESS`/`FAIL`
+职责划分见 [`docs/reconciliation.md`](docs/reconciliation.md)：
 
-1. `ReconTaskSeedService` generates T-1 tasks per account + bill date
-2. `ReconChannelOpenService` downloads bills from Alipay/WeChat/UnionPay → `ReconFileStorage` (local or S3)
-3. `BillParser` (channel-specific) parses CSV → `recon_bill_record`
-4. `ReconCompareService` matches against `cashier_payments` → `recon_diff` with types: `CHANNEL_ONLY`, `LOCAL_ONLY`, `AMOUNT_MISMATCH`, `STATUS_MISMATCH`
-5. `ReconDiffHealService` suggests fix actions (no auto-healing)
+| 组件 | 职责 |
+|------|------|
+| **recon-server** | 批处理：下载账单 → 解析 → 比对 → 差异标注（无管理 UI API） |
+| **admin-server** | 运营控制台：直读 `recon_*` 与 cashier 报表；差异工单 / SLA / 报告订阅 |
+| **cashier-server** | 交易源：`cashier_payments` / `cashier_orders` |
 
-Business error codes: **7500-7599** reserved for reconciliation.
+**recon-server 状态机**：`INIT` → `DOWNLOADING` → `PARSING` → `COMPARING` → `SUCCESS`/`FAIL`
+
+1. `ReconTaskSeedService` 按账户 + 账单日生成 T-1 任务
+2. 渠道账单下载 → `recon_bill_record` 批量入库（默认 batch-size 500）
+3. `ReconCompareService` 与 `cashier_payments` 半开区间 `[dayStart, dayEnd)` 比对 → `recon_diff`（`CHANNEL_ONLY` / `LOCAL_ONLY` / `AMOUNT_MISMATCH` / `STATUS_MISMATCH`）
+4. `ReconDiffHealService` 建议修复动作（不自动愈合）
+
+业务错误码：**7500-7599** 预留给对账。
 
 ### API Response Convention
 
-All controllers return `Map<String, Object>` with structure:
+三后端统一使用 `com.payflow.common.web.R<T>`：
+
 ```
 { "code": 0, "message": "success", "data": { "..." } }
 ```
 
-Frontend Axios interceptors unwrap `data` automatically.
+部分 admin Controller 仍返回 `Map<String,Object>`，结构与 `R` 字段一致。前端 Axios 拦截器自动解包 `data`。
 
 ### Frontend Stack
 

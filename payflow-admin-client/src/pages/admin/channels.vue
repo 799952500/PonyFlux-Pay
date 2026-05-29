@@ -3,22 +3,22 @@
     <!-- 顶部筛选工具栏 -->
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
-        <el-form-item label="关键词">
-          <el-input v-model="queryForm.keyword" placeholder="渠道编码 / 名称" clearable style="width: 180px" @keyup.enter="handleSearch" />
+        <el-form-item :label="t('channels.keyword')">
+          <el-input v-model="queryForm.keyword" :placeholder="t('channels.keywordPlaceholder')" clearable style="width: 180px" @keyup.enter="handleSearch" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.enabled" placeholder="全部" clearable style="width: 140px">
-            <el-option label="全部" value="" />
-            <el-option label="启用" :value="true" />
-            <el-option label="禁用" :value="false" />
+        <el-form-item :label="t('channels.status')">
+          <el-select v-model="queryForm.enabled" :placeholder="t('channels.all')" clearable style="width: 140px">
+            <el-option :label="t('channels.all')" value="" />
+            <el-option :label="t('channels.enabled')" :value="true" />
+            <el-option :label="t('channels.disabled')" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item class="filter-bar__actions">
-          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
-          <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">{{ t('channels.search') }}</el-button>
+          <el-button class="btn-outline" icon="Refresh" @click="handleReset">{{ t('channels.reset') }}</el-button>
         </el-form-item>
         <el-form-item class="ml-auto">
-          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">新建渠道</el-button>
+          <el-button type="primary" class="btn-primary" icon="Plus" @click="openCreateDialog">{{ t('channels.createChannel') }}</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -41,7 +41,7 @@
                 <span v-else class="channel-card-icon-emoji">{{ channelIcon[channel.channelCode] ?? '🏦' }}</span>
               </div>
               <div class="channel-card-meta">
-                <p class="channel-card-title">{{ channel.channelName || '未命名渠道' }}</p>
+                <p class="channel-card-title">{{ channel.channelName || t('channels.unnamed') }}</p>
                 <p class="channel-card-code">{{ channel.channelCode || '—' }}</p>
               </div>
             </div>
@@ -55,7 +55,7 @@
                   size="small"
                   @click.stop="openEditDialog(channel)"
                 >
-                  编辑
+                  {{ t('channels.edit') }}
                 </el-button>
                 <el-button
                   class="card-action-btn"
@@ -64,11 +64,11 @@
                   size="small"
                   @click.stop="handleDelete(channel)"
                 >
-                  删除
+                  {{ t('channels.delete') }}
                 </el-button>
               </div>
               <div class="channel-card-toolbar-switch">
-                <span class="channel-card-switch-label">启用</span>
+                <span class="channel-card-switch-label">{{ t('channels.enable') }}</span>
                 <el-switch
                   v-model="channel.enabled"
                   :active-value="true"
@@ -174,6 +174,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
@@ -181,6 +182,7 @@ import { getChannels, createChannel, updateChannel, toggleChannel, deleteChannel
 import { confirmDeleteWithGuard } from '@/composables/useResourceDeleteGuard'
 import type { Channel } from '@/types'
 
+const { t } = useI18n()
 const router = useRouter()
 
 const loading = ref(false)
@@ -272,7 +274,7 @@ async function loadChannels() {
     channelList.value = list
     await loadMethodCounts()
   } catch {
-    ElMessage.error('加载渠道列表失败')
+    ElMessage.error(t('channels.loadFailed'))
   } finally {
     loading.value = false
   }

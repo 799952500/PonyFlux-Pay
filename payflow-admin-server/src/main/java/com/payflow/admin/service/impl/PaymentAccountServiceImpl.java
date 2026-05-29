@@ -10,9 +10,12 @@ import com.payflow.admin.mapper.PaymentAccountMapper;
 import com.payflow.admin.service.PaymentAccountService;
 import com.payflow.admin.service.guard.ResourceDeleteGuardService;
 import com.payflow.admin.service.guard.ResourceType;
+import com.payflow.common.web.PageRequest;
+import com.payflow.common.web.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -54,19 +57,29 @@ public class PaymentAccountServiceImpl implements PaymentAccountService {
     }
 
     @Override
-    public PaymentAccount getById(Long id) {
-        PaymentAccount account = mapper.selectById(id);
-        if (account != null) {
-            // Load channelName via the same join query approach
-            List<PaymentAccount> list = mapper.listWithChannelName();
-            for (PaymentAccount pa : list) {
-                if (pa.getId().equals(id)) {
-                    account.setChannelName(pa.getChannelName());
-                    break;
-                }
+    public PageResult<PaymentAccount> page(PageRequest pageRequest, Long channelId, String keyword,
+                                           List<String> merchantScopeIds) {
+        Collection<Long> accountIds = null;
+        if (merchantScopeIds != null) {
+            if (merchantScopeIds.isEmpty()) {
+                return PageResult.of(List.of(), 0, pageRequest);
             }
+            Set<Long> ids = accountIdsForMerchantScope(merchantScopeIds);
+            if (ids.isEmpty()) {
+                return PageResult.of(List.of(), 0, pageRequest);
+            }
+            accountIds = ids;
         }
-        return account;
+        String kw = keyword != null && !keyword.isBlank() ? keyword.trim() : null;
+        long total = mapper.countFiltered(channelId, kw, accountIds);
+        List<PaymentAccount> list = mapper.pageWithChannelName(
+                channelId, kw, accountIds, pageRequest.getOffset(), pageRequest.getSize());
+        return PageResult.of(list, total, pageRequest);
+    }
+
+    @Override
+    public PaymentAccount getById(Long id) {
+        return mapper.getByIdWithChannelName(id);
     }
 
     @Override

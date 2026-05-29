@@ -8,6 +8,10 @@
 
 ## 0. 前置条件
 
+> **Baseline 占位（T005）**：Wave 1 压测/对账耗时请在优化前后各记录一次：200 并发下单（渠道 mock 2s）、5 万条账单对账总秒数。
+
+## 0.1 前置条件（环境）
+
 ```bash
 # 初始化 demo 库（实现 Wave 2 后应含 Flyway V11 历史）
 python scripts/install_demo_db.py

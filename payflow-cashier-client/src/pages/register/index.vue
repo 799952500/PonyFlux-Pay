@@ -1,11 +1,11 @@
 <template>
   <PortalShell
-    :title="step === 0 ? '商户入驻申请' : step === 1 ? '申请已提交' : '接入指引'"
+    :title="step === 0 ? t('portal.registerTitle') : step === 1 ? t('portal.registerSubmitted') : t('portal.registerGuide')"
     :subtitle="stepSubtitle"
     wide
   >
     <template #header-extra>
-      <router-link to="/onboarding/result" class="portal-link">查询审核结果</router-link>
+      <router-link to="/onboarding/result" class="portal-link">{{ t('portal.queryResult') }}</router-link>
     </template>
 
     <el-steps v-if="step < 2" :active="step" finish-status="success" align-center simple class="mb-6" />
@@ -21,67 +21,67 @@
     >
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="商户名称" prop="merchantName">
-            <el-input v-model="form.merchantName" placeholder="企业/店铺名称" clearable />
+          <el-form-item :label="t('portal.merchantName')" prop="merchantName">
+            <el-input v-model="form.merchantName" :placeholder="t('portal.merchantNamePlaceholder')" clearable />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="联系人" prop="contactName">
-            <el-input v-model="form.contactName" placeholder="联系人姓名" clearable />
+          <el-form-item :label="t('portal.contactName')" prop="contactName">
+            <el-input v-model="form.contactName" :placeholder="t('portal.contactNamePlaceholder')" clearable />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-form-item label="手机号码" prop="phone">
-        <el-input v-model="form.phone" placeholder="11 位手机号" clearable />
+      <el-form-item :label="t('portal.phone')" prop="phone">
+        <el-input v-model="form.phone" :placeholder="t('portal.phonePlaceholder')" clearable />
       </el-form-item>
 
-      <el-form-item label="邮箱" prop="email">
-        <el-input v-model="form.email" placeholder="用于接收审核通知与查询密钥" clearable />
+      <el-form-item :label="t('portal.email')" prop="email">
+        <el-input v-model="form.email" :placeholder="t('portal.emailPlaceholder')" clearable />
       </el-form-item>
 
-      <el-form-item label="营业执照号" prop="bizLicenseNo">
-        <el-input v-model="form.bizLicenseNo" placeholder="选填" clearable />
+      <el-form-item :label="t('portal.bizLicense')" prop="bizLicenseNo">
+        <el-input v-model="form.bizLicenseNo" :placeholder="t('portal.optional')" clearable />
       </el-form-item>
 
-      <el-form-item label="企业网址" prop="websiteUrl">
-        <el-input v-model="form.websiteUrl" placeholder="选填，https://..." clearable />
+      <el-form-item :label="t('portal.website')" prop="websiteUrl">
+        <el-input v-model="form.websiteUrl" :placeholder="t('portal.websitePlaceholder')" clearable />
       </el-form-item>
 
-      <el-form-item label="业务范围" prop="businessScope">
-        <el-select v-model="form.businessScope" placeholder="请选择" clearable class="w-full">
-          <el-option label="零售电商" value="retail" />
-          <el-option label="餐饮服务" value="catering" />
-          <el-option label="生活服务" value="service" />
-          <el-option label="物流同城" value="logistics" />
-          <el-option label="其他" value="other" />
+      <el-form-item :label="t('portal.businessScope')" prop="businessScope">
+        <el-select v-model="form.businessScope" :placeholder="t('portal.businessScopePlaceholder')" clearable class="w-full">
+          <el-option :label="t('portal.scopeRetail')" value="retail" />
+          <el-option :label="t('portal.scopeCatering')" value="catering" />
+          <el-option :label="t('portal.scopeService')" value="service" />
+          <el-option :label="t('portal.scopeLogistics')" value="logistics" />
+          <el-option :label="t('portal.scopeOther')" value="other" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="备注" prop="remark">
-        <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="选填" />
+      <el-form-item :label="t('portal.remark')" prop="remark">
+        <el-input v-model="form.remark" type="textarea" :rows="2" :placeholder="t('portal.optional')" />
       </el-form-item>
 
       <el-alert v-if="errorMsg" :title="errorMsg" type="error" show-icon :closable="false" class="mb-3" />
 
       <el-button type="primary" class="portal-submit" :loading="loading" native-type="submit">
-        {{ loading ? '提交中...' : '提交入驻申请' }}
+        {{ loading ? t('portal.submitting') : t('portal.submitRegister') }}
       </el-button>
     </el-form>
 
     <div v-else-if="step === 1" class="text-center">
-      <el-result icon="success" title="申请已提交">
+      <el-result icon="success" :title="t('portal.applySubmitted')">
         <template #sub-title>
-          <p class="text-sm text-[var(--pf-text-secondary)] mb-2">审核通过后，请使用申请单号与联系方式在查询页获取 API 密钥。</p>
+          <p class="text-sm text-[var(--pf-text-secondary)] mb-2">{{ t('portal.applySubmittedHint') }}</p>
           <p v-if="applicationNo" class="text-sm">
-            申请单号：<span class="font-mono font-semibold text-[var(--pf-primary-hover)]">{{ applicationNo }}</span>
+            {{ t('portal.applicationNo') }}<span class="font-mono font-semibold text-[var(--pf-primary-hover)]">{{ applicationNo }}</span>
           </p>
         </template>
         <template #extra>
           <div class="flex flex-col gap-2 items-center">
-            <el-button type="primary" class="portal-submit" @click="copyApplicationNo">复制申请单号</el-button>
-            <el-button @click="goQuery">前往查询页</el-button>
-            <router-link to="/onboarding/result" class="portal-link">打开入驻结果查询</router-link>
+            <el-button type="primary" class="portal-submit" @click="copyApplicationNo">{{ t('portal.copyApplicationNo') }}</el-button>
+            <el-button @click="goQuery">{{ t('portal.goQuery') }}</el-button>
+            <router-link to="/onboarding/result" class="portal-link">{{ t('portal.openResultQuery') }}</router-link>
           </div>
         </template>
       </el-result>
@@ -89,11 +89,11 @@
 
     <div v-else class="portal-guide">
       <ol class="portal-guide__list">
-        <li>等待平台 1–2 个工作日完成审核，请保留申请单号。</li>
-        <li>审核通过后，在「入驻结果查询」页获取 merchantId 与 appSecret。</li>
-        <li>使用 SDK 与签名密钥对接收银台开放接口。</li>
+        <li>{{ t('portal.guideStep1') }}</li>
+        <li>{{ t('portal.guideStep2') }}</li>
+        <li>{{ t('portal.guideStep3') }}</li>
       </ol>
-      <el-button type="primary" class="portal-submit mt-4" @click="goQuery">前往入驻结果查询</el-button>
+      <el-button type="primary" class="portal-submit mt-4" @click="goQuery">{{ t('portal.goResultQuery') }}</el-button>
     </div>
   </PortalShell>
 </template>
@@ -101,11 +101,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PortalShell from '@/components/PortalShell.vue'
 import { submitOnboardingApplication } from '@/api/onboarding'
 
+const { t } = useI18n()
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -125,23 +127,23 @@ const form = reactive({
 })
 
 const stepSubtitle = computed(() => {
-  if (step.value === 0) return '加入 PonyFlux Pay · 提交后等待平台审核'
-  if (step.value === 1) return '请妥善保存申请单号'
-  return '按以下步骤完成支付接入'
+  if (step.value === 0) return t('portal.registerSubtitleApply')
+  if (step.value === 1) return t('portal.registerSubtitleSubmitted')
+  return t('portal.registerSubtitleGuide')
 })
 
-const rules: FormRules = {
-  merchantName: [{ required: true, message: '请输入商户名称', trigger: 'blur' }],
-  contactName: [{ required: true, message: '请输入联系人姓名', trigger: 'blur' }],
+const rules = computed<FormRules>(() => ({
+  merchantName: [{ required: true, message: t('portal.merchantNameRequired'), trigger: 'blur' }],
+  contactName: [{ required: true, message: t('portal.contactRequired'), trigger: 'blur' }],
   phone: [
-    { required: true, message: '请输入手机号码', trigger: 'blur' },
-    { pattern: /^1\d{10}$/, message: '请输入正确的手机号码', trigger: 'blur' },
+    { required: true, message: t('portal.phoneRequired'), trigger: 'blur' },
+    { pattern: /^1\d{10}$/, message: t('portal.phoneInvalid'), trigger: 'blur' },
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' },
+    { required: true, message: t('portal.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('portal.emailInvalid'), trigger: 'blur' },
   ],
-}
+}))
 
 async function handleSubmit() {
   if (!formRef.value) return
@@ -166,10 +168,11 @@ async function handleSubmit() {
       remark: form.remark.trim() || undefined,
     })
     applicationNo.value = result.applicationNo
-    ElMessage.success('申请已提交')
+    ElMessage.success(t('portal.submitSuccess'))
     step.value = 1
-  } catch (err: any) {
-    errorMsg.value = err?.message ?? '提交失败，请稍后重试'
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : undefined
+    errorMsg.value = message ?? t('portal.submitFailed')
   } finally {
     loading.value = false
   }
@@ -179,9 +182,9 @@ async function copyApplicationNo() {
   if (!applicationNo.value) return
   try {
     await navigator.clipboard.writeText(applicationNo.value)
-    ElMessage.success('申请单号已复制')
+    ElMessage.success(t('portal.copySuccess'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('portal.copyFailed'))
   }
 }
 

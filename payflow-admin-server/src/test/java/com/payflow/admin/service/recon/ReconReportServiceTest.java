@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReconReportService 集成测试")
-class ReconReportServiceIT {
+class ReconReportServiceTest {
 
     @Mock
     private ReconReportSubscriptionEntityMapper subscriptionMapper;

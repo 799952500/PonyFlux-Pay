@@ -1,5 +1,10 @@
 <template>
-  <div class="page-table-shell">
+  <div v-loading="loading" class="page-table-shell">
+    <el-alert v-if="loadError" type="error" :title="loadError" show-icon class="mb-4">
+      <template #default>
+        <el-button type="primary" link @click="load">重试</el-button>
+      </template>
+    </el-alert>
     <div class="content-card mb-4">
       <div class="flex items-center justify-between mb-4">
         <div>
@@ -139,6 +144,10 @@ const route = useRoute()
 const router = useRouter()
 const diffId = Number(route.params.diffId)
 
+const loading = ref(false)
+const loadError = ref('')
+const actionLoading = ref(false)
+
 const diff = ref<any>(null)
 const assignment = ref<any>(null)
 const audits = ref<any[]>([])
@@ -157,16 +166,33 @@ const canComplete = computed(() =>
 )
 
 const load = async () => {
-  const data = await getReconWorkItemDetail(diffId)
-  diff.value = data?.diff
-  assignment.value = data?.assignment
-  audits.value = data?.audits ?? []
+  loading.value = true
+  loadError.value = ''
+  try {
+    const data = await getReconWorkItemDetail(diffId)
+    diff.value = data?.diff
+    assignment.value = data?.assignment
+    audits.value = data?.audits ?? []
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '加载失败'
+    loadError.value = msg
+    ElMessage.error(msg)
+  } finally {
+    loading.value = false
+  }
 }
 
 const doClaim = async () => {
-  await claimReconWorkItem(diffId)
-  ElMessage.success('认领成功')
-  await load()
+  actionLoading.value = true
+  try {
+    await claimReconWorkItem(diffId)
+    ElMessage.success('认领成功')
+    await load()
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '认领失败')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const openAssignDialog = () => {
@@ -176,16 +202,30 @@ const openAssignDialog = () => {
 }
 
 const doAssign = async () => {
-  await assignReconWorkItem(diffId, { assigneeId: assignForm.assigneeId, remark: assignForm.remark || undefined })
-  assignDialogVisible.value = false
-  ElMessage.success('指派成功')
-  await load()
+  actionLoading.value = true
+  try {
+    await assignReconWorkItem(diffId, { assigneeId: assignForm.assigneeId, remark: assignForm.remark || undefined })
+    assignDialogVisible.value = false
+    ElMessage.success('指派成功')
+    await load()
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '指派失败')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const doStart = async () => {
-  await startReconWorkItem(diffId)
-  ElMessage.success('已开始处理')
-  await load()
+  actionLoading.value = true
+  try {
+    await startReconWorkItem(diffId)
+    ElMessage.success('已开始处理')
+    await load()
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '操作失败')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const openCompleteDialog = () => {
@@ -195,17 +235,31 @@ const openCompleteDialog = () => {
 }
 
 const doComplete = async () => {
-  await completeReconWorkItem(diffId, { action: completeForm.action, remark: completeForm.remark })
-  completeDialogVisible.value = false
-  ElMessage.success('提交成功')
-  await load()
+  actionLoading.value = true
+  try {
+    await completeReconWorkItem(diffId, { action: completeForm.action, remark: completeForm.remark })
+    completeDialogVisible.value = false
+    ElMessage.success('提交成功')
+    await load()
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '提交失败')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const doComment = async () => {
-  await commentReconWorkItem(diffId, { content: comment.value })
-  comment.value = ''
-  ElMessage.success('留言成功')
-  await load()
+  actionLoading.value = true
+  try {
+    await commentReconWorkItem(diffId, { content: comment.value })
+    comment.value = ''
+    ElMessage.success('留言成功')
+    await load()
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '留言失败')
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 load()

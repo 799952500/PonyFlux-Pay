@@ -1,7 +1,7 @@
 <template>
-  <PortalShell title="入驻结果查询" subtitle="审批通过后，使用申请单号与联系方式获取密钥">
+  <PortalShell :title="t('portal.resultTitle')" :subtitle="t('portal.resultSubtitle')">
     <template #header-extra>
-      <router-link to="/register" class="portal-link">返回入驻申请</router-link>
+      <router-link to="/register" class="portal-link">{{ t('portal.backRegister') }}</router-link>
     </template>
 
     <el-form
@@ -13,15 +13,15 @@
       class="portal-form"
       @submit.prevent="handleQuery"
     >
-      <el-form-item label="申请单号" prop="applicationNo">
-        <el-input v-model="form.applicationNo" placeholder="如 AP20260523xxxxxx" clearable />
+      <el-form-item :label="t('portal.applicationNoLabel')" prop="applicationNo">
+        <el-input v-model="form.applicationNo" :placeholder="t('portal.applicationNoPlaceholder')" clearable />
       </el-form-item>
-      <el-form-item label="联系方式" prop="contact">
-        <el-input v-model="form.contact" placeholder="申请时填写的手机号或邮箱" clearable />
+      <el-form-item :label="t('portal.contactLabel')" prop="contact">
+        <el-input v-model="form.contact" :placeholder="t('portal.contactPlaceholder')" clearable />
       </el-form-item>
       <el-alert v-if="errorMsg" :title="errorMsg" type="error" show-icon :closable="false" class="mb-3" />
       <el-button type="primary" class="portal-submit" :loading="loading" native-type="submit">
-        {{ loading ? '查询中...' : '查询密钥' }}
+        {{ loading ? t('portal.querying') : t('portal.queryCredentials') }}
       </el-button>
     </el-form>
 
@@ -30,38 +30,39 @@
         type="warning"
         :closable="false"
         show-icon
-        title="请妥善保管以下信息"
-        description="密钥仅可查询有限次数，建议立即复制或下载保存。"
+        :title="t('portal.credentialsAlert')"
+        :description="t('portal.credentialsDesc')"
         class="mb-4"
       />
       <el-descriptions :column="1" border size="small">
-        <el-descriptions-item label="申请单号">{{ credentials.applicationNo }}</el-descriptions-item>
-        <el-descriptions-item label="商户号">
+        <el-descriptions-item :label="t('portal.applicationNoLabel')">{{ credentials.applicationNo }}</el-descriptions-item>
+        <el-descriptions-item :label="t('portal.merchantIdLabel')">
           <span class="font-mono text-sm">{{ credentials.merchantId }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="签名密钥">
+        <el-descriptions-item :label="t('portal.appSecretLabel')">
           <span class="font-mono text-xs break-all">{{ credentials.appSecret }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="管理后台账号">{{ credentials.adminUsername }}</el-descriptions-item>
-        <el-descriptions-item label="初始密码">
+        <el-descriptions-item :label="t('portal.adminUsernameLabel')">{{ credentials.adminUsername }}</el-descriptions-item>
+        <el-descriptions-item :label="t('portal.tempPasswordLabel')">
           <span class="font-mono">{{ credentials.tempPassword }}</span>
         </el-descriptions-item>
-        <el-descriptions-item v-if="credentials.remainingQueries != null" label="剩余查询次数">
+        <el-descriptions-item v-if="credentials.remainingQueries != null" :label="t('portal.remainingQueriesLabel')">
           {{ credentials.remainingQueries }}
         </el-descriptions-item>
       </el-descriptions>
       <div class="flex flex-col gap-2 mt-5">
-        <el-button type="primary" class="portal-submit" @click="copyAll">复制全部信息</el-button>
-        <el-button @click="downloadTxt">保存为文本文件</el-button>
-        <el-button link type="primary" @click="openAdminLogin">打开管理后台登录</el-button>
+        <el-button type="primary" class="portal-submit" @click="copyAll">{{ t('portal.copyAll') }}</el-button>
+        <el-button @click="downloadTxt">{{ t('portal.saveTxt') }}</el-button>
+        <el-button link type="primary" @click="openAdminLogin">{{ t('portal.openAdminLogin') }}</el-button>
       </div>
     </div>
   </PortalShell>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PortalShell from '@/components/PortalShell.vue'
@@ -70,6 +71,7 @@ import {
   type OnboardingCredentialResult,
 } from '@/api/onboarding'
 
+const { t } = useI18n()
 const route = useRoute()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -88,10 +90,10 @@ onMounted(() => {
   }
 })
 
-const rules: FormRules = {
-  applicationNo: [{ required: true, message: '请输入申请单号', trigger: 'blur' }],
-  contact: [{ required: true, message: '请输入手机号或邮箱', trigger: 'blur' }],
-}
+const rules = computed<FormRules>(() => ({
+  applicationNo: [{ required: true, message: t('portal.applicationNoRequired'), trigger: 'blur' }],
+  contact: [{ required: true, message: t('portal.contactRequiredResult'), trigger: 'blur' }],
+}))
 
 async function handleQuery() {
   if (!formRef.value) return
@@ -107,9 +109,10 @@ async function handleQuery() {
       applicationNo: form.applicationNo.trim(),
       contact: form.contact.trim(),
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     credentials.value = null
-    errorMsg.value = err?.message ?? '查询失败，请核对申请单号与联系方式'
+    const message = err instanceof Error ? err.message : undefined
+    errorMsg.value = message ?? t('portal.queryFailed')
   } finally {
     loading.value = false
   }
@@ -118,13 +121,13 @@ async function handleQuery() {
 function buildCredentialText(): string {
   const c = credentials.value!
   return [
-    'PonyFlux Pay 商户入驻凭证',
-    `申请单号: ${c.applicationNo}`,
-    `商户号 merchantId: ${c.merchantId}`,
-    `签名密钥 appSecret: ${c.appSecret}`,
-    `管理后台账号: ${c.adminUsername}`,
-    `初始密码: ${c.tempPassword}`,
-    `登录地址: ${c.loginUrl}`,
+    t('portal.credentialHeader'),
+    t('portal.credentialApplicationNo', { value: c.applicationNo }),
+    t('portal.credentialMerchantId', { value: c.merchantId }),
+    t('portal.credentialAppSecret', { value: c.appSecret }),
+    t('portal.credentialAdminUser', { value: c.adminUsername }),
+    t('portal.credentialTempPassword', { value: c.tempPassword }),
+    t('portal.credentialLoginUrl', { value: c.loginUrl }),
   ].join('\n')
 }
 
@@ -132,9 +135,9 @@ async function copyAll() {
   if (!credentials.value) return
   try {
     await navigator.clipboard.writeText(buildCredentialText())
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('portal.copied'))
   } catch {
-    ElMessage.error('复制失败，请手动选择文本复制')
+    ElMessage.error(t('portal.copyFailedManual'))
   }
 }
 

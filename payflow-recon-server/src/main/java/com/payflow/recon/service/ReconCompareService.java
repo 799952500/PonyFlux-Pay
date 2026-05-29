@@ -1,6 +1,8 @@
 package com.payflow.recon.service;
 
+import com.baomidou.mybatisplus.extension.toolkit.Db;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.payflow.recon.config.ReconProperties;
 import com.payflow.recon.entity.ReconBillRecord;
 import com.payflow.recon.entity.ReconDiff;
 import com.payflow.recon.kit.ReconChannelKit;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +41,7 @@ public class ReconCompareService {
     private final ReconBillRecordMapper reconBillRecordMapper;
     private final ReconDiffMapper reconDiffMapper;
     private final CashierReconPaymentMapper cashierReconPaymentMapper;
+    private final ReconProperties reconProperties;
 
     /**
      * 执行比对并写入差异表（先删本任务旧差异）。
@@ -59,7 +64,10 @@ public class ReconCompareService {
         }
 
         String payChannel = ReconChannelKit.reconToPayChannel(reconChannel);
-        List<CashierReconPaymentRow> locals = cashierReconPaymentMapper.listSuccessByBillDate(payChannel, billDate);
+        LocalDateTime dayStart = billDate.atStartOfDay();
+        LocalDateTime dayEnd = billDate.plusDays(1).atStartOfDay();
+        List<CashierReconPaymentRow> locals = cashierReconPaymentMapper.listSuccessByBillDate(
+                payChannel, dayStart, dayEnd);
         Map<String, CashierReconPaymentRow> localByTxn = new HashMap<>();
         for (CashierReconPaymentRow p : locals) {
             if (p.getChannelTransactionId() == null || p.getChannelTransactionId().isBlank()) {
@@ -68,14 +76,14 @@ public class ReconCompareService {
             localByTxn.putIfAbsent(p.getChannelTransactionId(), p);
         }
 
-        int diffCount = 0;
+        List<ReconDiff> pendingDiffs = new ArrayList<>();
 
         for (Map.Entry<String, ReconBillRecord> e : billByTrade.entrySet()) {
             String txn = e.getKey();
             ReconBillRecord bill = e.getValue();
             CashierReconPaymentRow pay = localByTxn.get(txn);
             if (pay == null) {
-                reconDiffMapper.insert(ReconDiff.builder()
+                pendingDiffs.add(ReconDiff.builder()
                         .taskId(taskId)
                         .merchantId(null)
                         .diffType(DIFF_CHANNEL_ONLY)
@@ -87,13 +95,12 @@ public class ReconCompareService {
                         .localStatus(null)
                         .handleStatus("PENDING")
                         .build());
-                diffCount++;
                 continue;
             }
             Long chAmt = bill.getAmountFen();
             Long locAmt = pay.getAmount();
             if (chAmt != null && locAmt != null && !chAmt.equals(locAmt)) {
-                reconDiffMapper.insert(ReconDiff.builder()
+                pendingDiffs.add(ReconDiff.builder()
                         .taskId(taskId)
                         .merchantId(merchantIdOf(pay))
                         .diffType(DIFF_AMOUNT_MISMATCH)
@@ -105,11 +112,10 @@ public class ReconCompareService {
                         .localStatus(pay.getStatus())
                         .handleStatus("PENDING")
                         .build());
-                diffCount++;
                 continue;
             }
             if (statusMismatch(bill.getChannelStatus(), pay.getStatus())) {
-                reconDiffMapper.insert(ReconDiff.builder()
+                pendingDiffs.add(ReconDiff.builder()
                         .taskId(taskId)
                         .merchantId(merchantIdOf(pay))
                         .diffType(DIFF_STATUS_MISMATCH)
@@ -121,7 +127,6 @@ public class ReconCompareService {
                         .localStatus(pay.getStatus())
                         .handleStatus("PENDING")
                         .build());
-                diffCount++;
             }
         }
 
@@ -131,7 +136,7 @@ public class ReconCompareService {
                 continue;
             }
             CashierReconPaymentRow pay = e.getValue();
-            reconDiffMapper.insert(ReconDiff.builder()
+            pendingDiffs.add(ReconDiff.builder()
                     .taskId(taskId)
                     .merchantId(merchantIdOf(pay))
                     .diffType(DIFF_LOCAL_ONLY)
@@ -143,9 +148,12 @@ public class ReconCompareService {
                     .localStatus(pay.getStatus())
                     .handleStatus("PENDING")
                     .build());
-            diffCount++;
         }
 
+        if (!pendingDiffs.isEmpty()) {
+            Db.saveBatch(pendingDiffs, reconProperties.getBatchSize());
+        }
+        int diffCount = pendingDiffs.size();
         log.info("对账比对完成: taskId={}, diffCount={}", taskId, diffCount);
         return diffCount;
     }

@@ -8,6 +8,9 @@
       </TableToolbar>
 
       <el-table table-layout="auto" v-loading="loading" :data="roleList" stripe size="small" class="data-table">
+        <template #empty>
+          <el-empty description="暂无角色" />
+        </template>
         <el-table-column label="角色编码" prop="roleCode" min-width="140">
           <template #default="{ row }">
             <span class="cell-mono pf-link">{{ row.roleCode }}</span>

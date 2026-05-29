@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -59,11 +60,20 @@ public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryServic
         Page<MerchantNotify> page = new Page<>(pageNum, size);
         wrapper.orderByDesc(MerchantNotify::getLastAttemptAt).orderByDesc(MerchantNotify::getUpdatedAt);
         IPage<MerchantNotify> raw = merchantNotifyMapper.selectPage(page, wrapper);
-        // 对连续失败达到阈值的记录触发站内通知（幂等）
+        List<String> orderIds = raw.getRecords().stream()
+                .map(MerchantNotify::getOrderId)
+                .filter(id -> id != null && !id.isBlank())
+                .distinct()
+                .toList();
+        Map<String, Order> orderMap = orderService.mapByOrderIds(orderIds);
+        IPage<Map<String, Object>> converted = raw.convert(n -> {
+            Order order = orderMap.get(n.getOrderId());
+            return toListItem(n, order != null ? order.getStatus() : n.getOrderStatusSnapshot());
+        });
         for (MerchantNotify notify : raw.getRecords()) {
             notifyWebhookFailureIfNeeded(notify);
         }
-        return raw.convert(this::toListItem);
+        return converted;
     }
 
     @Override
@@ -166,11 +176,6 @@ public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryServic
             wrapper.le(MerchantNotify::getLastAttemptAt, endTime);
         }
         return wrapper;
-    }
-
-    private Map<String, Object> toListItem(MerchantNotify summary) {
-        Order order = orderService.getByOrderId(summary.getOrderId());
-        return toListItem(summary, order != null ? order.getStatus() : summary.getOrderStatusSnapshot());
     }
 
     private Map<String, Object> toListItem(MerchantNotify summary, String orderStatus) {

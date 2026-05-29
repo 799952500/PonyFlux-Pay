@@ -5,6 +5,7 @@
 import { createRouter, createWebHistory, type RouteLocationGeneric } from 'vue-router'
 import { installPfSurface } from '@/composables/usePfSurface'
 import { buildCashierPath, resolveCashierTerminal } from '@/utils/cashierDevice'
+import { i18n } from '@/i18n'
 
 function redirectCashierByDevice(to: RouteLocationGeneric) {
   const orderId = (to.params.orderId as string) || 'demo'
@@ -26,26 +27,26 @@ const router = createRouter({
       path: '/cashier/:orderId',
       name: 'cashier',
       redirect: redirectCashierByDevice,
-      meta: { title: '收银台' },
+      meta: { titleKey: 'router.cashier' },
     },
     {
       path: '/cashier/pc/:orderId',
       name: 'cashier-pc',
       component: () => import('@/pages/cashier/pc/index.vue'),
-      meta: { title: '收银台', terminal: 'PC' },
+      meta: { titleKey: 'router.cashier', terminal: 'PC' },
     },
     {
       path: '/cashier/h5/:orderId',
       name: 'cashier-h5',
       component: () => import('@/pages/cashier/h5/index.vue'),
-      meta: { title: '收银台', terminal: 'H5' },
+      meta: { titleKey: 'router.cashier', terminal: 'H5' },
     },
 
     {
       path: '/receipt/:orderId',
       name: 'receipt',
       component: () => import('@/pages/receipt/index.vue'),
-      meta: { title: '电子收据' },
+      meta: { titleKey: 'router.receipt' },
     },
 
     {
@@ -57,14 +58,14 @@ const router = createRouter({
       path: '/register',
       name: 'register',
       component: () => import('@/pages/register/index.vue'),
-      meta: { title: '商户入驻申请' },
+      meta: { titleKey: 'router.register' },
     },
 
     {
       path: '/onboarding/result',
       name: 'onboarding-result',
       component: () => import('@/pages/onboarding/result.vue'),
-      meta: { title: '入驻结果查询' },
+      meta: { titleKey: 'router.onboardingResult' },
     },
 
     {
@@ -77,10 +78,12 @@ const router = createRouter({
 installPfSurface()
 
 router.afterEach((to) => {
-  const title = (to.meta?.title as string | undefined) ?? '小马支付'
+  const { t } = i18n.global
+  const titleKey = (to.meta?.titleKey as string | undefined) ?? 'router.default'
+  const title = t(titleKey)
   const terminal = to.meta?.terminal as string | undefined
   const suffix = terminal ? ` (${terminal})` : ''
-  document.title = `${title}${suffix} - 小马支付 PonyFlux Pay`
+  document.title = `${title}${suffix} - ${t('app.titleSuffix')}`
 })
 
 export default router

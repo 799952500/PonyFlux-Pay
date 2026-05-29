@@ -1,6 +1,10 @@
 package com.payflow.cashier.openservice.payment.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.cashier.entity.PayChannelAccount;
+import com.payflow.cashier.entity.Payment;
+import com.payflow.cashier.mapper.PaymentMapper;
+import com.payflow.cashier.openservice.payment.ChannelOrderQueryResult;
 import com.payflow.cashier.openservice.payment.PayChannelPaymentOpenService;
 import com.payflow.cashier.sdk.PayStrategyLocator;
 import com.payflow.common.exception.BizException;
@@ -8,18 +12,17 @@ import com.payflow.payment.core.PayMethod;
 import com.payflow.payment.core.PayResult;
 import com.payflow.payment.core.PayStrategy;
 import com.payflow.payment.core.RefundResult;
+import com.payflow.payment.union.UnionPayConfigLoader;
+import com.payflow.payment.union.UnionPayQrHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
  * 银联/云闪付支付开放服务。
- * <p>
- * 支持 H5（union_h5PayStrategy）和扫码 QR（union_qrPayStrategy）。
- * 通知处理由 {@link com.payflow.cashier.openservice.impl.UnionPayOpenService} 统一负责。
- * </p>
  */
 @Slf4j
 @Service("unionpayPaymentOpenService")
@@ -27,6 +30,7 @@ import java.util.Map;
 public class UnionPayPaymentOpenService implements PayChannelPaymentOpenService {
 
     private final PayStrategyLocator payStrategyLocator;
+    private final PaymentMapper paymentMapper;
 
     @Override
     public String channelCode() {
@@ -64,5 +68,20 @@ public class UnionPayPaymentOpenService implements PayChannelPaymentOpenService 
         RefundResult result = strategy.refund(orderId, refundAmount, reason, account);
         log.info("银联退款完成: orderId={}, refundId={}, success={}", orderId, refundId, result.isSuccess());
         return result;
+    }
+
+    @Override
+    public ChannelOrderQueryResult queryOrder(String orderId, PayChannelAccount account) {
+        var config = UnionPayConfigLoader.load(account);
+        Payment payment = paymentMapper.selectOne(new LambdaQueryWrapper<Payment>()
+                .eq(Payment::getOrderId, orderId)
+                .orderByDesc(Payment::getCreatedAt)
+                .last("LIMIT 1"));
+        LocalDateTime txnTime = payment != null && payment.getCreatedAt() != null
+                ? payment.getCreatedAt()
+                : LocalDateTime.now();
+        boolean paid = new UnionPayQrHandler().queryOrderSuccess(orderId, txnTime, config);
+        return ChannelOrderQueryResult.of(paid, null,
+                paid ? "银联侧订单已支付" : "银联侧订单未支付或查单失败");
     }
 }

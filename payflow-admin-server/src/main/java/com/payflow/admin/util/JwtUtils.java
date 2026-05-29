@@ -1,65 +1,42 @@
 package com.payflow.admin.util;
 
 import com.payflow.admin.config.JwtProperties;
+import com.payflow.common.security.JwtService;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 /**
  * @author Lucas
  */
 public class JwtUtils {
 
     private final JwtProperties jwtProperties;
+    private final JwtService jwtService;
 
-    private SecretKey getSigningKey() {
-        return JwtSigningKeys.hmacSha256(jwtProperties.getSecret());
+    public JwtUtils(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+        this.jwtService = new JwtService(jwtProperties.getSecret(), jwtProperties.getExpiration());
     }
 
     public String generateToken(String username, String role, String dataMerchantIds) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
-
         Map<String, Object> claims = new HashMap<>(5);
         claims.put("role", role != null ? role : "");
         claims.put("merchantId", "");
         claims.put("dataMerchantIds", dataMerchantIds != null ? dataMerchantIds : "");
-        claims.put("jti", UUID.randomUUID().toString());
-
-        return Jwts.builder()
-                .subject(username)
-                .claims(claims)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
+        return jwtService.generateToken(username, claims);
     }
 
     public Claims parseToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        return jwtService.parseToken(token);
     }
 
     public boolean validateToken(String token) {
-        try {
-            parseToken(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
-        }
+        return jwtService.validateToken(token);
     }
 
     public String getUsername(String token) {
@@ -75,6 +52,6 @@ public class JwtUtils {
     }
 
     public String getJti(String token) {
-        return parseToken(token).get("jti", String.class);
+        return jwtService.getJti(token);
     }
 }

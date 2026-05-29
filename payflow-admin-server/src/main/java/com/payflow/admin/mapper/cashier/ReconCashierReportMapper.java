@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -20,13 +21,15 @@ public interface ReconCashierReportMapper {
             FROM cashier_payments p
             INNER JOIN cashier_orders o ON o.order_id = p.order_id
             WHERE p.status = 'SUCCESS'
-              AND DATE(COALESCE(p.updated_at, p.created_at)) = #{billDate}
+              AND COALESCE(p.updated_at, p.created_at) &gt;= #{start}
+              AND COALESCE(p.updated_at, p.created_at) &lt; #{end}
               AND (#{payChannel} IS NULL OR #{payChannel} = '' OR p.pay_channel = #{payChannel})
               AND (#{merchantId} IS NULL OR #{merchantId} = '' OR o.merchant_id = #{merchantId})
               AND (#{orderKeyword} IS NULL OR #{orderKeyword} = '' OR p.order_id LIKE CONCAT('%', #{orderKeyword}, '%'))
             """)
     long countSuccessPaymentsOnBillDate(
-            @Param("billDate") LocalDate billDate,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
             @Param("payChannel") String payChannel,
             @Param("merchantId") String merchantId,
             @Param("orderKeyword") String orderKeyword);
@@ -38,7 +41,8 @@ public interface ReconCashierReportMapper {
             FROM cashier_payments p
             INNER JOIN cashier_orders o ON o.order_id = p.order_id
             WHERE p.status = 'SUCCESS'
-              AND DATE(COALESCE(p.updated_at, p.created_at)) = #{billDate}
+              AND COALESCE(p.updated_at, p.created_at) &gt;= #{start}
+              AND COALESCE(p.updated_at, p.created_at) &lt; #{end}
               AND (#{payChannel} IS NULL OR #{payChannel} = '' OR p.pay_channel = #{payChannel})
               AND (#{merchantId} IS NULL OR #{merchantId} = '' OR o.merchant_id = #{merchantId})
               AND (#{orderKeyword} IS NULL OR #{orderKeyword} = '' OR p.order_id LIKE CONCAT('%', #{orderKeyword}, '%'))
@@ -46,7 +50,8 @@ public interface ReconCashierReportMapper {
             LIMIT #{limit} OFFSET #{offset}
             """)
     List<ReconCashierPaymentRow> listSuccessPaymentsOnBillDate(
-            @Param("billDate") LocalDate billDate,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
             @Param("payChannel") String payChannel,
             @Param("merchantId") String merchantId,
             @Param("orderKeyword") String orderKeyword,
@@ -64,7 +69,8 @@ public interface ReconCashierReportMapper {
                    COALESCE(SUM(p.amount), 0) AS sumAmount
             FROM cashier_payments p
             WHERE p.status = 'SUCCESS'
-              AND DATE(COALESCE(p.updated_at, p.created_at)) = #{billDate}
+              AND COALESCE(p.updated_at, p.created_at) &gt;= #{start}
+              AND COALESCE(p.updated_at, p.created_at) &lt; #{end}
               AND p.pay_channel IN ('ALIPAY', 'WECHAT_PAY')
             <if test="accountCode != null and accountCode != ''">
               AND COALESCE(NULLIF(TRIM(p.account_code), ''), '__NO_ACCOUNT__') = #{accountCode}
@@ -73,7 +79,8 @@ public interface ReconCashierReportMapper {
             </script>
             """)
     List<ReconLocalAccountAggRow> aggregateLocalSuccessByAccount(
-            @Param("billDate") LocalDate billDate,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
             @Param("accountCode") String accountCode);
 
     @Select("""

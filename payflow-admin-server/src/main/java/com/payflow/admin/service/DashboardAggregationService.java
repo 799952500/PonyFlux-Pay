@@ -310,35 +310,44 @@ public class DashboardAggregationService {
     }
 
     private long sumPaidRevenueFenOnDay(LocalDate day, List<String> merchantScopeIds) {
+        var start = day.atStartOfDay();
+        var end = day.plusDays(1).atStartOfDay();
         if (merchantScopeIds == null) {
             return nz(orderMapper.sumPaidRevenueFenOnDay(day));
         }
         return orderMapper.selectList(new LambdaQueryWrapper<Order>()
                         .in(Order::getStatus, "PAID", "SUCCESS")
                         .in(Order::getMerchantId, merchantScopeIds)
-                        .apply("DATE(COALESCE(pay_time, updated_at, created_at)) = {0}", day))
+                        .ge(Order::getUpdatedAt, start)
+                        .lt(Order::getUpdatedAt, end))
                 .stream()
                 .mapToLong(o -> o.getPayAmount() != null ? o.getPayAmount() : (o.getAmount() != null ? o.getAmount() : 0L))
                 .sum();
     }
 
     private long countCreatedOnDay(LocalDate day, List<String> merchantScopeIds) {
+        var start = day.atStartOfDay();
+        var end = day.plusDays(1).atStartOfDay();
         if (merchantScopeIds == null) {
             return nz(orderMapper.countCreatedOnDay(day));
         }
         return orderMapper.selectCount(new LambdaQueryWrapper<Order>()
                 .in(Order::getMerchantId, merchantScopeIds)
-                .apply("DATE(created_at) = {0}", day));
+                .ge(Order::getCreatedAt, start)
+                .lt(Order::getCreatedAt, end));
     }
 
     private long countPaidOnDay(LocalDate day, List<String> merchantScopeIds) {
+        var start = day.atStartOfDay();
+        var end = day.plusDays(1).atStartOfDay();
         if (merchantScopeIds == null) {
             return nz(orderMapper.countPaidOnDay(day));
         }
         return orderMapper.selectCount(new LambdaQueryWrapper<Order>()
                 .in(Order::getStatus, "PAID", "SUCCESS")
                 .in(Order::getMerchantId, merchantScopeIds)
-                .apply("DATE(COALESCE(pay_time, updated_at, created_at)) = {0}", day));
+                .ge(Order::getPayTime, start)
+                .lt(Order::getPayTime, end));
     }
 
     private List<Map<String, Object>> buildRecentOrders(List<String> merchantScopeIds) {

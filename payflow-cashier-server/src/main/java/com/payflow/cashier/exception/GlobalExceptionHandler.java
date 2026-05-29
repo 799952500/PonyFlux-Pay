@@ -2,6 +2,7 @@ package com.payflow.cashier.exception;
 
 import com.payflow.cashier.constant.MerchantSecurityErrorCodes;
 import com.payflow.common.exception.BizException;
+import com.payflow.common.web.R;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

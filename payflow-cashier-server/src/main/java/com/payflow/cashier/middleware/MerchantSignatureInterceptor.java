@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payflow.cashier.config.PayflowProperties;
 import com.payflow.cashier.context.AuthMode;
 import com.payflow.cashier.entity.Merchant;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.mapper.MerchantMapper;
 import com.payflow.cashier.util.MerchantSignatureUtil;
 import jakarta.servlet.http.HttpServletRequest;

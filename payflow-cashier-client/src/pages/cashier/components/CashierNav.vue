@@ -18,7 +18,7 @@
           </svg>
           {{ expireCountdown }}
         </span>
-        <a href="tel:4008888888" class="nav-link">帮助</a>
+        <a href="tel:4008888888" class="nav-link">{{ t('nav.help') }}</a>
       </div>
     </div>
   </header>
@@ -26,7 +26,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCashierStore } from '@/stores/cashier'
+
+const { t } = useI18n()
 
 const cashierStore = useCashierStore()
 
@@ -37,7 +40,7 @@ const expireCountdown = computed(() => {
   const info = cashierStore.orderInfo
   if (!info?.expireTime) return ''
   const diff = new Date(info.expireTime).getTime() - now.value
-  if (diff <= 0) return '已过期'
+  if (diff <= 0) return t('order.expired')
   const min = Math.floor(diff / 60000)
   const sec = Math.floor((diff % 60000) / 1000)
   return `${min}:${sec.toString().padStart(2, '0')}`

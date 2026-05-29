@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -24,8 +24,10 @@ public interface CashierReconPaymentMapper {
             INNER JOIN cashier_orders o ON o.order_id = p.order_id
             WHERE p.pay_channel = #{payChannel}
               AND p.status = 'SUCCESS'
-              AND DATE(COALESCE(p.updated_at, p.created_at)) = #{billDate}
+              AND COALESCE(p.updated_at, p.created_at) &gt;= #{start}
+              AND COALESCE(p.updated_at, p.created_at) &lt; #{end}
             """)
     List<CashierReconPaymentRow> listSuccessByBillDate(@Param("payChannel") String payChannel,
-                                                        @Param("billDate") LocalDate billDate);
+                                                        @Param("start") LocalDateTime start,
+                                                        @Param("end") LocalDateTime end);
 }

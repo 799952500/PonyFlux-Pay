@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.payflow.admin.dto.UpdateMerchantRequest;
 import com.payflow.admin.entity.Merchant;
 import com.payflow.admin.kit.AdminRequestContext;
+import com.payflow.common.web.PageRequest;
 import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.MerchantService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,14 +60,15 @@ public class AdminMerchantController {
         } else {
             resolvedPageSize = 20;
         }
+        PageRequest pr = PageRequest.of(page, resolvedPageSize);
 
         IPage<Merchant> merchantPage = merchantService.page(
-                page, resolvedPageSize, keyword, status, AdminRequestContext.merchantScope(request));
+                pr.getPage(), pr.getSize(), keyword, status, AdminRequestContext.merchantScope(request));
 
         Map<String, Object> data = new HashMap<>();
         data.put("total", merchantPage.getTotal());
-        data.put("page", page);
-        data.put("pageSize", resolvedPageSize);
+        data.put("page", pr.getPage());
+        data.put("pageSize", pr.getSize());
         data.put("list", merchantPage.getRecords());
 
         Map<String, Object> resp = new HashMap<>();

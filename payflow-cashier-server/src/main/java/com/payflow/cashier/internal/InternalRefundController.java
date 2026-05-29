@@ -3,7 +3,7 @@ package com.payflow.cashier.internal;
 import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.dto.RefundRequest;
 import com.payflow.cashier.dto.RefundResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.service.RefundService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

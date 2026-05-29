@@ -1,7 +1,7 @@
 package com.payflow.cashier.controller;
 
 import com.payflow.cashier.dto.OrderDetailResponse;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import com.payflow.cashier.service.OrderService;
 import com.payflow.cashier.service.PaymentService;
@@ -63,7 +63,7 @@ public class MerchantQueryController {
         if (resp == null) {
             log.warn("[商户查询] 订单不存在或merchantId不匹配: orderId={}, merchantId={}",
                     orderId, merchantId);
-            return R.orderNotFound(orderId);
+            return R.bizError(6001, "订单不存在: " + orderId);
         }
 
         return R.ok(resp);

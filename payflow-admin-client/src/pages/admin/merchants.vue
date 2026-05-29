@@ -2,24 +2,24 @@
   <div class="page-table-shell">
     <div class="filter-bar">
       <el-form :inline="true" :model="queryForm" size="default" class="filter-bar__form">
-        <el-form-item label="关键词"><el-input v-model="queryForm.keyword" placeholder="商户号 / 商户名称" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="全部" clearable style="width: 140px">
-            <el-option label="全部" value="" /><el-option label="正常" value="ACTIVE" /><el-option label="停用" value="SUSPENDED" /><el-option label="关闭" value="CLOSED" />
+        <el-form-item :label="t('merchants.keyword')"><el-input v-model="queryForm.keyword" :placeholder="t('merchants.keywordPlaceholder')" clearable style="width: 180px" @keyup.enter="handleSearch" /></el-form-item>
+        <el-form-item :label="t('merchants.status')">
+          <el-select v-model="queryForm.status" :placeholder="t('merchants.all')" clearable style="width: 140px">
+            <el-option :label="t('merchants.all')" value="" /><el-option :label="t('merchants.active')" value="ACTIVE" /><el-option :label="t('merchants.suspended')" value="SUSPENDED" /><el-option :label="t('merchants.closed')" value="CLOSED" />
           </el-select>
         </el-form-item>
         <el-form-item class="filter-bar__actions">
-          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">查询</el-button>
-          <el-button class="btn-outline" icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="primary" class="btn-primary" icon="Search" @click="handleSearch">{{ t('merchants.search') }}</el-button>
+          <el-button class="btn-outline" icon="Refresh" @click="handleReset">{{ t('merchants.reset') }}</el-button>
         </el-form-item>
       </el-form>
     </div>
 
     <div class="content-card">
-      <TableToolbar title="商户列表" :total="total" />
+      <TableToolbar :title="t('merchants.listTitle')" :total="total" />
 
       <el-table table-layout="auto" v-loading="loading" :data="merchantList" stripe size="small" class="data-table">
-        <el-table-column label="商户号" prop="merchantId" min-width="150">
+        <el-table-column :label="t('merchants.merchantId')" prop="merchantId" min-width="150">
           <template #default="{ row }">
             <span
               :data-flip="`merchant-${row.merchantId}`"
@@ -28,42 +28,42 @@
             >{{ row.merchantId }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="商户名称" prop="merchantName" min-width="180"><template #default="{ row }"><span class="font-medium">{{ row.merchantName }}</span></template></el-table-column>
-        <el-table-column label="类型" prop="merchantType" width="100">
-          <template #default="{ row }"><el-tag size="small" :type="row.merchantType === 'ENTERPRISE' ? 'primary' : 'info'" effect="plain">{{ row.merchantType === 'ENTERPRISE' ? '企业' : '个人' }}</el-tag></template>
+        <el-table-column :label="t('merchants.merchantName')" prop="merchantName" min-width="180"><template #default="{ row }"><span class="font-medium">{{ row.merchantName }}</span></template></el-table-column>
+        <el-table-column :label="t('merchants.type')" prop="merchantType" width="100">
+          <template #default="{ row }"><el-tag size="small" :type="row.merchantType === 'ENTERPRISE' ? 'primary' : 'info'" effect="plain">{{ row.merchantType === 'ENTERPRISE' ? t('merchants.enterprise') : t('merchants.individual') }}</el-tag></template>
         </el-table-column>
         <el-table-column label="联系人" min-width="140">
           <template #default="{ row }"><div class="text-sm"><p>{{ row.contactPhone ?? '—' }}</p><p class="text-xs text-gray-400">{{ row.contactEmail ?? '' }}</p></div></template>
         </el-table-column>
-        <el-table-column label="商户密钥" prop="merchantKey" width="140">
+        <el-table-column :label="t('merchants.merchantKey')" prop="merchantKey" width="140">
           <template #default="{ row }">
             <span class="text-xs font-mono text-gray-500">{{ maskSecret(row.merchantKey) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="手续费率" width="110">
+        <el-table-column :label="t('merchants.feeRate')" width="110">
           <template #default="{ row }">
             <span class="text-sm tabular-nums">{{ formatRatePercent(row.commissionRate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" prop="status" width="90">
+        <el-table-column :label="t('merchants.status')" prop="status" width="90">
           <template #default="{ row }">
             <el-tag size="small" :type="tagTypeOf(MERCHANT_STATUS_TAG, row.status)">
               {{ labelOf(MERCHANT_STATUS_LABEL, row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
+        <el-table-column :label="t('merchants.createdAt')" prop="createdAt" min-width="168" class-name="col-datetime" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="cell-datetime">{{ formatDateTime(row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="280" class-name="col-actions" fixed="right">
+        <el-table-column :label="t('common.actions')" min-width="280" class-name="col-actions" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click.stop="openDetail(row)">详情</el-button>
-            <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">支付配置</el-button>
-            <el-button link type="primary" size="small" @click.stop="openEdit(row)">编辑</el-button>
-            <el-button link type="primary" size="small" @click.stop="goMerchantOrders(row)">订单</el-button>
-            <el-button link type="primary" size="small" @click.stop="goMerchantInsight(row)">洞察</el-button>
+            <el-button link type="primary" size="small" @click.stop="openDetail(row)">{{ t('merchants.detail') }}</el-button>
+            <el-button link type="success" size="small" @click.stop="openPaymentConfig(row)">{{ t('merchants.paymentConfig') }}</el-button>
+            <el-button link type="primary" size="small" @click.stop="openEdit(row)">{{ t('merchants.edit') }}</el-button>
+            <el-button link type="primary" size="small" @click.stop="goMerchantOrders(row)">{{ t('merchants.orders') }}</el-button>
+            <el-button link type="primary" size="small" @click.stop="goMerchantInsight(row)">{{ t('merchants.insight') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -245,6 +245,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMerchantInsightOverlay } from '@/composables/useMerchantInsightOverlay'
@@ -266,6 +267,7 @@ import {
   tagTypeOf,
 } from '@/utils/format'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { open: openMerchantInsight } = useMerchantInsightOverlay()
@@ -315,7 +317,7 @@ async function loadMerchants() {
     total.value = resp.total
     await tryOpenPaymentFromQuery()
   } catch {
-    ElMessage.error('加载商户列表失败')
+    ElMessage.error(t('merchants.loadFailed'))
   } finally {
     loading.value = false
   }

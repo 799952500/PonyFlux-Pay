@@ -102,4 +102,22 @@ public class AliPayQrHandler {
             throw new BizException(6009, "支付宝退款异常", e);
         }
     }
+
+    /**
+     * 按商户订单号查询支付宝交易是否已成功。
+     */
+    public boolean queryOutTradeNoSuccess(String outTradeNo, ChannelConfigHolder account) {
+        try {
+            AliPayClientCache.configure(account);
+            var response = Factory.Payment.Common().query(outTradeNo);
+            if (response.code != null && "10000".equals(response.code)) {
+                String tradeStatus = response.tradeStatus;
+                return "TRADE_SUCCESS".equals(tradeStatus) || "TRADE_FINISHED".equals(tradeStatus);
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("支付宝查单失败: outTradeNo={}, error={}", outTradeNo, e.getMessage());
+            return false;
+        }
+    }
 }

@@ -62,4 +62,25 @@ public class UnionPayQrHandler {
         log.info("银联扫码下单成功: orderId={}, queryId={}", orderId, queryId);
         return new QrPayResult(qrCode, queryId);
     }
+
+    /**
+     * 按商户订单号查询银联原交易是否成功。
+     */
+    public boolean queryOrderSuccess(String orderId, java.time.LocalDateTime txnTime, UnionPayAccountConfig config) {
+        UnionPayHttpClient client = new UnionPayHttpClient(config);
+        Map<String, String> bizParams = new HashMap<>();
+        bizParams.put("txnType", UnionPayApiConstants.TXN_TYPE_QUERY);
+        bizParams.put("txnSubType", UnionPayApiConstants.TXN_SUB_TYPE_DEFAULT);
+        bizParams.put("bizType", UnionPayApiConstants.BIZ_TYPE_DEFAULT);
+        bizParams.put("orderId", orderId);
+        bizParams.put("txnTime", txnTime.format(TXN_TIME_FMT));
+
+        Map<String, String> resp = client.backTrans(bizParams);
+        if (!UnionPayApiConstants.RESP_CODE_SUCCESS.equals(resp.get("respCode"))) {
+            log.warn("银联查单失败: orderId={}, respCode={}, respMsg={}",
+                    orderId, resp.get("respCode"), resp.get("respMsg"));
+            return false;
+        }
+        return UnionPayApiConstants.RESP_CODE_SUCCESS.equals(resp.get("origRespCode"));
+    }
 }

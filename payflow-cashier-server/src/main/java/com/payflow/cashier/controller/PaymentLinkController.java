@@ -3,7 +3,7 @@ package com.payflow.cashier.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.cashier.dto.PaymentLinkCreateRequest;
 import com.payflow.cashier.entity.PaymentLinkEntity;
-import com.payflow.cashier.exception.R;
+import com.payflow.common.web.R;
 import com.payflow.cashier.mapper.PaymentLinkEntityMapper;
 import com.payflow.cashier.middleware.MerchantSignatureInterceptor;
 import io.swagger.v3.oas.annotations.Operation;

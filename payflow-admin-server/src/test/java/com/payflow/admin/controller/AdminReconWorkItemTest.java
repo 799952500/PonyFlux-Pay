@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminReconController 工单接口编排测试")
-class AdminReconWorkItemIT {
+class AdminReconWorkItemTest {
 
     @Mock
     private ReconTaskEntityMapper reconTaskEntityMapper;

@@ -4,31 +4,31 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.DashboardMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * DashboardMetricsMapper 单元测试
- * 验证预聚合查询（按时间范围/粒度/渠道筛选）
+ * DashboardMetricsMapper 集成测试（需 MySQL，设置 PAYFLOW_INTEGRATION_TESTS=true 启用）。
  */
 @SpringBootTest
+@EnabledIfEnvironmentVariable(named = "PAYFLOW_INTEGRATION_TESTS", matches = "true")
 @DisplayName("DashboardMetricsMapper 测试")
 class DashboardMetricsMapperTest {
 
-    @Autowired(required = false)
+    @Autowired
     private DashboardMetricsMapper dashboardMetricsMapper;
 
     @Test
     @DisplayName("按时间范围和粒度查询")
     void queryByTimeRangeAndGranularity() {
-        if (dashboardMetricsMapper == null) {
-            return; // 无数据库时跳过
-        }
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -46,9 +46,6 @@ class DashboardMetricsMapperTest {
     @Test
     @DisplayName("按渠道筛选查询")
     void queryByChannelCode() {
-        if (dashboardMetricsMapper == null) {
-            return;
-        }
         List<DashboardMetrics> result = dashboardMetricsMapper.selectList(
                 new LambdaQueryWrapper<DashboardMetrics>()
                         .eq(DashboardMetrics::getChannelCode, "wxpay")
@@ -62,9 +59,6 @@ class DashboardMetricsMapperTest {
     @Test
     @DisplayName("插入聚合指标")
     void insertMetrics() {
-        if (dashboardMetricsMapper == null) {
-            return;
-        }
         DashboardMetrics metrics = new DashboardMetrics();
         metrics.setMetricTime(LocalDateTime.now());
         metrics.setGranularity("5min");

@@ -1,8 +1,12 @@
 package com.payflow.admin.controller;
 
 import com.payflow.admin.entity.PaymentAccount;
+import com.payflow.admin.kit.AdminRequestContext;
 import com.payflow.admin.security.RequirePermission;
 import com.payflow.admin.service.PaymentAccountService;
+import com.payflow.common.web.PageRequest;
+import com.payflow.common.web.PageResult;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,25 +38,17 @@ public class PaymentAccountController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
+            HttpServletRequest request,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(required = false) Long channelId,
             @RequestParam(required = false) String keyword) {
 
-        List<PaymentAccount> all = service.listAll();
-        List<PaymentAccount> filtered = all.stream()
-                .filter(a -> channelId == null || (a.getChannelId() != null && a.getChannelId().equals(channelId)))
-                .filter(a -> keyword == null || keyword.isBlank()
-                        || (a.getAccountCode() != null && a.getAccountCode().contains(keyword))
-                        || (a.getAccountName() != null && a.getAccountName().contains(keyword)))
-                .collect(Collectors.toList());
+        PageRequest pr = PageRequest.of(page, pageSize);
+        PageResult<PaymentAccount> result = service.page(
+                pr, channelId, keyword, AdminRequestContext.merchantScope(request));
 
-        int total = filtered.size();
-        int fromIndex = Math.max(0, (page - 1) * pageSize);
-        int toIndex = Math.min(total, fromIndex + pageSize);
-        List<PaymentAccount> pageList = fromIndex >= total ? List.of() : filtered.subList(fromIndex, toIndex);
-
-        List<Map<String, Object>> safeList = pageList.stream()
+        List<Map<String, Object>> safeList = result.getList().stream()
                 .map(this::toSafeMap)
                 .collect(Collectors.toList());
 
@@ -61,9 +57,9 @@ public class PaymentAccountController {
                 "message", "success",
                 "data", Map.of(
                         "list", safeList,
-                        "total", total,
-                        "page", page,
-                        "pageSize", pageSize
+                        "total", result.getTotal(),
+                        "page", result.getPage(),
+                        "pageSize", result.getSize()
                 )
         ));
     }

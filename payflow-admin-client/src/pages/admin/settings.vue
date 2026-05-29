@@ -42,7 +42,10 @@
     </div>
 
     <!-- 配置表格 -->
-    <el-table table-layout="auto" :data="tableData" stripe size="small" class="data-table w-full" row-key="id">
+    <el-table table-layout="auto" v-loading="loading" :data="tableData" stripe size="small" class="data-table w-full" row-key="id">
+      <template #empty>
+        <el-empty description="暂无配置" />
+      </template>
       <el-table-column prop="configKey" label="配置键" min-width="180" />
       <el-table-column prop="classification" label="数据分类" width="100" align="center">
         <template #default="{ row }">
@@ -170,6 +173,7 @@ interface SystemConfig {
 const metaVersion = ref<{ application: string; profiles: string } | null>(null)
 const activeCategory = ref('')
 const tableData = ref<SystemConfig[]>([])
+const loading = ref(false)
 const refreshCategory = ref('')
 const refreshKey = ref('')
 const refreshLoading = ref(false)
@@ -208,12 +212,15 @@ const formRules: FormRules = {
 async function loadData() {
   const params: Record<string, string> = {}
   if (activeCategory.value) params.category = activeCategory.value
+  loading.value = true
   try {
     const data = await request.get('/admin/system-configs', { params })
     tableData.value = Array.isArray(data) ? data : []
   } catch {
     tableData.value = []
     ElMessage.error('加载系统配置失败')
+  } finally {
+    loading.value = false
   }
 }
 

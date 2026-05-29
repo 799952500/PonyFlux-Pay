@@ -243,7 +243,10 @@ function onFilterChange() {
 async function fetchMerchants() {
   try {
     merchantOptions.value = await getMerchantsSimple() ?? []
-  } catch { /* 静默 */ }
+  } catch {
+    merchantOptions.value = []
+    ElMessage.warning(t('merchants.loadFailed'))
+  }
 }
 
 onMounted(() => {

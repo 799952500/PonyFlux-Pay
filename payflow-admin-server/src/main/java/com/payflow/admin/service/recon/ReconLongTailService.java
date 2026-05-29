@@ -18,7 +18,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 长尾差异统计与批量挂账。
@@ -52,6 +54,15 @@ public class ReconLongTailService {
         Map<String, ReconLongTailSummaryDTO.Bucket> buckets = new HashMap<>();
         initBuckets(buckets);
         int maxAge = 0;
+        List<Long> diffIds = open.stream()
+                .map(ReconDiffAssignmentEntity::getDiffId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, ReconDiffEntity> diffById = diffIds.isEmpty()
+                ? Map.of()
+                : reconDiffEntityMapper.selectBatchIds(diffIds).stream()
+                .collect(Collectors.toMap(ReconDiffEntity::getId, d -> d, (a, b) -> a));
         for (ReconDiffAssignmentEntity a : open) {
             if (!isMerchantAllowed(a.getMerchantId(), merchantScopeIds)) {
                 continue;
@@ -61,7 +72,7 @@ public class ReconLongTailService {
             String bucket = ageBucket(ageDays);
             ReconLongTailSummaryDTO.Bucket b = buckets.get(bucket);
             b.setDiffCount(b.getDiffCount() + 1);
-            ReconDiffEntity diff = reconDiffEntityMapper.selectById(a.getDiffId());
+            ReconDiffEntity diff = diffById.get(a.getDiffId());
             if (diff != null) {
                 b.setDiffAmount(b.getDiffAmount() + diffAmount(diff));
             }
