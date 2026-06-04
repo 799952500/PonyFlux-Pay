@@ -191,6 +191,12 @@ export interface PaymentMethod {
   channelId: string
   channelName?: string
   methodName: string
+  methodNameZhCn?: string
+  methodNameZhTw?: string
+  methodNameEn?: string
+  descriptionZhCn?: string
+  descriptionZhTw?: string
+  descriptionEn?: string
   methodCode: string
   methodType: string
   icon?: string

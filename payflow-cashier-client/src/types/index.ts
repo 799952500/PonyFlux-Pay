@@ -62,6 +62,8 @@ export interface PaymentMethod {
 // ============================================================
 // 收银台
 // ============================================================
+export type DisplayLanguage = 'zh-CN' | 'zh-TW' | 'en-US'
+
 export interface CashierInfo {
   orderId: string
   merchantName: string
@@ -69,6 +71,7 @@ export interface CashierInfo {
   body?: string
   amount: number          // 单位：分
   currency: string
+  displayLanguage?: DisplayLanguage
   expireTime: string
   /** 订单创建时间（ISO），用于倒计时进度条总时长 */
   createdAt?: string
@@ -139,6 +142,7 @@ export interface ApiResponse<T = unknown> {
 // 电子收据
 // ============================================================
 export interface ReceiptInfo {
+  displayLanguage?: DisplayLanguage
   orderId: string          // 平台订单号
   merchantName: string     // 商户名称
   subject: string          // 商品名称

@@ -40,6 +40,10 @@ public class ReceiptResponse {
     @Schema(description = "币种", example = "CNY")
     private String currency;
 
+    /** 收银台展示语言 */
+    @Schema(description = "收银台展示语言")
+    private String displayLanguage;
+
     /** 中文大写金额 */
     @Schema(description = "中文大写金额", example = "壹佰元整")
     private String amountCn;

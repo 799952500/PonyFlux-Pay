@@ -16,4 +16,9 @@ public interface CashierPaymentConfigService {
      * @return 每项含 methodCode、methodName、description、priority、clientScopes（字符串列表）
      */
     List<Map<String, Object>> listPaymentMethodsForCashier(String merchantId, String orderChannelCode);
+
+    /**
+     * @param locale 展示语言 zh-CN / zh-TW / en-US
+     */
+    List<Map<String, Object>> listPaymentMethodsForCashier(String merchantId, String orderChannelCode, String locale);
 }

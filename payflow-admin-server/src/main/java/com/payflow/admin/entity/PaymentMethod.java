@@ -25,6 +25,12 @@ public class PaymentMethod {
 
     private String methodCode;
     private String methodName;
+    @TableField("method_name_zh_cn")
+    private String methodNameZhCn;
+    @TableField("method_name_zh_tw")
+    private String methodNameZhTw;
+    @TableField("method_name_en")
+    private String methodNameEn;
     private Long channelId;              // 所属渠道ID
     @TableField(exist = false)          // 非数据库字段，关联查询
     private String channelName;         // 渠道名称（前端展示用）
@@ -40,6 +46,12 @@ public class PaymentMethod {
     private Boolean enabled;
     private Integer priority;
     private String description;
+    @TableField("description_zh_cn")
+    private String descriptionZhCn;
+    @TableField("description_zh_tw")
+    private String descriptionZhTw;
+    @TableField("description_en")
+    private String descriptionEn;
     /** 前端展示用，非数据库列 */
     @TableField(exist = false)
     private String status;

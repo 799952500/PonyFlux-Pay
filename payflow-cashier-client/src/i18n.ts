@@ -1,5 +1,5 @@
 import { createI18n } from 'vue-i18n'
-import { zhCN, enUS } from './locales'
+import { zhCN, zhTW, enUS } from './locales'
 
 export const LOCALE_STORAGE_KEY = 'payflow-cashier-locale'
 
@@ -13,6 +13,7 @@ export const i18n = createI18n({
   fallbackLocale: 'zh-CN',
   messages: {
     'zh-CN': zhCN,
+    'zh-TW': zhTW,
     'en-US': enUS,
   },
 })

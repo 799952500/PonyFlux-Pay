@@ -63,6 +63,10 @@ public class Order {
     @Schema(description = "支付渠道")
     private String channel;
 
+    @TableField("display_language")
+    @Schema(description = "收银台展示语言")
+    private String displayLanguage;
+
     @Schema(description = "订单状态")
     private String status;
 

@@ -48,6 +48,10 @@ public class CashierResponse {
     @Schema(description = "币种")
     private String currency;
 
+    /** 收银台展示语言 */
+    @Schema(description = "收银台展示语言")
+    private String displayLanguage;
+
     /** 过期时间 */
     @Schema(description = "过期时间")
     private String expireTime;

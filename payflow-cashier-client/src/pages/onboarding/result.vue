@@ -1,7 +1,10 @@
 <template>
   <PortalShell :title="t('portal.resultTitle')" :subtitle="t('portal.resultSubtitle')">
     <template #header-extra>
-      <router-link to="/register" class="portal-link">{{ t('portal.backRegister') }}</router-link>
+      <div class="flex items-center gap-3">
+        <LocaleSwitcher />
+        <router-link to="/register" class="portal-link">{{ t('portal.backRegister') }}</router-link>
+      </div>
     </template>
 
     <el-form
@@ -66,6 +69,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import PortalShell from '@/components/PortalShell.vue'
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import {
   queryOnboardingResult,
   type OnboardingCredentialResult,

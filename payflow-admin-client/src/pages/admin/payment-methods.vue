@@ -65,8 +65,10 @@
             <span class="cell-mono pf-link cursor-pointer" @click.stop="openDetail(row)">{{ row.methodCode }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="支付方式名称" prop="methodName" min-width="160">
-          <template #default="{ row }"><span class="font-medium text-slate-800">{{ row.methodName }}</span></template>
+        <el-table-column label="支付方式名称" prop="methodNameZhCn" min-width="160">
+          <template #default="{ row }">
+            <span class="font-medium text-slate-800">{{ row.methodNameZhCn ?? row.methodName }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="所属渠道" prop="channelType" width="112" align="center">
           <template #default="{ row }">
@@ -123,7 +125,7 @@
       v-if="platformAdmin"
       v-model="dialogVisible"
       :title="isEdit ? '编辑支付方式' : '新建支付方式'"
-      width="620px"
+      width="720px"
       destroy-on-close
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="130px" size="default">
@@ -137,8 +139,23 @@
         <el-form-item label="支付方式编号" prop="methodCode">
           <el-input v-model="form.methodCode" placeholder="如: WECHAT_NATIVE" />
         </el-form-item>
-        <el-form-item label="支付方式名称" prop="methodName">
-          <el-input v-model="form.methodName" placeholder="如: 微信扫码支付" />
+        <el-form-item label="展示名（简体中文）" prop="methodNameZhCn">
+          <el-input v-model="form.methodNameZhCn" placeholder="如: 微信扫码支付" />
+        </el-form-item>
+        <el-form-item label="展示名（繁體中文）" prop="methodNameZhTw">
+          <el-input v-model="form.methodNameZhTw" placeholder="如: 微信掃碼支付" />
+        </el-form-item>
+        <el-form-item label="展示名（English）" prop="methodNameEn">
+          <el-input v-model="form.methodNameEn" placeholder="e.g. WeChat Pay (QR)" />
+        </el-form-item>
+        <el-form-item label="描述（简体中文）" prop="descriptionZhCn">
+          <el-input v-model="form.descriptionZhCn" type="textarea" :rows="2" placeholder="支付方式说明" />
+        </el-form-item>
+        <el-form-item label="描述（繁體中文）" prop="descriptionZhTw">
+          <el-input v-model="form.descriptionZhTw" type="textarea" :rows="2" placeholder="支付方式說明" />
+        </el-form-item>
+        <el-form-item label="描述（English）" prop="descriptionEn">
+          <el-input v-model="form.descriptionEn" type="textarea" :rows="2" placeholder="Payment method description" />
         </el-form-item>
         <el-form-item label="扩展配置" prop="extraConfig">
           <el-input
@@ -147,9 +164,6 @@
             :rows="3"
             placeholder='场景参数 JSON，如: {"tradeType":"MWEB"}；勿填写 appId/密钥'
           />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="可选备注信息" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -166,7 +180,9 @@
           <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">基本信息</h3>
           <dl class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
             <dt class="text-gray-400">支付方式编号</dt><dd class="text-gray-800 font-medium">{{ currentRow.methodCode }}</dd>
-            <dt class="text-gray-400">支付方式名称</dt><dd class="text-gray-800">{{ currentRow.methodName }}</dd>
+            <dt class="text-gray-400">展示名（简体）</dt><dd class="text-gray-800">{{ currentRow.methodNameZhCn ?? currentRow.methodName }}</dd>
+            <dt class="text-gray-400">展示名（繁体）</dt><dd class="text-gray-800">{{ currentRow.methodNameZhTw ?? '—' }}</dd>
+            <dt class="text-gray-400">展示名（英文）</dt><dd class="text-gray-800">{{ currentRow.methodNameEn ?? '—' }}</dd>
             <dt class="text-gray-400">所属渠道</dt><dd><el-tag size="small" :type="channelTagType(currentRow.channelId ?? currentRow.channelType)">{{ currentRow.channelName ?? channelLabel(currentRow.channelType) }}</el-tag></dd>
             <dt class="text-gray-400">状态</dt><dd><el-tag size="small" :type="currentRow.status === 'ACTIVE' ? 'success' : 'danger'">{{ currentRow.status === 'ACTIVE' ? '启用' : '停用' }}</el-tag></dd>
             <dt class="text-gray-400">创建时间</dt><dd class="text-gray-800 tabular-nums">{{ formatDateTime(currentRow.createdAt) }}</dd>
@@ -240,15 +256,34 @@ const form = reactive({
   id: '',
   channelType: '',
   methodCode: '',
-  methodName: '',
+  methodNameZhCn: '',
+  methodNameZhTw: '',
+  methodNameEn: '',
+  descriptionZhCn: '',
+  descriptionZhTw: '',
+  descriptionEn: '',
   extraConfig: '',
-  remark: '',
+})
+
+const requiredTrim = (message: string) => ({
+  required: true,
+  message,
+  trigger: 'blur' as const,
+  validator: (_: unknown, value: string, cb: (e?: Error) => void) => {
+    if (value != null && String(value).trim()) cb()
+    else cb(new Error(message))
+  },
 })
 
 const rules: FormRules = {
   channelType: [{ required: true, message: '请选择所属渠道', trigger: 'change' }],
   methodCode: [{ required: true, message: '请输入支付方式编号', trigger: 'blur' }],
-  methodName: [{ required: true, message: '请输入支付方式名称', trigger: 'blur' }],
+  methodNameZhCn: [requiredTrim('请输入简体中文展示名')],
+  methodNameZhTw: [requiredTrim('请输入繁体中文展示名')],
+  methodNameEn: [requiredTrim('请输入英文展示名')],
+  descriptionZhCn: [requiredTrim('请输入简体中文描述')],
+  descriptionZhTw: [requiredTrim('请输入繁体中文描述')],
+  descriptionEn: [requiredTrim('请输入英文描述')],
 }
 
 /** 从渠道管理抽屉跳转时的 ?channelId= */
@@ -331,7 +366,16 @@ function handleChannelChange() {
 function openAdd() {
   isEdit.value = false
   Object.assign(form, {
-    id: '', channelType: '', methodCode: '', methodName: '', extraConfig: '', remark: '',
+    id: '',
+    channelType: '',
+    methodCode: '',
+    methodNameZhCn: '',
+    methodNameZhTw: '',
+    methodNameEn: '',
+    descriptionZhCn: '',
+    descriptionZhTw: '',
+    descriptionEn: '',
+    extraConfig: '',
   })
   dialogVisible.value = true
 }
@@ -342,9 +386,13 @@ function openEdit(row: any) {
     id: row.id,
     channelType: row.channelType,
     methodCode: row.methodCode,
-    methodName: row.methodName,
+    methodNameZhCn: row.methodNameZhCn ?? row.methodName ?? '',
+    methodNameZhTw: row.methodNameZhTw ?? row.methodName ?? '',
+    methodNameEn: row.methodNameEn ?? row.methodName ?? '',
+    descriptionZhCn: row.descriptionZhCn ?? row.description ?? '',
+    descriptionZhTw: row.descriptionZhTw ?? row.description ?? '',
+    descriptionEn: row.descriptionEn ?? row.description ?? '',
     extraConfig: row.extraConfig ?? row.configJson ?? '',
-    remark: row.remark ?? row.description ?? '',
   })
   dialogVisible.value = true
 }
@@ -371,9 +419,13 @@ async function handleSubmit() {
     try {
       const payload: Record<string, unknown> = {
         methodCode: form.methodCode,
-        methodName: form.methodName,
+        methodNameZhCn: form.methodNameZhCn.trim(),
+        methodNameZhTw: form.methodNameZhTw.trim(),
+        methodNameEn: form.methodNameEn.trim(),
+        descriptionZhCn: form.descriptionZhCn.trim(),
+        descriptionZhTw: form.descriptionZhTw.trim(),
+        descriptionEn: form.descriptionEn.trim(),
         configJson: form.extraConfig || undefined,
-        description: form.remark || undefined,
       }
       const selected = channelOptions.value.find(c => c.channelType === form.channelType)
       if (selected) {

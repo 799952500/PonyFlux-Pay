@@ -42,14 +42,18 @@ INSERT INTO payment_accounts (
 
 -- 支付方式仅存能力编码与场景参数；appId/密钥在 payment_accounts
 INSERT INTO payment_methods (
-  id, method_code, method_name, channel_id, app_id, enabled, priority, description, config_json, created_at, updated_at
+  id, method_code, method_name,
+  method_name_zh_cn, method_name_zh_tw, method_name_en,
+  channel_id, app_id, enabled, priority, description,
+  description_zh_cn, description_zh_tw, description_en,
+  config_json, created_at, updated_at
 ) VALUES
-(1, 'WECHAT_APP', '微信 App 支付', 1, NULL, 1, 100, 'App 内调起', '{"tradeType":"APP"}', NOW(), NOW()),
-(2, 'WECHAT_H5', '微信 H5 支付', 1, NULL, 1, 90, '手机浏览器', '{"tradeType":"MWEB"}', NOW(), NOW()),
-(3, 'ALIPAY_APP', '支付宝 App 支付', 2, NULL, 1, 100, 'App 支付', '{"payType":"APP"}', NOW(), NOW()),
-(4, 'ALIPAY_WAP', '支付宝 WAP', 2, NULL, 1, 90, '手机网站', '{"payWay":"WAP"}', NOW(), NOW()),
-(5, 'UNION_H5', '银联云闪付 H5', 3, NULL, 1, 80, 'H5 收银台', '{"payType":"H5"}', NOW(), NOW()),
-(6, 'UNION_QR', '银联扫码支付', 3, NULL, 1, 70, '用户扫码', '{"payType":"QR"}', NOW(), NOW());
+(1, 'WECHAT_APP', '微信 App 支付', '微信 App 支付', '微信 App 支付', 'WeChat Pay App', 1, NULL, 1, 100, 'App 内调起', 'App 内调起', 'App 內調起', 'In-app WeChat Pay', '{"tradeType":"APP"}', NOW(), NOW()),
+(2, 'WECHAT_H5', '微信 H5 支付', '微信 H5 支付', '微信 H5 支付', 'WeChat Pay H5', 1, NULL, 1, 90, '手机浏览器', '手机浏览器', '手機瀏覽器', 'Mobile browser', '{"tradeType":"MWEB"}', NOW(), NOW()),
+(3, 'ALIPAY_APP', '支付宝 App 支付', '支付宝 App 支付', '支付寶 App 支付', 'Alipay App', 2, NULL, 1, 100, 'App 支付', 'App 支付', 'App 支付', 'In-app Alipay', '{"payType":"APP"}', NOW(), NOW()),
+(4, 'ALIPAY_WAP', '支付宝 WAP', '支付宝 WAP', '支付寶 WAP', 'Alipay WAP', 2, NULL, 1, 90, '手机网站', '手机网站', '手機網站', 'Mobile web', '{"payWay":"WAP"}', NOW(), NOW()),
+(5, 'UNION_H5', '银联云闪付 H5', '银联云闪付 H5', '銀聯雲閃付 H5', 'UnionPay H5', 3, NULL, 1, 80, 'H5 收银台', 'H5 收银台', 'H5 收銀台', 'H5 checkout', '{"payType":"H5"}', NOW(), NOW()),
+(6, 'UNION_QR', '银联扫码支付', '银联扫码支付', '銀聯掃碼支付', 'UnionPay QR', 3, NULL, 1, 70, '用户扫码', '用户扫码', '用戶掃碼', 'Scan to pay', '{"payType":"QR"}', NOW(), NOW());
 
 INSERT INTO admin_merchant_payment_methods (id, merchant_id, payment_method_id, enabled, priority, created_at, updated_at) VALUES
 (1, 'M100001', 1, 1, 100, NOW(), NOW()),

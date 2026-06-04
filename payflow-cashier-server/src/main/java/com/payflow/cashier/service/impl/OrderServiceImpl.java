@@ -15,6 +15,7 @@ import com.payflow.cashier.service.OrderMqProducer;
 import com.payflow.cashier.service.OrderService;
 import com.payflow.cashier.context.MerchantScopeHolder;
 import com.payflow.cashier.service.RiskCheckService;
+import com.payflow.cashier.util.DisplayLocale;
 import com.payflow.cashier.util.SignUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -96,6 +97,7 @@ public class OrderServiceImpl implements OrderService {
                 .body(request.getBody())
                 .attach(request.getAttach())
                 .channel(request.getChannel())
+                .displayLanguage(DisplayLocale.normalize(request.getLanguage()))
                 .status(Order.STATUS_CREATED)
                 .notifyUrl(request.getNotifyUrl())
                 .merchantNotifyUrl(request.getNotifyUrl()) // 支付成功回调地址
@@ -170,6 +172,7 @@ public class OrderServiceImpl implements OrderService {
                             ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                     .amount(order.getAmount())
                     .currency(order.getCurrency())
+                    .displayLanguage(DisplayLocale.normalize(order.getDisplayLanguage()))
                     .expireTime(order.getExpireTime() != null
                             ? order.getExpireTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                     .status(order.getStatus())
@@ -197,6 +200,7 @@ public class OrderServiceImpl implements OrderService {
                         ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .amount(order.getAmount())
                 .currency(order.getCurrency())
+                .displayLanguage(DisplayLocale.normalize(order.getDisplayLanguage()))
                 .expireTime(order.getExpireTime() != null
                         ? order.getExpireTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .status(order.getStatus())
@@ -313,8 +317,9 @@ public class OrderServiceImpl implements OrderService {
 
     private List<PaymentMethodDTO> resolvePaymentMethods(Order order, String clientType) {
         String normalized = normalizeClientType(clientType);
+        String locale = DisplayLocale.normalize(order.getDisplayLanguage());
         List<AdminPaymentConfigClient.AdminPaymentMethodItem> items =
-                adminPaymentConfigClient.fetchPaymentMethods(order.getMerchantId(), order.getChannel());
+                adminPaymentConfigClient.fetchPaymentMethods(order.getMerchantId(), order.getChannel(), locale);
         if (!items.isEmpty()) {
             List<PaymentMethodDTO> fromAdmin = items.stream()
                     .filter(i -> i.visibleForClient(normalized))

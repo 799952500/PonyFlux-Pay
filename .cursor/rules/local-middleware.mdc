@@ -1,0 +1,24 @@
+---
+description: 本地中间件安装目录（D:\apps），启动服务与排查连接失败时使用
+alwaysApply: true
+---
+
+# 本地中间件路径
+
+本机开发/验证时，中间件（MySQL、Redis、RocketMQ 等）统一安装在 **`D:\apps`** 目录下。
+
+## 使用约定
+
+- 启动后端（`spring-boot:run`）或跑 E2E/API 测试前，先确认 `D:\apps` 中对应服务已运行。
+- 出现 `ECONNREFUSED`、`Connection refused`、Redis/MySQL 连接失败时，优先检查 `D:\apps` 里的服务进程与端口，而不是修改业务代码或随意降级依赖。
+- 需要安装、升级或查看中间件配置时，在 `D:\apps` 下查找，勿假设使用 Docker Compose 或系统全局安装路径。
+- 文档或脚本中的默认 `127.0.0.1` 端口仍适用；仅**安装根目录**以 `D:\apps` 为准。
+
+## 示例
+
+```text
+# 排查收银台服务 Redis 连接失败
+1. 检查 D:\apps 下 Redis 是否已启动
+2. 确认 application.yml 中 host/port 与 D:\apps 实例一致
+3. 服务正常后再重试 mvn spring-boot:run / Playwright API 用例
+```

@@ -240,4 +240,10 @@ export default {
     requestFailed: '请求失败',
     networkError: '网络错误',
   },
+  locale: {
+    label: '语言',
+    zhCN: '简体中文',
+    zhTW: '繁體中文',
+    enUS: 'English',
+  },
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.payflow.admin.entity.PaymentMethod;
 import com.payflow.admin.mapper.PaymentMethodMapper;
 import com.payflow.admin.service.PaymentMethodService;
+import com.payflow.common.exception.BizException;
 import com.payflow.admin.service.guard.ResourceDeleteGuardService;
 import com.payflow.admin.service.guard.ResourceType;
 import lombok.RequiredArgsConstructor;
@@ -73,13 +74,40 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
 
     @Override
     public void create(PaymentMethod method) {
+        validateLocalizedFields(method);
+        syncLegacyLocalizedColumns(method);
         paymentMethodMapper.insert(method);
     }
 
     @Override
     public void update(Long id, PaymentMethod method) {
+        validateLocalizedFields(method);
+        syncLegacyLocalizedColumns(method);
         method.setId(id);
         paymentMethodMapper.updateById(method);
+    }
+
+    /**
+     * 展示名与描述须填写简体中文、繁体中文、英文。
+     */
+    private static void validateLocalizedFields(PaymentMethod method) {
+        if (method == null) {
+            throw new BizException(4001, "支付方式数据不能为空");
+        }
+        if (!StringUtils.hasText(method.getMethodNameZhCn())
+                || !StringUtils.hasText(method.getMethodNameZhTw())
+                || !StringUtils.hasText(method.getMethodNameEn())
+                || !StringUtils.hasText(method.getDescriptionZhCn())
+                || !StringUtils.hasText(method.getDescriptionZhTw())
+                || !StringUtils.hasText(method.getDescriptionEn())) {
+            throw new BizException(4001, "支付方式展示名与描述须填写简体中文、繁体中文、英文");
+        }
+    }
+
+    /** 同步旧列，兼容依赖 method_name / description 的查询与展示 */
+    private static void syncLegacyLocalizedColumns(PaymentMethod method) {
+        method.setMethodName(method.getMethodNameZhCn().trim());
+        method.setDescription(method.getDescriptionZhCn().trim());
     }
 
     @Override
@@ -118,6 +146,7 @@ public class PaymentMethodServiceImpl implements PaymentMethodService {
         }
         String kw = keyword.trim().toLowerCase();
         return nullToEmpty(pm.getMethodName()).toLowerCase().contains(kw)
+                || nullToEmpty(pm.getMethodNameZhCn()).toLowerCase().contains(kw)
                 || nullToEmpty(pm.getMethodCode()).toLowerCase().contains(kw);
     }
 

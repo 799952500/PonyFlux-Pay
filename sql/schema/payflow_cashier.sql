@@ -54,6 +54,7 @@ CREATE TABLE `cashier_orders` (
   `body` VARCHAR(512) DEFAULT NULL COMMENT '订单详情',
   `attach` VARCHAR(512) DEFAULT NULL COMMENT '透传字段',
   `channel` VARCHAR(32) DEFAULT NULL COMMENT '支付渠道',
+  `display_language` VARCHAR(16) NOT NULL DEFAULT 'zh-CN' COMMENT '收银台展示语言',
   `status` VARCHAR(16) DEFAULT NULL COMMENT '订单状态',
   `notify_url` VARCHAR(256) DEFAULT NULL COMMENT '异步通知地址',
   `merchant_notify_url` VARCHAR(256) DEFAULT NULL COMMENT '商户回调地址',

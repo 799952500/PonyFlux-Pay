@@ -11,6 +11,7 @@ import com.payflow.cashier.mapper.OrderMapper;
 import com.payflow.cashier.mapper.PaymentMapper;
 import com.payflow.cashier.service.ReceiptService;
 import com.payflow.cashier.util.AmountCnConverter;
+import com.payflow.cashier.util.DisplayLocale;
 import com.payflow.cashier.util.ReceiptPdfGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,6 +99,7 @@ public class ReceiptServiceImpl implements ReceiptService {
                 .subject(order.getSubject())
                 .amount(amount)
                 .currency(order.getCurrency())
+                .displayLanguage(DisplayLocale.normalize(order.getDisplayLanguage()))
                 .amountCn(AmountCnConverter.convert(amount))
                 .payChannel(payChannel)
                 .payTime(payTime)

@@ -29,8 +29,10 @@ public class InternalCashierPaymentController {
     @GetMapping("/payment-methods")
     public ResponseEntity<Map<String, Object>> paymentMethods(
             @RequestParam String merchantId,
-            @RequestParam String orderChannel) {
-        List<Map<String, Object>> list = cashierPaymentConfigService.listPaymentMethodsForCashier(merchantId, orderChannel);
+            @RequestParam String orderChannel,
+            @RequestParam(required = false) String locale) {
+        List<Map<String, Object>> list = cashierPaymentConfigService.listPaymentMethodsForCashier(
+                merchantId, orderChannel, locale);
         return ResponseEntity.ok(Map.of(
                 "code", 0,
                 "message", "success",

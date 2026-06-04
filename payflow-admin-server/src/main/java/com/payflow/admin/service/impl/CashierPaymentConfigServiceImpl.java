@@ -5,6 +5,7 @@ import com.payflow.admin.entity.Channel;
 import com.payflow.admin.entity.MerchantPaymentRoute;
 import com.payflow.admin.entity.PaymentMethod;
 import com.payflow.admin.kit.ClientScopesKit;
+import com.payflow.admin.kit.LocalizedTextResolver;
 import com.payflow.admin.mapper.ChannelMapper;
 import com.payflow.admin.service.CashierPaymentConfigService;
 import com.payflow.admin.service.MerchantPaymentRouteService;
@@ -32,6 +33,12 @@ public class CashierPaymentConfigServiceImpl implements CashierPaymentConfigServ
 
     @Override
     public List<Map<String, Object>> listPaymentMethodsForCashier(String merchantId, String orderChannelCode) {
+        return listPaymentMethodsForCashier(merchantId, orderChannelCode, "zh-CN");
+    }
+
+    @Override
+    public List<Map<String, Object>> listPaymentMethodsForCashier(String merchantId, String orderChannelCode, String locale) {
+        String resolvedLocale = LocalizedTextResolver.normalizeLocale(locale);
         String channelType = mapOrderChannelToChannelType(orderChannelCode);
         if (channelType == null || merchantId == null || merchantId.isBlank()) {
             return List.of();
@@ -71,8 +78,8 @@ public class CashierPaymentConfigServiceImpl implements CashierPaymentConfigServ
                     }
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("methodCode", code);
-                    row.put("methodName", pm.getMethodName());
-                    row.put("description", pm.getDescription());
+                    row.put("methodName", LocalizedTextResolver.resolveMethodName(pm, resolvedLocale));
+                    row.put("description", LocalizedTextResolver.resolveDescription(pm, resolvedLocale));
                     row.put("priority", priority);
                     row.put("clientScopes", ClientScopesKit.parseToList(r.getClientScopes()));
                     byCode.put(code, row);

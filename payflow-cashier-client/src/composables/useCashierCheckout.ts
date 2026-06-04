@@ -6,6 +6,7 @@ import { useCashierStore } from '@/stores/cashier'
 import { getCashierInfo, createPayment, pollPaymentStatus } from '@/api/cashier'
 import type { CashierInfo, PayChannel, DeviceType, PaymentMethod } from '@/types'
 import type { CashierTerminal } from '@/utils/cashierDevice'
+import { applyDisplayLocale } from '@/composables/useDisplayLocale'
 
 function resolvePayChannel(methodCode: string): PayChannel {
   if (methodCode.startsWith('WECHAT_')) return 'WECHAT_PAY'
@@ -167,6 +168,8 @@ export function useCashierCheckout(terminal: CashierTerminal) {
 
     if (!orderId || orderId === 'demo') {
       loadError.value = null
+      const demoLang = typeof route.query.lang === 'string' ? route.query.lang : 'zh-CN'
+      await applyDisplayLocale(demoLang, { persist: false })
       cashierStore.setOrderInfo(buildDemoOrder(terminal, t))
       cashierStore.setLoading(false)
       return
@@ -176,6 +179,7 @@ export function useCashierCheckout(terminal: CashierTerminal) {
     loadError.value = null
     try {
       const info = await getCashierInfo(orderId, sig ?? '', terminal)
+      await applyDisplayLocale(info.displayLanguage ?? 'zh-CN', { persist: false })
       cashierStore.setOrderInfo(info)
       if (info.status === 'PAID') {
         payResult.value = 'success'

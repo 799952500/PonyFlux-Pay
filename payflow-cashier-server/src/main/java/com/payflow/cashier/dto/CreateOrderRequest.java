@@ -89,4 +89,8 @@ public class CreateOrderRequest {
     /** 客户端 IP */
     @Schema(description = "客户端 IP")
     private String clientIp;
+
+    /** 收银台展示语言：zh-CN / zh-TW / en-US */
+    @Schema(description = "收银台展示语言")
+    private String language;
 }

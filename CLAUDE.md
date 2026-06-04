@@ -141,5 +141,5 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/014-product-optimization/plan.md
+at specs/015-cashier-i18n/plan.md
 <!-- SPECKIT END -->

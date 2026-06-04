@@ -50,7 +50,7 @@
 | `getRiskHitRecords` / `getRiskAuditLogs` | GET | `/admin/risk/hits`、`/admin/risk/audits` | 同上 |
 | `getMerchantRiskRules` / `createMerchantRiskRule` / `updateMerchantRiskRule` / `updateMerchantRiskRuleStatus` | GET/POST/PUT | `/merchant/risk/rules`、`/merchant/risk/rules/{ruleId}`、`/merchant/risk/rules/{ruleId}/status` | [`MerchantRiskController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/MerchantRiskController.java) |
 | `getMerchantRiskHitRecords` | GET | `/merchant/risk/hits` | 同上 |
-| 支付方式 | * | `/admin/payment-methods` | [`PaymentMethodController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentMethodController.java) |
+| 支付方式 | * | `/admin/payment-methods` | [`PaymentMethodController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentMethodController.java)；body 含 `methodNameZhCn/Tw/En`、`descriptionZhCn/Tw/En`（三语必填） |
 | 删除依赖预检 | GET | `/admin/resource-dependencies` | [`ResourceDependencyController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/ResourceDependencyController.java) |
 | 支付账号（旧路径） | * | `/admin/payment-accounts` | [`PaymentAccountController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/PaymentAccountController.java) |
 | 角色/菜单/用户 | * | `/admin/roles`、`/admin/menus`、`/admin/users` | [`SysRoleController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysRoleController.java)、[`SysMenuController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysMenuController.java)、[`SysUserController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/SysUserController.java) |
@@ -82,8 +82,9 @@ JWT：除 `/admin/auth/login`、`/admin/auth/captcha`、`/admin/auth/captcha-req
 | 前端方法 | HTTP | 路径 | 后端 |
 |----------|------|------|------|
 | `merchantLogin` | POST | `/auth/login` | [`MerchantAuthController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/MerchantAuthController.java) |
-| `getCashierInfo` | GET | `/cashier/{orderId}?sig=&client=` | 返回订单 + `paymentMethods`；`client=PC\|H5\|APP` 按商户路由 `client_scopes` 过滤；收银台经内部接口拉取管理端配置 |
-| （内部）收银台支付方式 | GET | `/internal/cashier/payment-methods?merchantId=&orderChannel=` | [`InternalCashierPaymentController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/InternalCashierPaymentController.java) → 商户支付路由 + 平台支付方式 |
+| `createOrder` | POST | `/orders` | body 可选 `language`（`zh-CN` \| `zh-TW` \| `en-US`，非法回 `zh-CN`）；持久化 `cashier_orders.display_language` |
+| `getCashierInfo` | GET | `/cashier/{orderId}?sig=&client=` | 返回订单 + `displayLanguage` + `paymentMethods`；`client=PC\|H5\|APP` 按商户路由 `client_scopes` 过滤；支付方式名按订单语言解析 |
+| （内部）收银台支付方式 | GET | `/internal/cashier/payment-methods?merchantId=&orderChannel=&locale=` | [`InternalCashierPaymentController`](payflow-admin-server/src/main/java/com/payflow/admin/controller/InternalCashierPaymentController.java) → 按 `locale` 返回单语言 `methodName`/`description` |
 | `createPayment` | POST | `/payments` | [`PaymentController`](payflow-cashier-server/src/main/java/com/payflow/cashier/controller/PaymentController.java) |
 | `pollPaymentStatus` | GET | `/payments/status/{paymentId}` | 同上（无需商户签名） |
 

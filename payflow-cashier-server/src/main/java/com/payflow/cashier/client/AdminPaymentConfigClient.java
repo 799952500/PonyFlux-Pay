@@ -40,6 +40,10 @@ public class AdminPaymentConfigClient {
      * @return 管理端返回的列表；调用失败或未配置 baseUrl 时返回空列表
      */
     public List<AdminPaymentMethodItem> fetchPaymentMethods(String merchantId, String orderChannel) {
+        return fetchPaymentMethods(merchantId, orderChannel, "zh-CN");
+    }
+
+    public List<AdminPaymentMethodItem> fetchPaymentMethods(String merchantId, String orderChannel, String locale) {
         PayflowProperties.Admin admin = payflowProperties.getAdmin();
         if (admin == null || admin.getBaseUrl() == null || admin.getBaseUrl().isBlank()) {
             return List.of();
@@ -51,6 +55,7 @@ public class AdminPaymentConfigClient {
                 .path("/api/v1/internal/cashier/payment-methods")
                 .queryParam("merchantId", merchantId)
                 .queryParam("orderChannel", orderChannel)
+                .queryParam("locale", locale != null && !locale.isBlank() ? locale : "zh-CN")
                 .build(true)
                 .toUriString();
 
