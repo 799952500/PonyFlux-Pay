@@ -25,8 +25,8 @@ T-1 任务种子 → recon-server 下载渠道账单
 
 ## 初始化
 
-权威入口：`python scripts/install_demo_db.py`（schema + seed + Flyway 历史至 V11）。  
-Docker：`docker compose up` 后手动执行上述脚本，见 `scripts/docker-init/README.md`。
+权威入口：`python scripts/setup.py --db-only` 或 `.\setup.ps1`（schema + seed + Flyway 历史至 V11）。
+Docker：`docker compose up -d mysql redis` 后在宿主机执行上述脚本。
 
 ## 相关文档
 

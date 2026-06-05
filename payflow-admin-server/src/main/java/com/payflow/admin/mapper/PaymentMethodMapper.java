@@ -13,8 +13,8 @@ import java.util.List;
 public interface PaymentMethodMapper extends BaseMapper<PaymentMethod> {
     
     @Select("SELECT pm.*, c.channel_name, c.channel_type " +
-            "FROM payment_methods pm " +
-            "LEFT JOIN channels c ON pm.channel_id = c.id " +
+            "FROM admin_payment_methods pm " +
+            "LEFT JOIN admin_channels c ON pm.channel_id = c.id " +
             "ORDER BY pm.id")
     List<PaymentMethod> listWithChannelName();
 }

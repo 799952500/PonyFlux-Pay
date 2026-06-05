@@ -33,11 +33,10 @@ mvn -B -pl payflow-recon-server spring-boot:run
 cd payflow-admin-client && npx playwright test
 cd payflow-cashier-client && npx playwright test
 
-# Reset demo database (schema + seed)
-python scripts/install_demo_db.py
-
-# Verify admin passwords after reseed
-python scripts/verify_admin_password.py
+# One-shot setup (DB reset + validate + Maven/npm)
+.\setup.ps1
+# or: python scripts/setup.py
+# DB only: python scripts/setup.py --db-only
 ```
 
 ## Architecture Overview
@@ -128,7 +127,7 @@ Full frontend ↔ backend contract documented in [`docs/CONTRACT_MATRIX.md`](doc
 | `sql/schema/` | Full DDL per database (`payflow_admin`, `payflow_cashier`) |
 | `sql/seed/` | Realistic demo data for all admin pages |
 | `sql/migrations/` | Historical Flyway-style incremental migrations (reference) |
-| `scripts/install_demo_db.py` | One-shot install: schema + seed |
+| `scripts/setup.py` | One-shot setup: schema + seed + validate + build |
 
 ### Port Assignments
 

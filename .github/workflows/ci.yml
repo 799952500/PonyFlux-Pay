@@ -100,7 +100,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install demo database
-        run: pip install pymysql && python scripts/install_demo_db.py
+        run: pip install -r scripts/requirements.txt && python scripts/setup.py --db-only --skip-redis
 
       - name: Start backend servers
         run: |

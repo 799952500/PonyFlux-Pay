@@ -16,14 +16,14 @@ INSERT INTO admin_users (id, username, password, role, nickname, status, data_me
 (4, 'merchant_m100001', @pwd, 'ADMIN', '星云零售商户管理员', 'ACTIVE', 'M100001', NOW(), NOW()),
 (5, 'merchant_m100002', @pwd, 'ADMIN', '蓝海餐饮商户管理员', 'ACTIVE', 'M100002', NOW(), NOW());
 
-INSERT INTO channels (
+INSERT INTO admin_channels (
   id, channel_code, channel_name, channel_type, api_url, api_key, enabled, priority, icon, description, fee_rate, created_at, updated_at
 ) VALUES
 (1, 'WECHAT_PAY', '微信支付', 'WECHAT', 'https://api.mch.weixin.qq.com', 'demo-wechat-key', 1, 100, '💚', '微信官方渠道', 0.0060, NOW(), NOW()),
 (2, 'ALIPAY', '支付宝', 'ALIPAY', 'https://openapi.alipay.com', 'demo-alipay-key', 1, 90, '🔵', '支付宝官方渠道', 0.0055, NOW(), NOW()),
 (3, 'UNION_PAY', '银联云闪付', 'UNION', 'https://gateway.95516.com', 'demo-union-key', 1, 80, '🟦', '银联云闪付', 0.0050, NOW(), NOW());
 
-INSERT INTO merchants (
+INSERT INTO admin_merchants (
   id, merchant_id, merchant_name, merchant_key, callback_url, notify_url, commission_rate,
   rate_calc_mode, merchant_group, status, created_at, updated_at
 ) VALUES
@@ -31,7 +31,7 @@ INSERT INTO merchants (
 (2, 'M100002', '蓝海餐饮连锁', 'merchant_key_demo_m100002_xxxxxxxx', 'https://m100002.demo/cb', 'https://m100002.demo/notify', 0.0055, 'flat', 'catering_std', 'ACTIVE', NOW(), NOW()),
 (3, 'M100003', '青禾教育培训', 'merchant_key_demo_m100003_xxxxxxxx', 'https://m100003.demo/cb', 'https://m100003.demo/notify', 0.0065, 'flat', 'edu_std', 'ACTIVE', DATE_SUB(NOW(), INTERVAL 30 DAY), NOW());
 
-INSERT INTO payment_accounts (
+INSERT INTO admin_payment_accounts (
   id, channel_id, account_code, account_name, app_id, app_secret, mch_id, mch_key,
   config_json, enabled, priority, description, created_at, updated_at
 ) VALUES
@@ -41,7 +41,7 @@ INSERT INTO payment_accounts (
 (4, 3, 'ACC-UNION-001', '银联华东主账户', NULL, NULL, 'union_mch_001', NULL, '{"env":"sandbox"}', 1, 80, '演示银联', NOW(), NOW());
 
 -- 支付方式仅存能力编码与场景参数；appId/密钥在 payment_accounts
-INSERT INTO payment_methods (
+INSERT INTO admin_payment_methods (
   id, method_code, method_name,
   method_name_zh_cn, method_name_zh_tw, method_name_en,
   channel_id, app_id, enabled, priority, description,
@@ -265,7 +265,7 @@ INSERT INTO admin_sys_menus (
 (61, 60, 'reconcile_tasks', '对账任务', 'MENU', '/admin/reconcile/tasks', NULL, 2, 1, 'ACTIVE', NOW(), NOW()),
 (62, 60, 'reconcile_results', '对账结果', 'MENU', '/admin/reconcile/results', NULL, 3, 1, 'ACTIVE', NOW(), NOW()),
 (311, 60, 'reconcile_insights_dashboard', '差异归因看板', 'MENU', '/admin/reconcile/insights-dashboard', NULL, 4, 1, 'ACTIVE', NOW(), NOW()),
-(312, 60, 'reconcile_sla_rules', 'SLA 规则', 'MENU', '/admin/reconcile/sla-rules', NULL, 5, 1, 'ACTIVE', 'recon:manage', NULL, NOW(), NOW()),
+(312, 60, 'reconcile_sla_rules', 'SLA 规则', 'MENU', '/admin/reconcile/sla-rules', NULL, 5, 1, 'ACTIVE', NOW(), NOW()),
 (313, 60, 'reconcile_long_tail', '长尾差异', 'MENU', '/admin/reconcile/long-tail', NULL, 6, 1, 'ACTIVE', NOW(), NOW()),
 (63, 60, 'reconcile_summary', '对账汇总', 'MENU', '/admin/reconcile/summary', NULL, 7, 1, 'ACTIVE', NOW(), NOW()),
 -- 4 渠道与账户

@@ -66,14 +66,15 @@ public class MerchantNotifyQueryServiceImpl implements MerchantNotifyQueryServic
                 .distinct()
                 .toList();
         Map<String, Order> orderMap = orderService.mapByOrderIds(orderIds);
-        IPage<Map<String, Object>> converted = raw.convert(n -> {
+        // convert 会就地替换 records 类型，须在转换前保留实体列表
+        List<MerchantNotify> summaries = new ArrayList<>(raw.getRecords());
+        for (MerchantNotify notify : summaries) {
+            notifyWebhookFailureIfNeeded(notify);
+        }
+        return raw.convert(n -> {
             Order order = orderMap.get(n.getOrderId());
             return toListItem(n, order != null ? order.getStatus() : n.getOrderStatusSnapshot());
         });
-        for (MerchantNotify notify : raw.getRecords()) {
-            notifyWebhookFailureIfNeeded(notify);
-        }
-        return converted;
     }
 
     @Override
